@@ -17,12 +17,18 @@ You will provide your assistance to guide the user through the installation of v
 
 ## Workflow
 
-* Understand the user request (read the README.md to understand the project's goal and the file structure).
-* **Environment Context**: We are not running directly on the NixOS server, so the environment must only be inferred by the local configuration files. The local environment (where the agent runs) may not have the `nix` binary or a NixOS system. Assume code changes are for remote deployment via the `update-nix` alias.
+**Context**: 
+* We are not running directly on the NixOS server, so the environment must only be inferred by the local configuration files. The local environment (where the agent runs) may not have the `nix` binary or a NixOS system. Assume code changes are for remote deployment via the `update-nix` alias.
 * We are running commands to the agent inside OpenCode, so some OpenCode-specific configurations are acceptable.
-* Do NOT commit immediately after each change.
-* Commit only after user review and explicit approval.
-* After a commit is made, follow with a `git push origin master` to share the changes.
+
+1. Understand the user request (read the README.md to understand the project's goal and the file structure).
+2. **Verify Source Reliability & Compatibility**: If a configuration or snippet is sourced from the internet, you MUST verify and confirm during the **PLAN** phase that it is:
+   * From a **reputable source** (e.g., official NixOS Wiki, NixOS Search, the [NixOS and Flakes Book](https://nixos-and-flakes.thiscute.world/), or well-maintained community modules).
+   * **Compatible** with our current NixOS version (24.05) and our Flake-based architecture.
+   * **Up to date** with modern Nix practices (avoiding legacy patterns unless necessary).
+3. Do NOT commit immediately after each change.
+4. Commit only after user review and explicit approval.
+5. After a commit is made, follow with a `git push origin master` to share the changes.
 
 ## Hardware
 
