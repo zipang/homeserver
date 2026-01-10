@@ -56,7 +56,7 @@
       user.name = "zipang";
       user.email = "christophe.desguez@gmail.com";
       init.defaultBranch = "master";
-      safe.directory = "/home/zipang/Workspace/projects/homeserver";
+      safe.directory = "/home/master/homeserver";
     };
   };
 }

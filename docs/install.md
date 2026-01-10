@@ -38,14 +38,14 @@ Then run `sudo nixos-rebuild switch`.
 ### 3. Clone this Repository
 
 ```bash
-git clone https://github.com/youruser/homeserver.git ~/homeserver
-cd ~/homeserver
+git clone https://github.com/youruser/homeserver.git /home/master/homeserver
+cd /home/master/homeserver
 ```
 
 ### 3. Import Hardware Configuration
 Copy the auto-generated hardware config from your machine into the repo:
 ```bash
-cp /etc/nixos/hardware-configuration.nix ~/homeserver/hosts/SKYLAB/hardware.nix
+cp /etc/nixos/hardware-configuration.nix /home/master/homeserver/hosts/SKYLAB/hardware-configuration.nix
 ```
 
 ### 4. Apply the Flake Configuration
@@ -73,15 +73,16 @@ To sync this repository with GitHub from SKYLAB:
    ```
 
 ### Setting up the Admin User
-The `homelab` user is defined in `modules/system/core.nix`. You must set its password manually after the first deployment:
+The `master` and `zipang` users are defined in `modules/system/core.nix`. You must set their passwords manually after the first deployment:
 ```bash
-sudo passwd homelab
+sudo passwd master
+sudo passwd zipang
 ```
 
 ### NFS Setup
-Ensure your data drive is labeled `HOMELAB_DATA` for the NFS module to find it:
+Ensure your data drive is labeled `MEDIAS` for the NFS module to find it:
 ```bash
-sudo btrfs filesystem label /dev/sdX HOMELAB_DATA
+sudo btrfs filesystem label /dev/sdX MEDIAS
 ```
 Check exports:
 ```bash

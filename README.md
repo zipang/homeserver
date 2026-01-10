@@ -10,7 +10,7 @@ This repository contains the NixOS configuration for the SKYLAB home server (Int
 ├── hosts/                  # Host-specific configurations
 │   └── SKYLAB/
 │       ├── default.nix     # Main configuration for SKYLAB
-│       └── hardware.nix    # Hardware-specific config (scanned from machine)
+│       └── hardware-configuration.nix # Hardware-specific config (scanned from machine)
 ├── modules/                # Reusable NixOS modules
 │   ├── services/           # Services (NFS, Docker, etc.)
 │   └── system/             # System settings (SSH, Core, Nix)
@@ -39,7 +39,7 @@ Ensure you have your `hardware-configuration.nix` ready.
 
 ```bash
 # Copy your existing hardware config into the repo
-cp /etc/nixos/hardware-configuration.nix ./hosts/SKYLAB/hardware.nix
+cp /etc/nixos/hardware-configuration.nix ./hosts/SKYLAB/hardware-configuration.nix
 ```
 
 ### 2. Apply Configuration
