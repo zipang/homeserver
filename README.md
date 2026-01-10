@@ -47,7 +47,7 @@ cp /etc/nixos/hardware-configuration.nix ./hosts/SKYLAB/hardware-configuration.n
 To apply the configuration using Flakes:
 
 ```bash
-sudo nixos-rebuild switch --flake .#SKYLAB
+sudo nixos-rebuild switch --impure --flake .#SKYLAB
 ```
 
 ### 3. Update the System
@@ -57,7 +57,7 @@ sudo nixos-rebuild switch --flake .#SKYLAB
 nix flake update
 
 # Apply changes
-sudo nixos-rebuild switch --flake .#SKYLAB
+sudo nixos-rebuild switch --impure --flake .#SKYLAB
 ```
 
 ## Security & Best Practices

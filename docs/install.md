@@ -50,8 +50,10 @@ cp /etc/nixos/hardware-configuration.nix /home/master/homeserver/hosts/SKYLAB/ha
 
 ### 4. Apply the Flake Configuration
 ```bash
-sudo nixos-rebuild switch --flake .#SKYLAB
+sudo nixos-rebuild switch --impure --flake .#SKYLAB
 ```
+
+*Note: The `--impure` flag is required because the configuration references an external file (`/etc/nixos/ssh/authorized_keys`) which is not tracked in the Git repository.*
 
 ## Phase 3: Post-Installation
 
