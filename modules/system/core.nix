@@ -34,7 +34,6 @@
     git
     inetutils
     nano
-    neovim
     nfs-utils
     openssh
     lsd
@@ -51,7 +50,7 @@
     ls = "lsd";
     la = "lsd -la";
     ll = "lsd -l";
-    update-nix = "cd /home/master/homeserver && sudo nixos-rebuild switch --impure --flake .#SKYLAB";
+    update-nix = "cd /home/master/homeserver && git pull && sudo nixos-rebuild switch --impure --flake .#SKYLAB";
   };
 
   programs.starship.enable = true;
