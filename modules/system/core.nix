@@ -51,6 +51,7 @@
     ls = "lsd";
     la = "lsd -la";
     ll = "lsd -l";
+    update-nix = "cd /home/master/homeserver && sudo nixos-rebuild switch --flake .#SKYLAB";
   };
 
   programs.starship.enable = true;
