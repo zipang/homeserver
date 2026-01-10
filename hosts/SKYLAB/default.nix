@@ -10,6 +10,7 @@
     ../../modules/system/core.nix
     ../../modules/system/ssh.nix
     ../../modules/system/nix-settings.nix
+    ../../modules/system/neovim.nix
     
     # Services
     ../../modules/services/nfs.nix
