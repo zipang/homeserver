@@ -21,9 +21,8 @@
   # Swap configuration from reference
   swapDevices = [{ device = "/dev/disk/by-label/SWAP"; }];
 
-  # Essential packages for the system (migrated from reference)
+  # Essential packages for the system
   environment.systemPackages = with pkgs; [
-    git
     _7zz
     btop
     bun
@@ -32,6 +31,7 @@
     docker-compose
     fastfetch
     fd
+    git
     inetutils
     nano
     neovim
@@ -40,14 +40,20 @@
     lsd
     lshw
     mpv
-    pipx
     tree
     wget
-    htop # Added back from original core.nix
   ];
 
   # Basic networking
   networking.networkmanager.enable = true;
+
+  environment.shellAliases = {
+    ls = "lsd";
+    la = "lsd -la";
+    ll = "lsd -l";
+  };
+
+  programs.starship.enable = true;
 
   # Git configuration
   programs.git = {

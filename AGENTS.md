@@ -14,6 +14,11 @@ You will provide your assistance to guide the user through the installations of 
 * We will be using some unstabilized Nix features like Flakes.
 * provide each service's configuration in a separate file.
 
+## Workflow
+
+* Do NOT commit immediately after each change.
+* Commit only after user review and explicit approval.
+
 ## Hardware
 
 The home server 
