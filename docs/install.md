@@ -55,6 +55,23 @@ sudo nixos-rebuild switch --flake .#SKYLAB
 
 ## Phase 3: Post-Installation
 
+### GitHub Integration
+To sync this repository with GitHub from SKYLAB:
+
+1. **Generate an SSH key**:
+   ```bash
+   ssh-keygen -t ed25519 -C "christophe.desguez@gmail.com"
+   ```
+   Press Enter to accept the defaults.
+2. **Add the key to GitHub**:
+   - Copy the public key: `cat ~/.ssh/id_ed25519.pub`
+   - Go to GitHub -> Settings -> SSH and GPG keys -> New SSH key.
+   - Paste the content and save.
+3. **Test the connection**:
+   ```bash
+   ssh -T git@github.com
+   ```
+
 ### Setting up the Admin User
 The `homelab` user is defined in `modules/system/core.nix`. You must set its password manually after the first deployment:
 ```bash

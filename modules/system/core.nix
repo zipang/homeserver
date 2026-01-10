@@ -48,4 +48,15 @@
 
   # Basic networking
   networking.networkmanager.enable = true;
+
+  # Git configuration
+  programs.git = {
+    enable = true;
+    config = {
+      user.name = "zipang";
+      user.email = "christophe.desguez@gmail.com";
+      init.defaultBranch = "master";
+      safe.directory = "/home/zipang/Workspace/projects/homeserver";
+    };
+  };
 }
