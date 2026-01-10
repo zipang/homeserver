@@ -6,6 +6,7 @@
     ./hardware-configuration.nix
 
     # Modular system configurations
+    ../../modules/system/boot.nix
     ../../modules/system/core.nix
     ../../modules/system/ssh.nix
     ../../modules/system/nix-settings.nix
