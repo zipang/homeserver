@@ -3,8 +3,7 @@
 {
   imports = [
     # Include the results of the hardware scan.
-    # This file will be copied from /etc/nixos/hardware-configuration.nix on the host.
-    ./hardware.nix
+    ./hardware-configuration.nix
 
     # Modular system configurations
     ../../modules/system/core.nix

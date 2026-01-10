@@ -1,47 +1,73 @@
 { config, pkgs, ... }:
 
 let
-  diskLabel = "HOMELAB_DATA";
+  diskLabel = "MEDIAS";
   nfsNetwork = "192.168.1.0/24";
   diskDevice = "/dev/disk/by-label/${diskLabel}";
 in
 {
-  # --- 1. Mount BTRFS Subvolumes ---
-  # These rely on the disk being labeled 'HOMELAB_DATA'
-  fileSystems."/share/Music" = {
+  # --- 1. Mount BTRFS Subvolumes (Local mounts for zipang) ---
+  fileSystems."/home/zipang/Pictures" = {
     device = diskDevice;
     fsType = "btrfs";
-    options = [ "subvol=Music" "compress=zstd" "noatime" ];
+    options = [ "subvol=@pictures" "compress=zstd" "noatime" ];
   };
 
-  fileSystems."/share/Documents" = {
+  fileSystems."/home/zipang/Documents" = {
     device = diskDevice;
     fsType = "btrfs";
-    options = [ "subvol=Documents" "compress=zstd" "noatime" ];
+    options = [ "subvol=@documents" "compress=zstd" "noatime" ];
   };
 
-  fileSystems."/share/Pictures" = {
+  fileSystems."/home/zipang/Music" = {
     device = diskDevice;
     fsType = "btrfs";
-    options = [ "subvol=Pictures" "compress=zstd" "noatime" ];
+    options = [ "subvol=@music" "compress=zstd" "noatime" ];
   };
 
-  # --- 2. NFS Export Tree (Bind Mounts) ---
-  fileSystems."/export/Music"     = { device = "/share/Music";     options = [ "bind" ]; };
-  fileSystems."/export/Documents" = { device = "/share/Documents"; options = [ "bind" ]; };
-  fileSystems."/export/Pictures"  = { device = "/share/Pictures";  options = [ "bind" ]; };
+  fileSystems."/home/zipang/Games" = {
+    device = diskDevice;
+    fsType = "btrfs";
+    options = [ "subvol=@games" "compress=zstd" "noatime" ];
+  };
+
+  fileSystems."/home/zipang/Workspace" = {
+    device = diskDevice;
+    fsType = "btrfs";
+    options = [ "subvol=@workspace" "compress=zstd" "noatime" ];
+  };
+
+  # --- 2. NFS Export Tree (Bind Mounts for sharing) ---
+  fileSystems."/share/Skylab/Documents" = {
+    device = diskDevice;
+    fsType = "btrfs";
+    options = [ "subvolume=@documents" "compress=zstd" "noatime" "bind" ];
+  };
+  fileSystems."/share/Skylab/Games" = {
+    device = diskDevice;
+    fsType = "btrfs";
+    options = [ "subvolume=@games" "compress=zstd" "noatime" "bind" ];
+  };
+  fileSystems."/share/Skylab/Music" = {
+    device = diskDevice;
+    fsType = "btrfs";
+    options = [ "subvolume=@music" "compress=zstd" "noatime" "bind" ];
+  };
+  fileSystems."/share/Skylab/Pictures" = {
+    device = diskDevice;
+    fsType = "btrfs";
+    options = [ "subvolume=@pictures" "compress=zstd" "noatime" "bind" ];
+  };
 
   # --- 3. NFS Server Service ---
   services.nfs.server = {
     enable = true;
     exports = ''
-      /export           ${nfsNetwork}(rw,fsid=0,no_subtree_check,crossmnt)
-      /export/Music     ${nfsNetwork}(rw,nohide,insecure,no_subtree_check)
-      /export/Documents ${nfsNetwork}(rw,nohide,insecure,no_subtree_check)
-      /export/Pictures  ${nfsNetwork}(rw,nohide,insecure,no_subtree_check)
+      /share           ${nfsNetwork}(rw,fsid=0,no_subtree_check,crossmnt)
+      /share/Skylab    ${nfsNetwork}(rw,nohide,insecure,no_subtree_check)
     '';
   };
 
-  # --- 4. Firewall ---
-  networking.firewall.allowedTCPPorts = [ 2049 ];
+  # Enable NFS client support (needed for mounting)
+  services.rpcbind.enable = true;
 }

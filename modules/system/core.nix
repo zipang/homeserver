@@ -1,25 +1,49 @@
 { config, pkgs, ... }:
 
 {
-  time.timeZone = "Europe/Paris"; # Adjusted for your probable location, please verify
+  time.timeZone = "Europe/Paris";
   i18n.defaultLocale = "en_US.UTF-8";
+  console.keyMap = "fr";
 
-  users.users.homelab = {
+  # Define users
+  users.users.zipang = {
     isNormalUser = true;
-    description = "Homelab Administrator";
     extraGroups = [ "wheel" "docker" "networkmanager" ];
-    # Password should be set via 'passwd' on the machine or via hashed password
+    openssh.authorizedKeys.keyFiles = [ /etc/nixos/ssh/authorized_keys ];
   };
 
-  # Essential packages for the system
+  users.users.master = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "docker" "networkmanager" ];
+    openssh.authorizedKeys.keyFiles = [ /etc/nixos/ssh/authorized_keys ];
+  };
+
+  # Swap configuration from reference
+  swapDevices = [{ device = "/dev/disk/by-label/SWAP"; }];
+
+  # Essential packages for the system (migrated from reference)
   environment.systemPackages = with pkgs; [
-    vim
     git
-    curl
-    wget
-    htop
+    _7zz
     btop
+    bun
+    curl
+    docker
+    docker-compose
+    fastfetch
+    fd
+    inetutils
+    nano
+    neovim
+    nfs-utils
+    openssh
+    lsd
+    lshw
+    mpv
+    pipx
     tree
+    wget
+    htop # Added back from original core.nix
   ];
 
   # Basic networking
