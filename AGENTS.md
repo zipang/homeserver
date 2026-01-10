@@ -18,6 +18,7 @@ You will provide your assistance to guide the user through the installations of 
 
 * Do NOT commit immediately after each change.
 * Commit only after user review and explicit approval.
+* After a commit is made, follow with a `git push origin master` to share the changes.
 
 ## Hardware
 
