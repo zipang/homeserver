@@ -54,7 +54,7 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] NixOS Upgrade to 25.11
 * [ ] NFS to share a list of available NAS drive on the local network (Linux and MacOS machines, no Windows)
 * [ ] `authelia` SSO for secure application access
-* [ ] `copyparty` with Authelia SSO integration
+* [ ] `copyparty` with Authelia SSO integration (currently disabled due to build failure)
 * [ ] `immich` to backup and index photos
 * [ ] `jellyfin` to stream music and local movies
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)

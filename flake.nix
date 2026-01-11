@@ -11,7 +11,7 @@
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
-        ./hosts/SKYLAB/default.nix
+        ./hosts/SKYLAB/configuration.nix
       ];
     };
   };

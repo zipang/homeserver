@@ -13,7 +13,7 @@ To understand the repository structure and philosophy of NixOS with Flakes some 
 ├── flake.nix               # Entry point for Nix Flake
 ├── hosts/                  # Host-specific configurations
 │   └── SKYLAB/
-│       ├── default.nix     # Main configuration for SKYLAB
+│       ├── configuration.nix # Main configuration for SKYLAB
 │       └── hardware-configuration.nix # Hardware-specific config (scanned from machine)
 ├── modules/                # Reusable NixOS modules
 │   ├── services/           # Services (NFS, Docker, etc.)
