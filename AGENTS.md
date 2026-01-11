@@ -25,10 +25,11 @@ You will provide your assistance to guide the user through the installation of v
 2. **Verify Source Reliability & Compatibility**: If a configuration or snippet is sourced from the internet, you MUST verify and confirm during the **PLAN** phase that it is:
    * From a **reputable source** (e.g., official NixOS Wiki, NixOS Search, the [NixOS and Flakes Book](https://nixos-and-flakes.thiscute.world/), or well-maintained community modules).
    * **Compatible** with our current NixOS version (24.05) and our Flake-based architecture.
-   * **Up to date** with modern Nix practices (avoiding legacy patterns unless necessary).
-3. Do NOT commit immediately after each change.
-4. Commit only after user review and explicit approval.
-5. After a commit is made, follow with a `git push origin master` to share the changes.
+    * **Up to date** with modern Nix practices (avoiding legacy patterns unless necessary).
+3. **Pending Session Context**: For complex, multi-step tasks that cannot be completed in a single session, you MUST save the current progress, plan, and pending requirements into a `.pending_session.context.md` file. This file acts as a memory bridge for future sessions.
+4. Do NOT commit immediately after each change.
+5. Commit only after user review and explicit approval.
+6. After a commit is made, follow with a `git push origin master` to share the changes.
 
 ## Hardware
 
