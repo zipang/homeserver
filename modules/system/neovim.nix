@@ -5,6 +5,7 @@ let
   snacks-nvim = pkgs.vimUtils.buildVimPlugin {
     name = "snacks.nvim";
     src = inputs.snacks-nvim;
+    doCheck = false; # Skip require-check as it fails on optional dependencies
   };
 in
 {
