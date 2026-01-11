@@ -18,6 +18,6 @@
     ignoreIP = [ "192.168.1.0/24" ];
   };
 
-  # Firewall: only allow SSH and NFS (NFS module will handle 2049)
-  networking.firewall.allowedTCPPorts = [ 22 2049 ];
+  # Firewall: only allow SSH (other ports handled by respective modules)
+  networking.firewall.allowedTCPPorts = [ 22 ];
 }

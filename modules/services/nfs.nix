@@ -70,4 +70,7 @@ in
 
   # Enable NFS client support (needed for mounting)
   services.rpcbind.enable = true;
+
+  # Firewall: Port for NFS
+  networking.firewall.allowedTCPPorts = [ 2049 ];
 }

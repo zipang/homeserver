@@ -15,6 +15,7 @@
     # Services
     ../../modules/services/nfs.nix
     ../../modules/services/docker.nix
+    ../../modules/services/copyparty.nix
   ];
 
   networking.hostName = "SKYLAB";
