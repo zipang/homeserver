@@ -52,7 +52,7 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] git repo to save our configuration files
 * [x] Neovim with `snacks.nvim` plugin
 * [ ] NFS to share a list of available NAS drive on the local network (Linux and MacOS machines, no Windows)
-* [x] `copyparty` to access these shared drives from the internet
+* [ ] `copyparty` to access these shared drives from the internet
 * [ ] `immich` to backup and index photos
 * [ ] `jellyfin` to stream music and local movies
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)
