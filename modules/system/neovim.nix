@@ -14,8 +14,8 @@ in
     viAlias = true;
     vimAlias = true;
 
-    # In NixOS 24.05 (system-level), we use the 'configure' attribute
-    # to manage both the configuration (customRC) and the plugins.
+    # We use the 'configure' attribute to manage both the configuration (customRC)
+    # and the plugins. This is compatible with NixOS 24.05 and 25.11.
     configure = {
       customRC = ''
         lua << EOF

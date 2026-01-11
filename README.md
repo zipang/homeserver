@@ -1,5 +1,8 @@
 # SKYLAB - A NixOS Home Server Experience
 
+> [!IMPORTANT]
+> **Mandatory Reading for Agents:** Always read [AGENTS.md](./AGENTS.md) and [.pending_session.context.md](./.pending_session.context.md) before starting any task to understand project rules and current session state.
+
 This repository contains the NixOS configuration for my home server.
 
 ## Repository Structure
