@@ -6,7 +6,7 @@ You will provide your assistance to guide the user through the installation of v
 ## Project goals
 
 * We want to document our installation of a home server (or homelab server) step by step.
-* We will be using NixOS in terminal mode (no graphical UI).
+* We will be using NixOS in terminal mode only (no graphical UI).
 * We want to follow the best practices specifically on these crucial aspects: security & performance.
 
 ## NixOS configuration
@@ -17,9 +17,9 @@ You will provide your assistance to guide the user through the installation of v
 
 ## Workflow
 
-**Context**: 
-* We are not running directly on the NixOS server, so the environment must only be inferred by the local configuration files. The local environment (where the agent runs) may not have the `nix` binary or a NixOS system. Assume code changes are for remote deployment via the `update-nix` alias.
-* We are running commands to the agent inside OpenCode, so some OpenCode-specific configurations are acceptable.
+**Staging Context**: 
+* _We are not running directly on the NixOS server_, so the environment must only be inferred by the local configuration files : the local environment (where the agent runs) does not have the `nix` binary or a NixOS system. 
+* We are running commands to the agent inside OpenCode, so some OpenCode-specific configurations can be proposed.
 
 1. Understand the user request (read the README.md to understand the project's goal and the file structure).
 2. **Verify Source Reliability & Compatibility**: If a configuration or snippet is sourced from the internet, you MUST verify and confirm during the **PLAN** phase that it is:
@@ -41,8 +41,8 @@ Model: Mini PC Intel NUC Hades (NUC8i7HVK)
 CPU: Intel Core i7-8809G (8) @ 8.30 GHz
 GPU 1: Intel HD Graphics 630 @ 1.10 GHz 
 GPU 2: AMD Radeon RX Vega M GH Graphics @ 0.23 GHz
-OS: NixOS 24.05.7376.b134951a4c9f (Uakari) x86_64
-Kernel: Linux 6.6.68
+OS: NixOS 25.11 (Xantusia) x86_64
+Kernel: Linux 6.12.64
 Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 ```
 
@@ -51,8 +51,10 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] ssh to securely connect to the host
 * [x] git repo to save our configuration files
 * [x] Neovim with `snacks.nvim` plugin
+* [x] NixOS Upgrade to 25.11
 * [ ] NFS to share a list of available NAS drive on the local network (Linux and MacOS machines, no Windows)
-* [ ] `copyparty` to access these shared drives from the internet
+* [ ] `authelia` SSO for secure application access
+* [ ] `copyparty` with Authelia SSO integration
 * [ ] `immich` to backup and index photos
 * [ ] `jellyfin` to stream music and local movies
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)

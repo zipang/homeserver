@@ -1,9 +1,10 @@
 # SKYLAB - A NixOS Home Server Experience
 
-> [!IMPORTANT]
-> **Mandatory Reading for Agents:** Always read [AGENTS.md](./AGENTS.md) and [.pending_session.context.md](./.pending_session.context.md) before starting any task to understand project rules and current session state.
-
 This repository contains the NixOS configuration for my home server.
+
+To understand the repository structure and philosophy of NixOS with Flakes some preliminary readings can be useful : 
+
+* [NixOS - Introduction to Flakes](https://nixos-and-flakes.thiscute.world/nixos-with-flakes/introduction-to-flakes)
 
 ## Repository Structure
 
@@ -35,27 +36,19 @@ Before deploying, ensure the following are handled manually on the SKYLAB server
 
 ## How to use
 
-1. Preparation (on the Server)
-  > Follow the instructions in [./docs/install.md](docs > install) to install NixOS on a new machine and sync the Flake configuration with this repo.
+1. Preparation (on the host)
+  * Follow the instructions in [docs > install](./docs/install.md) to install NixOS on a new machine and sync the Flake configuration with this repo.
 
-2. Add new feature to the server (on any machine inside a clone of the git repository)
-  > Launch `opencode` and switch between PLAN and BUILD mode to update the Flake configuration
+2. Add new feature (on any 'staging' machine inside a clone of this git repository)
+  * Launch `opencode` and switch between PLAN and BUILD mode to update the Flake configuration.
+  * commit and push changes to the repo
  
-3. Apply Configuration (on the server)
-  > A script has been added to the configuration to apply any new configuration:
-  
+3. Apply Configuration (on the host)
+  * A script has been added to apply any new configuration (pull changes from the github repo, build and re-push `flake.lock`):
   ```bash
   update-nix
   ```
 
-## Advanced: Managing External Dependencies (Flake Inputs)
+## IMPORTANT: Note for LLM Agents
 
-To avoid manual `sha256` hashing for packages or plugins not yet in `nixpkgs`, we use **Flake Inputs** in `flake.nix`. 
-
-1.  **Add Input**: Add the source URL to the `inputs` block in `flake.nix`.
-2.  **Use Input**: The inputs are automatically passed to all modules via `specialArgs`. You can access them in your module arguments:
-    ```nix
-    { config, pkgs, inputs, ... }:
-    # Use inputs.your-dependency in the module
-    ```
-3.  **Automatic Hashing**: When you run `update-nix`, Nix will automatically download the dependency and record its hash in `flake.lock`. No manual intervention is needed.
+**Mandatory Reading for Agents:** Always read [AGENTS.md](./AGENTS.md) and [.pending_session.context.md](./.pending_session.context.md) when starting a new session to understand the project rules and current session state.
