@@ -50,8 +50,12 @@
       BRANCH=''${1:-master}
       echo "🚀 Starting SKYLAB System Update (Branch: $BRANCH)..."
 
-      echo "📥 [1/4] Pulling latest changes from Git..."
+      echo "🔧 [0/4] Fixing repository permissions..."
       cd /home/master/homeserver
+      # Ensure current user owns the directory to avoid git permission errors
+      sudo chown -R $USER:wheel .
+
+      echo "📥 [1/4] Pulling latest changes from Git..."
       git fetch origin
       git checkout "$BRANCH"
       git pull origin "$BRANCH"
