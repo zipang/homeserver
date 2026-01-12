@@ -46,15 +46,19 @@ Kernel: Linux 6.12.64
 Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 ```
 
-## Services to install (TODO list to keep updated)
+## TODO list (to keep updated)
 
 * [x] ssh to securely connect to the host
 * [x] git repo to save our configuration files
 * [x] Neovim with `snacks.nvim` plugin
-* [x] NixOS Upgrade to 25.11
 * [ ] NFS to share a list of available NAS drive on the local network (Linux and MacOS machines, no Windows)
+* [ ] Secrets management
+* [ ] `jellyfin` to stream music and local movies
 * [ ] `authelia` SSO for secure application access
 * [ ] `copyparty` with Authelia SSO integration (currently disabled due to build failure)
 * [ ] `immich` to backup and index photos
-* [ ] `jellyfin` to stream music and local movies
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)
+
+## Documentation
+
+Each time a task from the TODO List is completed we want to add a new chapter inside the main README.md file to document how we solved the problem and how the configuration is done.
