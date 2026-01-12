@@ -79,6 +79,11 @@
   # Basic networking
   networking.networkmanager.enable = true;
 
+  # Path configuration for management scripts
+  environment.sessionVariables = {
+    PATH = [ "$PATH:/home/master/homeserver/scripts" ];
+  };
+
   environment.shellAliases = {
     ls = "lsd";
     la = "lsd -la";
