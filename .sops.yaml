@@ -1,0 +1,7 @@
+creation_rules:
+  - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
+    input_type: binary
+    output_type: binary
+    key_groups:
+      - age:
+        - "age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

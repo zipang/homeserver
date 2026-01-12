@@ -47,11 +47,14 @@
     # Custom update script
     (writeShellScriptBin "update-nix" ''
       set -e
-      echo "🚀 Starting SKYLAB System Update..."
+      BRANCH=''${1:-master}
+      echo "🚀 Starting SKYLAB System Update (Branch: $BRANCH)..."
 
       echo "📥 [1/4] Pulling latest changes from Git..."
       cd /home/master/homeserver
-      git pull
+      git fetch origin
+      git checkout "$BRANCH"
+      git pull origin "$BRANCH"
 
       echo "🔄 [2/4] Updating Flake lockfile..."
       nix flake update
@@ -64,7 +67,7 @@
         echo "📤 Pushing updated flake.lock to repository..."
         git add flake.lock
         git commit -m "chore: update flake.lock after system upgrade"
-        git push origin master
+        git push origin "$BRANCH"
       else
         echo "✅ No changes to flake.lock. System is up to date."
       fi
