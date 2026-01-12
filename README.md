@@ -18,6 +18,8 @@ To understand the repository structure and philosophy of NixOS with Flakes some 
 ├── modules/                # Reusable NixOS modules
 │   ├── services/           # Services (NFS, Docker, etc.)
 │   └── system/             # System settings (SSH, Core, Nix)
+├── scripts/                # Custom management scripts
+├── secrets/                # Encrypted secrets (sops)
 └── docs/                   # Detailed documentation
 ```
 
