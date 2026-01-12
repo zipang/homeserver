@@ -18,6 +18,7 @@
         owner = "master";
         path = "/run/secrets/test.env";
         sopsFile = ../../secrets/test.env;
+        format = "binary";
       };
     };
   };
