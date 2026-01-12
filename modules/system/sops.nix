@@ -13,13 +13,7 @@
     # Example usage in other modules:
     # systemd.services.jellyfin.serviceConfig.EnvironmentFile = config.sops.secrets."jellyfin.env".path;
     secrets = {
-      # Placeholder for initial setup
-      "test.env" = {
-        owner = "master";
-        path = "/run/secrets/test.env";
-        sopsFile = ../../secrets/test.env;
-        format = "binary";
-      };
+      # Add your secrets here
     };
   };
 }
