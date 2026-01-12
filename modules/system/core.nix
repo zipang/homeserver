@@ -23,7 +23,9 @@
 
   # Essential packages for the system
   environment.systemPackages = with pkgs; [
+    git  # Note: git must be put first because Flakes
     _7zz
+    age
     btop
     bun
     curl
@@ -31,7 +33,6 @@
     docker-compose
     fastfetch
     fd
-    git
     inetutils
     nano
     nfs-utils
@@ -39,6 +40,7 @@
     lsd
     lshw
     mpv
+    sops
     tree
     wget
 
@@ -46,7 +48,7 @@
     (writeShellScriptBin "update-nix" ''
       set -e
       echo "🚀 Starting SKYLAB System Update..."
-      
+
       echo "📥 [1/4] Pulling latest changes from Git..."
       cd /home/master/homeserver
       git pull
