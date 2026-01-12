@@ -11,6 +11,7 @@
     ../../modules/system/ssh.nix
     ../../modules/system/nix-settings.nix
     ../../modules/system/neovim.nix
+    ../../modules/system/sops.nix
     
     # Services
     ../../modules/services/nfs.nix

@@ -51,8 +51,8 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] ssh to securely connect to the host
 * [x] git repo to save our configuration files
 * [x] Neovim with `snacks.nvim` plugin
+* [x] Secrets management with sops and age
 * [ ] NFS to share a list of available NAS drive on the local network (Linux and MacOS machines, no Windows)
-* [ ] Secrets management
 * [ ] `jellyfin` to stream music and local movies
 * [ ] `authelia` SSO for secure application access
 * [ ] `copyparty` with Authelia SSO integration (currently disabled due to build failure)
