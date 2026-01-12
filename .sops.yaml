@@ -4,4 +4,5 @@ creation_rules:
     output_type: binary
     key_groups:
       - age:
-        - "age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        - "age1jm6zer3f4mzwwn7yc9xwhw0w252475anwzxr6r6kg302megnqf5qt5q6zc"
+        - "age1jaztnew2y779mf6dxyzhw54heayntakdh7pvuzwd70fjsuh2cdms9tjrga"
