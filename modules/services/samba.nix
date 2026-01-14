@@ -4,19 +4,20 @@
   # --- 1. Samba Server Configuration ---
   services.samba = {
     enable = true;
-    securityType = "user";
     openFirewall = true;
-    extraConfig = ''
-      workgroup = WORKGROUP
-      server string = SKYLAB
-      netbios name = SKYLAB
-      security = user 
-      # use guest account if user authentication fails
-      map to guest = bad user
-      guest account = nobody
-    '';
+    
+    # Modern NixOS (25.11+) uses settings instead of extraConfig/shares
+    settings = {
+      global = {
+        workgroup = "WORKGROUP";
+        "server string" = "SKYLAB";
+        "netbios name" = "SKYLAB";
+        security = "user";
+        # use guest account if user authentication fails
+        "map to guest" = "bad user";
+        "guest account" = "nobody";
+      };
 
-    shares = {
       Skylab = {
         path = "/share/Skylab";
         browseable = "yes";
