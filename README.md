@@ -51,32 +51,6 @@ Before deploying, ensure the following are handled manually on the SKYLAB server
   update-nix [branch]
   ```
 
-## Secrets Management
-
-We use `sops` with `age` for secrets management. Secrets are stored in the `secrets/` directory as binary-encrypted files.
-
-### 1. Prerequisite: Age Key
-You must have an `age` key to encrypt/decrypt secrets. The public key must be added to `.sops.yaml`.
-The server uses its SSH host key (`/etc/ssh/ssh_host_ed25519_key`) for decryption.
-
-### 2. Workflow
-1.  **Create/Update a secret**: Create a file (e.g., `secrets/service.env`) with your secrets.
-2.  **Encrypt**: Run the management script to encrypt it in-place:
-    ```bash
-    ./scripts/secrets encrypt secrets/service.env
-    ```
-3.  **Configure**: Add the secret to `modules/system/sops.nix`.
-4.  **Use**: Reference the secret in your service configuration:
-    ```nix
-    systemd.services.myservice.serviceConfig.EnvironmentFile = config.sops.secrets."service.env".path;
-    ```
-
-### 3. Management Script
-The `scripts/secrets` wrapper simplifies the commands:
-*   `./scripts/secrets encrypt <file>`: Encrypts a file in-place.
-*   `./scripts/secrets edit <file>`: Opens an encrypted file for editing.
-*   `./scripts/secrets decrypt <file>`: Displays the decrypted content.
-
 ## IMPORTANT: Note for LLM Agents
 
 **Mandatory Reading for Agents:** Always read [AGENTS.md](./AGENTS.md) and [.pending_session.context.md](./.pending_session.context.md) when starting a new session to understand the project rules and current session state.

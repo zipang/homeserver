@@ -64,7 +64,7 @@ in
     enable = true;
     exports = ''
       /share           ${nfsNetwork}(rw,fsid=0,no_subtree_check,crossmnt)
-      /share/Skylab    ${nfsNetwork}(rw,nohide,insecure,no_subtree_check)
+      /share/Skylab    ${nfsNetwork}(rw,fsid=314116,nohide,insecure,no_subtree_check)
     '';
   };
 
