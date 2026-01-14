@@ -44,6 +44,7 @@
     tree
     wget
 
+
     # Custom update script
     (writeShellScriptBin "update-nix" ''
       set -e

@@ -9,13 +9,14 @@
     ../../modules/system/boot.nix
     ../../modules/system/core.nix
     ../../modules/system/ssh.nix
-    ../../modules/system/nfs.nix
+    ../../modules/system/storage.nix
     ../../modules/system/nix-settings.nix
     ../../modules/system/sops.nix
 
     # Services
     ../../modules/services/neovim.nix
     ../../modules/services/docker.nix
+    ../../modules/services/samba.nix
     # ../../modules/services/copyparty.nix
   ];
 
