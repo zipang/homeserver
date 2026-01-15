@@ -36,28 +36,32 @@ in
   };
 
   # --- 2. Share Tree (Common mount point for sharing services) ---
-  # We use the same subvolumes but mount them under /share/Skylab for external access
+  # We bind mount existing user directories under /share/Skylab for external access.
+  # This avoids race conditions on BTRFS subvolumes and ensures the system boots
+  # even if there's an issue with the shares (nofail).
   fileSystems."/share/Skylab/Documents" = {
-    device = mediasDevice;
-    fsType = "btrfs";
-    options = [ "subvol=@documents" "compress=zstd" "noatime" ];
+    device = "/home/zipang/Documents";
+    options = [ "bind" "nofail" ];
   };
 
   fileSystems."/share/Skylab/Games" = {
-    device = mediasDevice;
-    fsType = "btrfs";
-    options = [ "subvol=@games" "compress=zstd" "noatime" ];
+    device = "/home/zipang/Games";
+    options = [ "bind" "nofail" ];
   };
 
   fileSystems."/share/Skylab/Music" = {
-    device = mediasDevice;
-    fsType = "btrfs";
-    options = [ "subvol=@music" "compress=zstd" "noatime" ];
+    device = "/home/zipang/Music";
+    options = [ "bind" "nofail" ];
   };
 
   fileSystems."/share/Skylab/Pictures" = {
-    device = mediasDevice;
-    fsType = "btrfs";
-    options = [ "subvol=@pictures" "compress=zstd" "noatime" ];
+    device = "/home/zipang/Pictures";
+    options = [ "bind" "nofail" ];
   };
+
+  # Ensure the mount points exist
+  systemd.tmpfiles.rules = [
+    "d /share 0755 root root -"
+    "d /share/Skylab 0755 root root -"
+  ];
 }
