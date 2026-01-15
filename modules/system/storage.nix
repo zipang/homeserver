@@ -41,21 +41,25 @@ in
   # even if there's an issue with the shares (nofail).
   fileSystems."/share/Skylab/Documents" = {
     device = "/home/zipang/Documents";
+    fsType = "none";
     options = [ "bind" "nofail" ];
   };
 
   fileSystems."/share/Skylab/Games" = {
     device = "/home/zipang/Games";
+    fsType = "none";
     options = [ "bind" "nofail" ];
   };
 
   fileSystems."/share/Skylab/Music" = {
     device = "/home/zipang/Music";
+    fsType = "none";
     options = [ "bind" "nofail" ];
   };
 
   fileSystems."/share/Skylab/Pictures" = {
     device = "/home/zipang/Pictures";
+    fsType = "none";
     options = [ "bind" "nofail" ];
   };
 
@@ -63,5 +67,9 @@ in
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
     "d /share/Skylab 0755 root root -"
+    "d /share/Skylab/Documents 0755 root root -"
+    "d /share/Skylab/Games 0755 root root -"
+    "d /share/Skylab/Music 0755 root root -"
+    "d /share/Skylab/Pictures 0755 root root -"
   ];
 }
