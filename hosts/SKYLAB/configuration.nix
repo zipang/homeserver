@@ -16,7 +16,7 @@
     # Services
     ../../modules/services/neovim.nix
     ../../modules/services/docker.nix
-    ../../modules/services/samba.nix
+    # ../../modules/services/samba.nix
     ../../modules/services/nfs.nix
     # ../../modules/services/copyparty.nix
   ];
