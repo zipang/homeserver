@@ -43,24 +43,28 @@ in
     device = "/home/zipang/Documents";
     fsType = "none";
     options = [ "bind" "nofail" ];
+    dependsOn = [ "/home/zipang/Documents" ];
   };
 
   fileSystems."/share/Skylab/Games" = {
     device = "/home/zipang/Games";
     fsType = "none";
     options = [ "bind" "nofail" ];
+    dependsOn = [ "/home/zipang/Games" ];
   };
 
   fileSystems."/share/Skylab/Music" = {
     device = "/home/zipang/Music";
     fsType = "none";
     options = [ "bind" "nofail" ];
+    dependsOn = [ "/home/zipang/Music" ];
   };
 
   fileSystems."/share/Skylab/Pictures" = {
     device = "/home/zipang/Pictures";
     fsType = "none";
     options = [ "bind" "nofail" ];
+    dependsOn = [ "/home/zipang/Pictures" ];
   };
 
   # Ensure the mount points exist
