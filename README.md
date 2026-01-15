@@ -38,18 +38,32 @@ Before deploying, ensure the following are handled manually on the SKYLAB server
 
 ## How to use
 
-1. Preparation (on the host)
+1. **Preparation** (on the host)
   * Follow the instructions in [docs > install](./docs/install.md) to install NixOS on a new machine and sync the Flake configuration with this repo.
 
-2. Add new feature (on any 'staging' machine inside a clone of this git repository)
-  * Launch `opencode` and switch between PLAN and BUILD mode to update the Flake configuration.
-  * commit and push changes to the repo
+2. **Add new feature** (on any 'staging' machine)
+  * Launch `opencode` to update the Flake configuration.
+  * Commit and push changes to the repo.
  
-3. Apply Configuration (on the host)
-  * A script has been added to apply any new configuration (pull changes from the github repo, build and re-push `flake.lock`):
+3. **Apply Configuration** (on the host)
+  * Use the `update-nix` script to pull and apply changes:
   ```bash
   update-nix [branch]
   ```
+
+4. **Troubleshooting & Recovery**
+  * **Emergency Mode / Boot Failure**: If the system fails to boot or `switch` hangs, find the cause in the failed boot's logs:
+    ```bash
+    journalctl --list-boots      # Find the index of the failed boot (usually -1)
+    journalctl -b -1 -p err..alert # View errors from that boot
+    ```
+  * **Stuck Units**: If a service or mount unit is stuck and prevents `nixos-rebuild switch`, use `boot` instead of `switch` and restart:
+    ```bash
+    sudo nixos-rebuild boot --flake .#SKYLAB
+    sudo reboot
+    ```
+    This prepares the new configuration to be activated cleanly from the next cold start.
+
 
 ## IMPORTANT: Note for LLM Agents
 

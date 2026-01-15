@@ -61,4 +61,6 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 
 ## Documentation
 
-Each time a task from the TODO List is completed we want to add a new chapter inside the main README.md file to document how we solved the problem and how the configuration is done.
+* **README.md**: Contains high-level project goals, repository structure, and core operational workflows (installation, deployment, recovery).
+* **docs/**: Contains detailed, step-by-step documentation for each specific feature or service (numbered sequentially).
+* Each time a task from the TODO List is completed, update the relevant docs and ensure the README.md reflects the overall progress.
