@@ -6,4 +6,8 @@
   # Keep only the 6 last boot entries in the grub menu
   boot.loader.systemd-boot.configurationLimit = 6;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  # Ensure the keyboard layout is applied in the early boot stage (initrd)
+  # This is crucial for typing the root password in emergency mode.
+  boot.initrd.systemd.enable = true;
 }

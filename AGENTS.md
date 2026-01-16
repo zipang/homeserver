@@ -20,6 +20,7 @@ You will provide your assistance to guide the user through the installation of v
 **Staging Context**: 
 * _We are not running directly on the NixOS server_, so the environment must only be inferred by the local configuration files : the local environment (where the agent runs) does not have the `nix` binary or a NixOS system. 
 * We are running commands to the agent inside OpenCode, so some OpenCode-specific configurations can be proposed.
+* **Do NOT attempt to analyze the file system for live system clues** (like /etc/shadow or /proc), as they reflect the staging environment, not the target NixOS server.
 
 1. Understand the user request (read the README.md to understand the project's goal and the file structure).
 2. **Verify Source Reliability & Compatibility**: If a configuration or snippet is sourced from the internet, you MUST verify and confirm during the **PLAN** phase that it is:
