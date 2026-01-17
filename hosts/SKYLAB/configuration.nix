@@ -8,9 +8,9 @@
     # Modular system configurations
     ../../modules/system/boot.nix
     ../../modules/system/core.nix
+    ../../modules/system/users.nix
     ../../modules/system/ssh.nix
     ../../modules/system/storage.nix
-    ../../modules/system/nix-settings.nix
     ../../modules/system/sops.nix
 
     # Services

@@ -1,22 +1,23 @@
 { config, pkgs, ... }:
 
 {
+
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # Optimization settings
+  nix.settings.auto-optimise-store = true;
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
+
   time.timeZone = "Europe/Paris";
   i18n.defaultLocale = "en_US.UTF-8";
   console.keyMap = "fr";
 
-  # Define users
-  users.users.zipang = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" "docker" "networkmanager" ];
-    openssh.authorizedKeys.keyFiles = [ /etc/nixos/ssh/authorized_keys ];
-  };
-
-  users.users.master = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" "docker" "networkmanager" ];
-    openssh.authorizedKeys.keyFiles = [ /etc/nixos/ssh/authorized_keys ];
-  };
+  # Basic networking
+  networking.networkmanager.enable = true;
 
   # Swap configuration from reference
   swapDevices = [{ device = "/dev/disk/by-label/SWAP"; }];
@@ -43,7 +44,6 @@
     sops
     tree
     wget
-
 
     # Custom update script
     (writeShellScriptBin "update-nix" ''
@@ -81,9 +81,6 @@
     '')
   ];
 
-  # Basic networking
-  networking.networkmanager.enable = true;
-
   programs.tmux = {
     enable = true;
     clock24 = true;
@@ -112,27 +109,4 @@
     '';
   };
 
-  # Path configuration for management scripts
-  environment.sessionVariables = {
-    PATH = [ "$PATH:/home/master/homeserver/scripts" ];
-  };
-
-  environment.shellAliases = {
-    ls = "lsd";
-    la = "lsd -la";
-    ll = "lsd -l";
-  };
-
-  programs.starship.enable = true;
-
-  # Git configuration
-  programs.git = {
-    enable = true;
-    config = {
-      user.name = "zipang";
-      user.email = "christophe.desguez@gmail.com";
-      init.defaultBranch = "master";
-      safe.directory = "/home/master/homeserver";
-    };
-  };
 }
