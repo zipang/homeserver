@@ -56,6 +56,7 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] SAMBA to share the Skylab root folder on the local network
 * [x] NFS to share the Skylab root folder for Linux-to-Linux performance testing
 * [x] `tmux` for terminal multiplexing and persistent sessions
+* [x] `syncthing` to sync files between devices
 * [ ] `jellyfin` to stream music and local movies
 * [ ] `authelia` SSO for secure application access
 * [ ] `copyparty` with Authelia SSO integration (currently disabled due to build failure)
