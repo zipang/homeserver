@@ -88,8 +88,10 @@
     enable = true;
     clock24 = true;
     historyLimit = 10000;
-    mouse = true;
     extraConfig = ''
+      # Enable mouse support
+      set -g mouse on
+
       # Split panes using | and -
       bind | split-window -h
       bind - split-window -v
