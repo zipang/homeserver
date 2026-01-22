@@ -57,7 +57,7 @@
     # Extra command-line arguments passed to the syncthing binary.
     # NOTE: Syncthing v2.x removed the '--no-default-folder' flag. 
     # If the service fails to start with "unknown flag", ensure it's not present here.
-    extraArgs = [ ];
+    extraFlags = [ ];
 
     # Whether to overwrite devices configured in the WebUI with these settings.
     # Default: true
