@@ -6,10 +6,6 @@
   services.syncthing = {
     enable = true;
 
-    # The Syncthing package to use.
-    # Default: pkgs.syncthing
-    package = pkgs.syncthing;
-
     # Whether to create a systemd system service.
     # Default: true
     systemService = true;
@@ -44,11 +40,11 @@
 
     # Path to the certificate file.
     # Default: null (auto-generated in configDir)
-    cert = null;
+    # cert = null;
 
     # Path to the key file.
     # Default: null (auto-generated in configDir)
-    key = null;
+    # key = null;
 
     # Extra command-line arguments passed to the syncthing binary.
     # NOTE: Syncthing v2.x removed the '--no-default-folder' flag.
@@ -83,7 +79,8 @@
         };
         "workspace" = {
           path = "/home/zipang/Workspace";
-          devices = [ "SKYLAB" ];
+          type = "receiveonly";
+          devices = [ "SKYLAB" "FEDORA-WORKSTATION" ];
           ignorePerms = false;
         };
       };
@@ -106,7 +103,7 @@
   };
 
   # Firewall rules
-  # 8384: GUI (only for SSH tunnel or local access)
+  # 8384: GUI
   # 22000: Syncing protocol
   # 21027: Local discovery
   networking.firewall.allowedTCPPorts = [ 22000 ];
