@@ -6,7 +6,7 @@
   services.syncthing = {
     enable = true;
 
-    # The Syncthing package to use. 
+    # The Syncthing package to use.
     # Default: pkgs.syncthing
     package = pkgs.syncthing;
 
@@ -35,12 +35,12 @@
     databaseDir = "/home/zipang/.config/syncthing";
 
     # The address the web interface will listen on.
-    # Default: "127.0.0.1:8384"
+    # Default: "127.0.0.1:8384" (localhost only)
     guiAddress = "127.0.0.1:8384";
 
     # Whether to open the default ports (22000/TCP/UDP, 21027/UDP).
     # Default: false
-    openDefaultPorts = false;
+    openDefaultPorts = true;
 
     # Path to the certificate file.
     # Default: null (auto-generated in configDir)
@@ -51,15 +51,17 @@
     key = null;
 
     # Extra command-line arguments passed to the syncthing binary.
-    # NOTE: Syncthing v2.x removed the '--no-default-folder' flag. 
+    # NOTE: Syncthing v2.x removed the '--no-default-folder' flag.
     # If the service fails to start with "unknown flag", ensure it's not present here.
     extraFlags = [ ];
 
-    # Whether to overwrite devices configured in the WebUI with these settings.
+    # Whether to delete the devices which are not configured via the devices option.
+    # If set to false, devices added via the web interface will persist and will have to be deleted manually.
     # Default: true
     overrideDevices = true;
 
-    # Whether to overwrite folders configured in the WebUI with these settings.
+    # Whether to delete the folders which are not configured via the folders option.
+    # If set to false, folders added via the web interface will persist and will have to be deleted manually.
     # Default: true
     overrideFolders = true;
 
@@ -88,9 +90,12 @@
 
       # Syncthing configuration options (config.xml)
       options = {
-        # Usage reporting: -1 (ask), 0 (no), 1 (yes)
-        # urAccepted = -1;
-        # localAnnounceEnabled = true;
+        # Whether to send announcements to the local LAN, also use such announcements to find other devices.
+        localAnnounceEnabled = true;
+        # When true, relays will be connected to and potentially used for device to device connections.
+        relaysEnabled = false;
+        # Usage reporting: -1 (no), 0 (not answered), >=1 (yes)
+        urAccepted = -1;
       };
 
       # GUI settings
@@ -104,6 +109,6 @@
   # 8384: GUI (only for SSH tunnel or local access)
   # 22000: Syncing protocol
   # 21027: Local discovery
-  networking.firewall.allowedTCPPorts = [ 8384 22000 ];
+  networking.firewall.allowedTCPPorts = [ 22000 ];
   networking.firewall.allowedUDPPorts = [ 22000 21027 ];
 }
