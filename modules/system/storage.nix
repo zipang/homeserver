@@ -62,6 +62,12 @@ in
     options = [ "bind" "nofail" ];
   };
 
+  fileSystems."/share/Skylab/Workspace" = {
+    device = "/home/zipang/Workspace";
+    fsType = "none";
+    options = [ "bind" "nofail" ];
+  };
+
   # Ensure only the parent directory exists
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
