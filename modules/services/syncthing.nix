@@ -22,10 +22,6 @@
     # Default: "syncthing"
     group = "users";
 
-    # The hostname to use for the local device.
-    # Default: config.networking.hostName
-    hostname = "SKYLAB";
-
     # The path where synchronized folders are stored by default.
     # Default: "/var/lib/syncthing"
     dataDir = "/home/zipang";
