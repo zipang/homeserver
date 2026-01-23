@@ -85,6 +85,7 @@
       # GUI settings
       gui = {
         # theme = "black";
+        insecureSkipHostcheck = true; # Allow access via the reverse proxy domain
       };
     };
   };

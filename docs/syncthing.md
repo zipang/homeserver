@@ -91,6 +91,7 @@ You can use this template in `modules/services/syncthing.nix` to configure the s
       # GUI settings
       gui = {
         # theme = "black";
+        insecureSkipHostcheck = true; # Required if using a reverse proxy
       };
     };
   };
