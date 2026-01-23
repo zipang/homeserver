@@ -73,6 +73,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Samba Shares](./docs/samba-shares.md)
 * [Syncthing](./docs/syncthing.md)
 * [Nginx Reverse Proxy](./docs/nginx.md)
+* [Fail2Ban Security](./docs/fail2ban.md)
 * [Secrets Management](./docs/secrets.md)
 * [Tmux](./docs/tmux.md)
 

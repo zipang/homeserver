@@ -54,6 +54,37 @@ Edit `C:\Windows\System32\drivers\etc\hosts`:
 <SKYLAB_IP> syncthing.skylab.local
 ```
 
+## Security & Access Control
+
+By default, Nginx is configured to be the entry point for all web services. To ensure security before implementing Single Sign-On (SSO):
+
+### IP Whitelisting
+Critical services (like Syncthing) are restricted to the local network using Nginx's `allow` and `deny` directives.
+
+Example from `modules/services/nginx.nix`:
+```nix
+virtualHosts."syncthing.skylab.local" = {
+  extraConfig = ''
+    allow 192.168.1.0/24;
+    allow 127.0.0.1;
+    deny all;
+  '';
+  # ...
+};
+```
+This ensures that even if port 80/443 is exposed to the internet, only local devices can reach the application.
+
+> [!NOTE]
+> **Understanding IP Range Notation (`192.168.1.0/24`)**
+> We use CIDR (Classless Inter-Domain Routing) notation to define the range:
+> - `192.168.1.0`: The base network address.
+> - `/24`: The "subnet mask", meaning the first 24 bits are fixed.
+> - **Range**: This covers all addresses from `192.168.1.0` to `192.168.1.255` (256 addresses total).
+> - In a typical home network, this includes your router and all your connected devices.
+
+### Brute-Force Protection
+Nginx logs are monitored by [Fail2Ban](./fail2ban.md), which will automatically ban any IP attempting to brute-force authentication or scan for common vulnerabilities.
+
 ## Headless Operations & Troubleshooting
 
 ### View Service Logs

@@ -19,6 +19,7 @@
 
     # Services
     ../../modules/services/nginx.nix
+    ../../modules/services/fail2ban.nix
     ../../modules/services/docker.nix
     # ../../modules/services/samba.nix
     ../../modules/services/nfs.nix

@@ -16,6 +16,12 @@
 
     # Virtual Hosts will be added as we implement services
     virtualHosts."syncthing.skylab.local" = {
+      # Security: Only allow local network access
+      extraConfig = ''
+        allow 192.168.1.0/24;
+        allow 127.0.0.1;
+        deny all;
+      '';
       locations."/" = {
         proxyPass = "http://127.0.0.1:8384";
         proxyWebsockets = true;
