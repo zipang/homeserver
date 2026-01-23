@@ -99,9 +99,15 @@ You can use this template in `modules/services/syncthing.nix` to configure the s
 
 ## Connection to the GUI
 
-See [Remote Web GUI](https://docs.syncthing.net/users/firewall.html#remote-web-gui) for reference.
+The Syncthing GUI can be accessed in two ways:
 
-The Syncthing GUI is only accessible via an SSH tunnel.
+### 1. Via Nginx Reverse Proxy (Recommended)
+If you have configured Nginx and updated your local `hosts` file (see [Nginx documentation](./nginx.md)), you can access the GUI directly:
+- **URL**: `http://syncthing.skylab.local`
+
+### 2. Via SSH Tunnel (Fallback/Initial Setup)
+See [Remote Web GUI](https://docs.syncthing.net/users/firewall.html#remote-web-gui) for reference.
+The Syncthing GUI is also accessible via an SSH tunnel if Nginx is not yet configured.
 
 1.  **Create an SSH Tunnel**:
     From your laptop, run:

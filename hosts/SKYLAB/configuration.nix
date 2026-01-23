@@ -18,6 +18,7 @@
     ../../modules/programs/tmux.nix
 
     # Services
+    ../../modules/services/nginx.nix
     ../../modules/services/docker.nix
     # ../../modules/services/samba.nix
     ../../modules/services/nfs.nix

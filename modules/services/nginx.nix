@@ -15,7 +15,12 @@
     clientMaxBodySize = "10G";
 
     # Virtual Hosts will be added as we implement services
-    # virtualHosts."immich.yourdomain.com" = { ... };
+    virtualHosts."syncthing.skylab.local" = {
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8384";
+        proxyWebsockets = true;
+      };
+    };
   };
 
   # Open ports for Nginx (internal traffic manager)
