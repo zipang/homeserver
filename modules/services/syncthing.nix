@@ -54,35 +54,21 @@
     # Whether to delete the devices which are not configured via the devices option.
     # If set to false, devices added via the web interface will persist and will have to be deleted manually.
     # Default: true
-    overrideDevices = true;
+    overrideDevices = false;
 
     # Whether to delete the folders which are not configured via the folders option.
     # If set to false, folders added via the web interface will persist and will have to be deleted manually.
     # Default: true
-    overrideFolders = true;
+    overrideFolders = false;
 
     # Declarative configuration for devices, folders, and options.
     settings = {
       # List of devices to share folders with.
       devices = {
-        "SKYLAB" = { id = "PZLQNYP-IJQWCEN-ZJK3RKF-SYHSJVG-BFSPTTN-AJAZ7LS-77TXJ53-WOV5GQC"; };
-        "FEDORA-WORKSTATION" = { id = "NACG2PA-YIYCXOE-VALUJVR-EC7NOD5-NHGKRET-TLVPG3M-X7IIBJZ-F6XFZQH"; };
       };
 
       # List of folders to synchronize.
       folders = {
-        "documents" = {
-          path = "/home/zipang/Documents";
-          devices = [ "SKYLAB" "FEDORA-WORKSTATION" ];
-          # Whether to ignore file permissions.
-          ignorePerms = false;
-        };
-        "workspace" = {
-          path = "/home/zipang/Workspace";
-          type = "receiveonly";
-          devices = [ "SKYLAB" "FEDORA-WORKSTATION" ];
-          ignorePerms = false;
-        };
       };
 
       # Syncthing configuration options (config.xml)
