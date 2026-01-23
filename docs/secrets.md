@@ -1,16 +1,13 @@
 # Secrets Management
 
-## Goal
-
 To securely store and manage sensitive information (like API tokens, passwords, and private keys) within our public Git repository. We use `sops` (Secrets OPerationS) with `age` encryption to ensure that secrets are only accessible by the server and authorized administrators.
+The configuration for `sops-nix` is defined in `modules/system/sops.nix`:
 
 ## Configuration Reference
 
 For the full list of options, refer to the [sops-nix official documentation](https://github.com/Mic92/sops-nix).
 
 ## Full Configuration Template
-
-The global configuration for `sops-nix` is located in `modules/system/sops.nix`:
 
 ```nix
 { config, pkgs, ... }: {
@@ -73,7 +70,6 @@ Check `sops-nix` initialization logs:
 ```bash
 journalctl -t sops-nix
 ```
-
 
 ## Setup Instructions
 

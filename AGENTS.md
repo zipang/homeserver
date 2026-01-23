@@ -67,12 +67,12 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 ## Documentation
 
 * **README.md**: Contains high-level project goals, repository structure, and core operational workflows (installation, deployment, recovery).
-* **docs/**: Contains detailed, step-by-step documentation for each specific feature or service (numbered sequentially).
+* **docs/**: Contains detailed, step-by-step documentation for each specific feature or service.
 * Each time a task from the TODO List is completed, update the relevant docs and ensure the README.md reflects the overall progress.
 
 ### Service Documentation Standard
 
-Each service documentation file (in `docs/`) must follow the structure established in `docs/06.syncthing.md`:
+Each service documentation file (in `docs/`) must follow the structure established in `docs/syncthing.md`:
 
 1.  **Overview**: Purpose of the service and its relevant `.nix` module path.
 2.  **Configuration Reference**: Link to the official NixOS options search (targeting the current NixOS version, e.g., 25.11).

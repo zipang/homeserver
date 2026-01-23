@@ -1,14 +1,13 @@
 # Tmux Quick Start Guide
 
 `tmux` is a terminal multiplexer that allows you to manage multiple terminal sessions in a single window. It is essential for a home server because it keeps your processes running even if your SSH connection drops.
+`tmux` is configured via `modules/programs/tmux.nix`.
 
 ## Configuration Reference
 
 The complete list of available options for the `programs.tmux` module can be found in the [official NixOS Options Search](https://search.nixos.org/options?channel=25.11&query=programs.tmux).
 
 ## Nix Configuration Template
-
-On SKYLAB, `tmux` is configured via `modules/programs/tmux.nix`:
 
 ```nix
 { pkgs, ... }: {
