@@ -30,7 +30,8 @@ You will provide your assistance to guide the user through the installation of v
 3. **Pending Session Context**: For complex, multi-step tasks that cannot be completed in a single session, you MUST save the current progress, plan, and pending requirements into a `.pending_session.context.md` file. This file acts as a memory bridge for future sessions.
 4. Do NOT commit immediately after each change.
 5. Commit only after user review and explicit approval.
-6. After a commit is made, follow with a `git push origin master` to share the changes.
+6. **Commit Message Standard**: Use standard prefixes for every commit message (e.g., `feat:`, `chore:`, `fix:`, `docs:`, `refactor:`).
+7. After a commit is made, follow with a `git push origin master` to share the changes.
 
 ## Hardware
 
@@ -68,3 +69,16 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * **README.md**: Contains high-level project goals, repository structure, and core operational workflows (installation, deployment, recovery).
 * **docs/**: Contains detailed, step-by-step documentation for each specific feature or service (numbered sequentially).
 * Each time a task from the TODO List is completed, update the relevant docs and ensure the README.md reflects the overall progress.
+
+### Service Documentation Standard
+
+Each service documentation file (in `docs/`) must follow the structure established in `docs/06.syncthing.md`:
+
+1.  **Overview**: Purpose of the service and its relevant `.nix` module path.
+2.  **Configuration Reference**: Link to the official NixOS options search (targeting the current NixOS version, e.g., 25.11).
+3.  **Full Configuration Template**: A fully commented Nix code block showing the primary options for the module.
+4.  **Operational Guides**: Step-by-step instructions for common tasks (e.g., SSH tunneling for GUIs, client pairing).
+5.  **Headless Operations & Troubleshooting**: Essential CLI commands for terminal-only management:
+    *   `journalctl -u <service>.service -f` (Logs monitoring)
+    *   `systemctl status <service>.service` (Status check)
+    *   Service-specific CLI tool usage (e.g., `syncthing cli ...`).
