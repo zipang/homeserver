@@ -29,6 +29,9 @@ You can use this template in `modules/services/nginx.nix` to configure the servi
       locations."/" = {
         proxyPass = "http://127.0.0.1:8384";
         proxyWebsockets = true;
+        extraConfig = ''
+          proxy_set_header Host localhost;
+        '';
       };
     };
   };
@@ -106,5 +109,6 @@ systemctl status nginx.service
 
 ### Common Issues
 - **502 Bad Gateway**: The target service (e.g., Syncthing) is not running or is not listening on the expected port/address.
-- **403 Forbidden**: Check file permissions if Nginx is serving static files directly.
+- **403 Forbidden**: Check file permissions if Nginx is serving static files directly, or IP whitelisting settings.
+- **Host check error (Syncthing)**: Syncthing rejects requests where the `Host` header doesn't match `localhost`. This is fixed by adding `proxy_set_header Host localhost;` to the Nginx location configuration.
 - **WebSocket connection failed**: Ensure `proxyWebsockets = true;` is set in the virtual host configuration.

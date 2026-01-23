@@ -141,7 +141,7 @@ $ tree ~/.config/syncthing/
 $ syncthing serve
 ```
 
-Note: Add a .stignore file at the root of your folders to ignore [some file patterns](https://developerinsider.co/syncthing-stignore-examples-ignore-files-by-extension-folder-pattern-type/)
+**Important:** Add a `.stignore` file at the root of your folders to ignore [some file patterns](https://developerinsider.co/syncthing-stignore-examples-ignore-files-by-extension-folder-pattern-type/)
 
 ```
 .DS_Store       # macOS Finder metadata
