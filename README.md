@@ -16,6 +16,7 @@ To understand the repository structure and philosophy of NixOS with Flakes some 
 │       ├── configuration.nix # Main configuration for SKYLAB
 │       └── hardware-configuration.nix # Hardware-specific config (scanned from machine)
 ├── modules/                # Reusable NixOS modules
+│   ├── programs/           # User programs (Neovim, Tmux)
 │   ├── services/           # Services (NFS, Docker, etc.)
 │   └── system/             # System settings (SSH, Core, Nix)
 ├── scripts/                # Custom management scripts

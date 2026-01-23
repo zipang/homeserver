@@ -13,8 +13,11 @@
     ../../modules/system/storage.nix
     ../../modules/system/sops.nix
 
+    # Programs
+    ../../modules/programs/neovim.nix
+    ../../modules/programs/tmux.nix
+
     # Services
-    ../../modules/services/neovim.nix
     ../../modules/services/docker.nix
     # ../../modules/services/samba.nix
     ../../modules/services/nfs.nix
