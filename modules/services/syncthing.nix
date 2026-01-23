@@ -49,7 +49,7 @@
     # Extra command-line arguments passed to the syncthing binary.
     # NOTE: Syncthing v2.x removed the '--no-default-folder' flag.
     # If the service fails to start with "unknown flag", ensure it's not present here.
-    extraFlags = [ ];
+    extraFlags = [ "--no-browser" ];
 
     # Whether to delete the devices which are not configured via the devices option.
     # If set to false, devices added via the web interface will persist and will have to be deleted manually.
@@ -89,6 +89,7 @@
       options = {
         # Whether to send announcements to the local LAN, also use such announcements to find other devices.
         localAnnounceEnabled = true;
+        globalAnnounceEnabled = false;
         # When true, relays will be connected to and potentially used for device to device connections.
         relaysEnabled = false;
         # Usage reporting: -1 (no), 0 (not answered), >=1 (yes)
