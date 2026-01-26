@@ -78,7 +78,7 @@ ZFS support and services are enabled in the host configuration:
 ```nix
 boot.supportedFilesystems = [ "zfs" ];
 networking.hostId = "8425e349"; # Required for ZFS
-services.zfs.autoImportPools = true;
+boot.zfs.extraPools = [ "BUZZ" "WOODY" ];
 services.zfs.autoScrub.enable = true;
 ```
 

@@ -32,7 +32,7 @@
   networking.hostId = "8425e349";
 
   # ZFS Services
-  services.zfs.autoImportPools = true;
+  boot.zfs.extraPools = [ "BUZZ" "WOODY" ];
   services.zfs.autoScrub.enable = true;
 
   # This value determines the NixOS release from which the default
