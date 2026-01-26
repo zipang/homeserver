@@ -3,6 +3,12 @@
 # This script creates the ZFS pools BUZZ and WOODY for the SKYLAB homelab.
 # WARNING: This script will format the specified drives. Data will be lost.
 
+# 0. Cleanup: Unmount any existing partitions to avoid "in use" errors
+echo "Cleaning up existing mounts..."
+sudo umount /run/media/zipang/NIMITZ 2>/dev/null || true
+sudo zpool export BUZZ 2>/dev/null || true
+sudo zpool export WOODY 2>/dev/null || true
+
 # 1. Create the high-speed SSD pool (BUZZ)
 # Using Realtek RTL9210B (sdb)
 echo "Creating pool BUZZ..."
