@@ -9,8 +9,8 @@
     # crossmnt allows clients to automatically discover sub-mounts like /share/Skylab
     exports = ''
       /share         192.168.1.0/24(rw,fsid=0,no_subtree_check,crossmnt)
-      /share/Skylab  192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt)
-      /share/Storage 192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt)
+      /share/Skylab  192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt,no_root_squash,fsid=1)
+      /share/Storage 192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt,no_root_squash,fsid=2)
     '';
   };
 

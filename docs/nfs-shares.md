@@ -20,7 +20,8 @@ You can use this template in `modules/services/nfs.nix` to configure the NFS ser
     # we export /share as the root (fsid=0)
     exports = ''
       /share         192.168.1.0/24(rw,fsid=0,no_subtree_check,crossmnt)
-      /share/Skylab  192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt)
+      /share/Skylab  192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt,no_root_squash,fsid=1)
+      /share/Storage 192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt,no_root_squash,fsid=2)
     '';
   };
 
@@ -43,8 +44,10 @@ The NFS server is configured for the local network (192.168.1.0/24):
 - **Pseudo-root**: `/share` is the entry point. Clients mounting `SKYLAB:/` will see the `Skylab` directory.
 - **Options**:
     - `rw`: Read-Write access.
-    - `crossmnt`: Allows clients to move from the pseudo-root into sub-mounts automatically.
+    - `crossmnt`: Allows clients to move from the pseudo-root into sub-mounts automatically. This is essential for ZFS datasets nested under a single export.
     - `nohide`: Ensures that the bind-mounted directories under `/share/Skylab` are visible to clients.
+    - `no_root_squash`: Allows remote root users (via `sudo`) to have root permissions on the filesystem. Useful for homelab management.
+    - `fsid=X`: Unique filesystem IDs required for NFSv4 to distinguish between multiple exports under the pseudo-root.
 
 ## How to Access
 
@@ -61,9 +64,12 @@ sudo mount -t nfs4 skylab.local:/ /mnt/path
 ```
 
 ### Automatic Mount (/etc/fstab)
+For the best experience, use `nfs4` and ensure your local UID matches the server's (typically `1000` for the first user).
+
 Add the following to your client's `/etc/fstab`:
 ```fstab
-skylab.local:/Skylab  /mnt/skylab  nfs4  rw,user,noauto,x-systemd.automount,x-systemd.idle-timeout=600 0 0
+skylab.local:/Skylab  /media/SKYLAB  nfs4  rw,user,noauto,x-systemd.automount,x-systemd.idle-timeout=600 0 0
+skylab.local:/Storage/WOODY /media/WOODY nfs4 rw,user,noauto,x-systemd.automount 0 0
 ```
 
 ## Performance Testing (NFS vs Samba)
