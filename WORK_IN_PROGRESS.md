@@ -35,12 +35,21 @@ sudo zpool create -f -o ashift=12 \
 
 ### 2. Create Datasets for Immich
 ```bash
+# Set pools to legacy mode to allow NixOS to manage mounts
+sudo zfs set mountpoint=legacy BUZZ
+sudo zfs set mountpoint=legacy WOODY
+
+# Create datasets and set to legacy mode
 sudo zfs create BUZZ/immich
+sudo zfs set mountpoint=legacy BUZZ/immich
+
 sudo zfs create WOODY/photos
+sudo zfs set mountpoint=legacy WOODY/photos
 ```
 
 ### 3. Update Immich configuration
 Update `modules/services/immich.nix` to point `mediaLocation` to `/share/Storage/WOODY/photos`.
+Database and thumbnails will be stored in `/var/lib/immich` (mounted on `BUZZ/immich`).
 
 ---
 

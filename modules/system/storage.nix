@@ -69,14 +69,29 @@ in
   };
 
   # --- 3. Shared ZFS External Pools ---
+  # We use 'legacy' mountpoints in ZFS and define them here for systemd control.
+  # 'nofail' prevents boot hangs if the USB enclosure is disconnected.
+
   fileSystems."/share/Storage/BUZZ" = {
     device = "BUZZ";
+    fsType = "zfs";
+    options = [ "nofail" "X-systemd.automount" "X-systemd.idle-timeout=60" ];
+  };
+
+  fileSystems."/var/lib/immich" = {
+    device = "BUZZ/immich";
     fsType = "zfs";
     options = [ "nofail" "X-systemd.automount" ];
   };
 
   fileSystems."/share/Storage/WOODY" = {
     device = "WOODY";
+    fsType = "zfs";
+    options = [ "nofail" "X-systemd.automount" "X-systemd.idle-timeout=60" ];
+  };
+
+  fileSystems."/share/Storage/WOODY/photos" = {
+    device = "WOODY/photos";
     fsType = "zfs";
     options = [ "nofail" "X-systemd.automount" ];
   };
@@ -86,6 +101,7 @@ in
     "d /share 0755 root root -"
     "d /share/Skylab 0755 root root -"
     "d /share/Storage 0755 root root -"
+    "d /share/Storage/WOODY 0755 root root -"
     "d /media 0755 root root -"
   ];
 }
