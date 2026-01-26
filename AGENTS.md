@@ -27,7 +27,7 @@ You will provide your assistance to guide the user through the installation of v
    * From a **reputable source** (e.g., official NixOS Wiki, NixOS Search, the [NixOS and Flakes Book](https://nixos-and-flakes.thiscute.world/), or well-maintained community modules).
    * **Compatible** with our current NixOS version (24.05) and our Flake-based architecture.
     * **Up to date** with modern Nix practices (avoiding legacy patterns unless necessary).
-3. **Pending Session Context**: For complex, multi-step tasks that cannot be completed in a single session, you MUST save the current progress, plan, and pending requirements into a `.pending_session.context.md` file. This file acts as a memory bridge for future sessions.
+3. **Pending Session Context**: At the user's demand, multi-step tasks that cannot be completed in a single session, must be saved into a [WORK IN  PROGRESS](./WORK_IN_PROGRESS.md) file (detailed plan, current progress, and pending requirements). This file acts as a memory bridge for future sessions.
 4. Do NOT commit immediately after each change.
 5. Commit only after user review and explicit approval.
 6. **Commit Message Standard**: Use standard prefixes for every commit message (e.g., `feat:`, `chore:`, `fix:`, `docs:`, `refactor:`).

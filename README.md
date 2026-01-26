@@ -76,7 +76,8 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Fail2Ban Security](./docs/fail2ban.md)
 * [Secrets Management](./docs/secrets.md)
 * [Tmux](./docs/tmux.md)
+* [Immich](./docs/immich.md)
 
 ## IMPORTANT: Note for LLM Agents
 
-**Mandatory Reading for Agents:** Always read [AGENTS.md](./AGENTS.md) and [.pending_session.context.md](./.pending_session.context.md) when starting a new session to understand the project rules and current session state.
+**Mandatory Reading for Agents:** Always read [AGENTS.md](./AGENTS.md) and if required [WORK IN PROGRESS](./WORK_IN_PROGRESS.md) when starting a new session to understand the project rules and current session state.

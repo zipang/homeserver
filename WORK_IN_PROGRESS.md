@@ -3,64 +3,70 @@
 This document tracks the step-by-step implementation of Immich on the SKYLAB homeserver, including the networking infrastructure (Nginx + Cloudflare Tunnel).
 
 ## Current Status
-- [x] Phase 1: Storage & Secrets Preparation (Configuration updated)
-- [x] Phase 2: Reverse Proxy (Nginx) & Cloudflare Tunnel (Modules created)
-- [x] Phase 3: Immich Service Implementation (Module created)
+- [/] Phase 1: Storage & Secrets Preparation (REVISED: Offloading /var/lib/immich)
+- [x] Phase 2: Reverse Proxy (Nginx) (Configured for local network)
+- [x] Phase 3: Immich Service Implementation (Module created and enabled)
 - [ ] Phase 4: Verification & Polishing
 
 ---
 
 ## Phase 1: Storage & Secrets Preparation (Manual Steps Required)
 
-The Nix configuration has been updated to expect the following:
+The Nix configuration needs to be updated for the following:
 
-### 1. BTRFS Subvolume & Import Path
-We have configured a specific exposure for Immich to isolate it from the rest of your `@pictures` subvolume:
-1.  `@pictures` remains mounted at `/home/zipang/Pictures`.
-2.  A bind mount exposes `/home/zipang/Pictures/Digicam` as `/media/immich`.
-3.  This bypasses Systemd's `ProtectHome` and isolates Immich to only your personal photos.
-4.  Immich's managed data (thumbnails, DB, etc.) will stay in the default `/var/lib/immich` on the system drive.
+### 1. External Library (Pictures Indexing)
+- `@pictures` remains mounted at `/home/zipang/Pictures`.
+- A bind mount exposes `/home/zipang/Pictures/Digicam` as `/media/immich`.
+- **Action**: In the Immich UI, add `/media/immich` as an **External Library**.
 
-**Action**: In the Immich UI, add `/media/immich` as an **External Library**.
+### 2. Managed Data Offloading (Database, Thumbnails, ML)
+To prevent the system partition from filling up, `/var/lib/immich` will be moved to a dedicated BTRFS subvolume on the `MEDIAS` drive.
 
-### 2. Secrets Management
-You need to add the following secrets to your `secrets/secrets.yaml` using `sops`:
+**Manual Action Required**:
+Before applying the next configuration update, create the subvolume on the `MEDIAS` drive:
+```bash
+# Assuming the MEDIAS drive is mounted at /mnt/medias or similar for maintenance
+sudo btrfs subvolume create /mnt/medias/@immich
+```
 
-*   `immich/db_password`: A strong password for the PostgreSQL database.
-*   `cloudflared/tunnel_id`: The UUID of your Cloudflare tunnels
-*   `cloudflared/credentials`: The JSON content of your Cloudflare tunnel credentials file.
+**Configuration Task**:
+Update `modules/system/storage.nix` to include:
+```nix
+  fileSystems."/var/lib/immich" = {
+    device = "/dev/disk/by-label/MEDIAS";
+    fsType = "btrfs";
+    options = [ "subvol=@immich" "compress=zstd" "noatime" ];
+  };
+```
 
-Run: `sops secrets/secrets.yaml` and add these keys.
+### 3. Secrets Management
+Add to `secrets/secrets.yaml` using `sops`:
+* `immich/db_password`: A strong password for the PostgreSQL database (optional for local-only, but recommended).
 
 ---
 
 ## Detailed Plan
 
-### Phase 1: Storage & Secrets Preparation
-- [ ] Define storage path for Immich data (e.g., `/media/immich`).
-- [ ] Add `immich-db-password` to `secrets/secrets.yaml` (via sops).
-- [ ] Add Cloudflare Tunnel credentials to `secrets/secrets.yaml`.
+### Phase 1: Storage Migration (PENDING)
+- [ ] Update `modules/system/storage.nix` with `/var/lib/immich` BTRFS subvolume.
+- [ ] Verify `systemd.tmpfiles.rules` ownership for the new mount.
 
-### Phase 2: Reverse Proxy & Tunnel
-- [ ] Create `modules/services/nginx.nix` as a lightweight central proxy.
-- [ ] Create `modules/services/cloudflared.nix` for secure external access.
-- [ ] Configure DNS-01 ACME challenge for SSL (optional if using Cloudflare Tunnel edge SSL).
+### Phase 2: Reverse Proxy
+- [x] Configure `immich.skylab.local` in `modules/services/nginx.nix` (DONE).
 
 ### Phase 3: Immich Implementation
-- [ ] Create `modules/services/immich.nix` using the official NixOS module.
-- [ ] Configure PostgreSQL with `pgvecto-rs` (managed by module).
-- [ ] Configure Redis (managed by module).
-- [ ] Link Immich to the Nginx virtual host.
+- [x] Complete `modules/services/immich.nix` with full options (DONE).
+- [x] Add `services.immich.user` and `services.immich.group` (DONE).
+- [x] Add `services.immich-public-proxy` to documentation (DONE).
 
 ### Phase 4: Verification
 - [ ] Apply configuration via `sudo nixos-rebuild switch`.
-- [ ] Test large file uploads (client_max_body_size).
-- [ ] Verify external access via Cloudflare Tunnel.
+- [ ] Verify `/var/lib/immich` is correctly mounted on the external drive.
+- [ ] Test indexing performance.
 
 ---
 
 ## Technical Choices
-- **Proxy**: Nginx (Lightest full-featured proxy for NixOS).
-- **External Access**: Cloudflare Tunnel (No open ports, secure outbound connection).
-- **Storage**: BTRFS subvolume on `MEDIAS` drive for easy snapshots and capacity management.
-- **Secrets Management**: `sops-nix` with `age` keys.
+- **Storage**: Offloading `/var/lib/immich` to BTRFS subvolume `@immich` on `MEDIAS` drive for capacity and snapshot support.
+- **Compression**: `zstd` enabled on the subvolume to save space on thumbnails and database logs.
+- **Proxy**: Nginx for local resolution.
