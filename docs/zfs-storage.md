@@ -57,27 +57,41 @@ sudo zpool create -f -o ashift=12 \
 ```
 
 ## Datasets
-Instead of directories, we use ZFS datasets for isolation:
-*   `BUZZ/immich`: Immich database and cache.
-*   `WOODY/photos`: Master photo library.
+Instead of directories, we use ZFS datasets for isolation. We set them to `mountpoint=legacy` to let NixOS manage the mounting via `systemd`.
 
 ```bash
+# Set legacy mode on pools
+sudo zfs set mountpoint=legacy BUZZ
+sudo zfs set mountpoint=legacy WOODY
+
+# Create datasets and set to legacy mode
 sudo zfs create BUZZ/immich
+sudo zfs set mountpoint=legacy BUZZ/immich
+
 sudo zfs create WOODY/photos
+sudo zfs set mountpoint=legacy WOODY/photos
 ```
 
 ## NixOS Integration
 
-ZFS support is enabled in `modules/system/boot.nix`:
+ZFS support and services are enabled in the host configuration:
 ```nix
 boot.supportedFilesystems = [ "zfs" ];
 networking.hostId = "8425e349"; # Required for ZFS
+services.zfs.autoImportPools = true;
+services.zfs.autoScrub.enable = true;
 ```
 
 Mounts are managed in `modules/system/storage.nix`:
 ```nix
-fileSystems."/share/Storage/BUZZ" = {
-  device = "BUZZ";
+fileSystems."/var/lib/immich" = {
+  device = "BUZZ/immich";
+  fsType = "zfs";
+  options = [ "nofail" "X-systemd.automount" ];
+};
+
+fileSystems."/share/Storage/WOODY/photos" = {
+  device = "WOODY/photos";
   fsType = "zfs";
   options = [ "nofail" "X-systemd.automount" ];
 };
