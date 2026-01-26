@@ -75,25 +75,25 @@ in
   fileSystems."/share/Storage/BUZZ" = {
     device = "BUZZ";
     fsType = "zfs";
-    options = [ "nofail" "X-systemd.automount" "X-systemd.idle-timeout=60" ];
+    options = [ "nofail" "X-systemd.automount" "X-systemd.idle-timeout=60" "x-systemd.mount-timeout=5s" ];
   };
 
   fileSystems."/var/lib/immich" = {
     device = "BUZZ/immich";
     fsType = "zfs";
-    options = [ "nofail" "X-systemd.automount" ];
+    options = [ "nofail" "X-systemd.automount" "x-systemd.mount-timeout=5s" ];
   };
 
   fileSystems."/share/Storage/WOODY" = {
     device = "WOODY";
     fsType = "zfs";
-    options = [ "nofail" "X-systemd.automount" "X-systemd.idle-timeout=60" ];
+    options = [ "nofail" "X-systemd.automount" "X-systemd.idle-timeout=60" "x-systemd.mount-timeout=5s" ];
   };
 
   fileSystems."/share/Storage/WOODY/photos" = {
     device = "WOODY/photos";
     fsType = "zfs";
-    options = [ "nofail" "X-systemd.automount" ];
+    options = [ "nofail" "X-systemd.automount" "x-systemd.mount-timeout=5s" ];
   };
 
   # Ensure only the parent directory exists

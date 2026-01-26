@@ -76,5 +76,6 @@ Database and thumbnails will be stored in `/var/lib/immich` (mounted on `BUZZ/im
 
 ## Technical Choices
 - **Storage**: Offloading Immich media to ZFS mirror pool `WOODY` and database/cache to ZFS SSD pool `BUZZ`.
+- **Mount Strategy**: Using ZFS `legacy` mountpoints managed by NixOS `fileSystems` with `nofail`, `X-systemd.automount`, and a shortened `x-systemd.mount-timeout=5s` for maximum boot resilience.
 - **Compression**: `zstd` enabled on ZFS pools to save space on thumbnails and database logs.
 - **Proxy**: Nginx for local resolution.

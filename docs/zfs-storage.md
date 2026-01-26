@@ -87,13 +87,13 @@ Mounts are managed in `modules/system/storage.nix`:
 fileSystems."/var/lib/immich" = {
   device = "BUZZ/immich";
   fsType = "zfs";
-  options = [ "nofail" "X-systemd.automount" ];
+  options = [ "nofail" "X-systemd.automount" "x-systemd.mount-timeout=5s" ];
 };
 
 fileSystems."/share/Storage/WOODY/photos" = {
   device = "WOODY/photos";
   fsType = "zfs";
-  options = [ "nofail" "X-systemd.automount" ];
+  options = [ "nofail" "X-systemd.automount" "x-systemd.mount-timeout=5s" ];
 };
 ```
 
