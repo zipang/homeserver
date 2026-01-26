@@ -6,12 +6,11 @@
 # 1. Create the high-speed SSD pool (BUZZ)
 # Using Realtek RTL9210B (sdb)
 echo "Creating pool BUZZ..."
-sudo zpool create -f -o ashift=12 \
+sudo zpool create -f -o ashift=12 -o autotrim=on \
   -O compression=zstd \
   -O acltype=posixacl \
   -O xattr=sa \
   -O relatime=on \
-  -O autotrim=on \
   BUZZ usb-Realtek_RTL9210B-CG_012345678944-0:0
 
 # 2. Create the redundant HDD Mirror pool (WOODY)

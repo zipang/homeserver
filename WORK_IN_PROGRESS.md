@@ -19,8 +19,8 @@ Run these commands on your workstation or the server to create the pools using t
 
 **Pool BUZZ (4TB SSD)**:
 ```bash
-sudo zpool create -f -o ashift=12 \
-  -O compression=zstd -O acltype=posixacl -O xattr=sa -O relatime=on -O autotrim=on \
+sudo zpool create -f -o ashift=12 -o autotrim=on \
+  -O compression=zstd -O acltype=posixacl -O xattr=sa -O relatime=on \
   BUZZ usb-Realtek_RTL9210B-CG_012345678944-0:0
 ```
 

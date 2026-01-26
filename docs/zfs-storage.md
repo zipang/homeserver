@@ -38,12 +38,11 @@ To ensure stability across reboots, pools are created using unique disk IDs from
 
 ### BUZZ (SSD)
 ```bash
-sudo zpool create -f -o ashift=12 \
+sudo zpool create -f -o ashift=12 -o autotrim=on \
   -O compression=zstd \
   -O acltype=posixacl \
   -O xattr=sa \
   -O relatime=on \
-  -O autotrim=on \
   BUZZ <disk-id>
 ```
 
