@@ -3,10 +3,10 @@
 This document tracks the step-by-step implementation of Immich on the SKYLAB homeserver, including the transition to ZFS storage for BUZZ (SSD) and WOODY (HDD Mirror).
 
 ## Current Status
-- [/] Phase 1: Storage & Secrets Preparation (ZFS Migration)
+- [x] Phase 1: Storage & Secrets Preparation (ZFS Migration)
 - [x] Phase 2: Reverse Proxy (Nginx) (Configured for local network)
 - [x] Phase 3: Immich Service Implementation (Module created and enabled)
-- [ ] Phase 4: Verification & Polishing
+- [/] Phase 4: Network Sharing & Verification
 
 ---
 
@@ -55,27 +55,30 @@ Database and thumbnails will be stored in `/var/lib/immich` (mounted on `BUZZ/im
 
 ## Detailed Plan
 
-### Phase 1: Storage Migration (PENDING)
+### Phase 1: Storage Migration (DONE)
 - [x] Update `modules/system/storage.nix` with ZFS pool mounts.
-- [ ] Verify `systemd.tmpfiles.rules` ownership for the new mount.
+- [x] Verify `systemd.tmpfiles.rules` ownership for the new mount.
 
-### Phase 2: Reverse Proxy
+### Phase 2: Reverse Proxy (DONE)
 - [x] Configure `immich.skylab.local` in `modules/services/nginx.nix` (DONE).
 
-### Phase 3: Immich Implementation
+### Phase 3: Immich Implementation (READY)
 - [x] Complete `modules/services/immich.nix` with full options (DONE).
 - [x] Add `services.immich.user` and `services.immich.group` (DONE).
 - [x] Add `services.immich-public-proxy` to documentation (DONE).
 
-### Phase 4: Verification
+### Phase 4: Network Sharing & Verification
+- [x] Export `/share/Storage` via NFS and Samba.
 - [ ] Apply configuration via `sudo nixos-rebuild switch`.
 - [ ] Verify `/share/Storage/BUZZ` and `/share/Storage/WOODY` are correctly mounted.
-- [ ] Test indexing performance.
+- [ ] Test indexing performance with Immich.
+- [ ] Verify NFS and Samba access to the new pools.
 
 ---
 
 ## Technical Choices
 - **Storage**: Offloading Immich media to ZFS mirror pool `WOODY` and database/cache to ZFS SSD pool `BUZZ`.
 - **Mount Strategy**: Using ZFS `legacy` mountpoints managed by NixOS `fileSystems` with `nofail`, `X-systemd.automount`, and a shortened `x-systemd.mount-timeout=5s` for maximum boot resilience.
+- **Networking**: Exporting `/share/Storage` via NFS and Samba for easy access to photos and backups.
 - **Compression**: `zstd` enabled on ZFS pools to save space on thumbnails and database logs.
 - **Proxy**: Nginx for local resolution.

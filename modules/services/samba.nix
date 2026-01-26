@@ -27,6 +27,16 @@
         "create mask" = "0644";
         "directory mask" = "0755";
       };
+
+      Storage = {
+        path = "/share/Storage";
+        browseable = "yes";
+        "read only" = "no";
+        "guest ok" = "yes";
+        "force user" = "zipang";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+      };
     };
   };
 

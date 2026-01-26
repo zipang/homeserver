@@ -32,7 +32,7 @@ sudo dnf install zfs
 sudo modprobe zfs
 ```
 
-## Pool Creation (Manual)
+## Initial ZFS pools Creation
 
 To ensure stability across reboots, pools are created using unique disk IDs from `/dev/disk/by-id/`.
 

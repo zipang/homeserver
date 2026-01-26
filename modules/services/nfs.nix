@@ -10,6 +10,7 @@
     exports = ''
       /share         192.168.1.0/24(rw,fsid=0,no_subtree_check,crossmnt)
       /share/Skylab  192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt)
+      /share/Storage 192.168.1.0/24(rw,nohide,insecure,no_subtree_check,crossmnt)
     '';
   };
 

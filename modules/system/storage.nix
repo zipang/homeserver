@@ -100,8 +100,10 @@ in
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
     "d /share/Skylab 0755 root root -"
-    "d /share/Storage 0755 root root -"
-    "d /share/Storage/WOODY 0755 root root -"
+    "d /share/Storage 0755 zipang users -"
+    "d /share/Storage/BUZZ 0755 zipang users -"
+    "d /share/Storage/WOODY 0755 zipang users -"
+    "d /share/Storage/WOODY/photos 0755 zipang users -"
     "d /media 0755 root root -"
   ];
 }
