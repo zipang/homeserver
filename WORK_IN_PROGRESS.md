@@ -40,14 +40,14 @@ sudo zfs create WOODY/photos
 ```
 
 ### 3. Update Immich configuration
-Update `modules/services/immich.nix` to point `mediaLocation` to `/share/External/WOODY/photos`.
+Update `modules/services/immich.nix` to point `mediaLocation` to `/share/Storage/WOODY/photos`.
 
 ---
 
 ## Detailed Plan
 
 ### Phase 1: Storage Migration (PENDING)
-- [ ] Update `modules/system/storage.nix` with `/var/lib/immich` BTRFS subvolume.
+- [x] Update `modules/system/storage.nix` with ZFS pool mounts.
 - [ ] Verify `systemd.tmpfiles.rules` ownership for the new mount.
 
 ### Phase 2: Reverse Proxy
@@ -60,12 +60,12 @@ Update `modules/services/immich.nix` to point `mediaLocation` to `/share/Externa
 
 ### Phase 4: Verification
 - [ ] Apply configuration via `sudo nixos-rebuild switch`.
-- [ ] Verify `/var/lib/immich` is correctly mounted on the external drive.
+- [ ] Verify `/share/Storage/BUZZ` and `/share/Storage/WOODY` are correctly mounted.
 - [ ] Test indexing performance.
 
 ---
 
 ## Technical Choices
-- **Storage**: Offloading `/var/lib/immich` to BTRFS subvolume `@immich` on `MEDIAS` drive for capacity and snapshot support.
-- **Compression**: `zstd` enabled on the subvolume to save space on thumbnails and database logs.
+- **Storage**: Offloading Immich media to ZFS mirror pool `WOODY` and database/cache to ZFS SSD pool `BUZZ`.
+- **Compression**: `zstd` enabled on ZFS pools to save space on thumbnails and database logs.
 - **Proxy**: Nginx for local resolution.

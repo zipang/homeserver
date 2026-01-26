@@ -77,7 +77,7 @@ networking.hostId = "8425e349"; # Required for ZFS
 
 Mounts are managed in `modules/system/storage.nix`:
 ```nix
-fileSystems."/share/External/BUZZ" = {
+fileSystems."/share/Storage/BUZZ" = {
   device = "BUZZ";
   fsType = "zfs";
   options = [ "nofail" "X-systemd.automount" ];
