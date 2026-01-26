@@ -29,6 +29,7 @@
   ];
 
   networking.hostName = "SKYLAB";
+  networking.hostId = "8425e349";
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions

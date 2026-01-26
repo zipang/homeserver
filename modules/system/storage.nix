@@ -68,9 +68,24 @@ in
     options = [ "bind" "nofail" ];
   };
 
+  # --- 3. Shared ZFS External Pools ---
+  fileSystems."/share/External/BUZZ" = {
+    device = "BUZZ";
+    fsType = "zfs";
+    options = [ "nofail" "X-systemd.automount" ];
+  };
+
+  fileSystems."/share/External/WOODY" = {
+    device = "WOODY";
+    fsType = "zfs";
+    options = [ "nofail" "X-systemd.automount" ];
+  };
+
   # Ensure only the parent directory exists
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
     "d /share/Skylab 0755 root root -"
+    "d /share/External 0755 root root -"
+    "d /media 0755 root root -"
   ];
 }
