@@ -148,9 +148,10 @@ NixOS Module: `modules/services/immich.nix`
 ```
 
 ## Storage Strategy
-* **Managed Data**: Thumbnails, encoded videos, and database are stored in `/var/lib/immich`.
-* **External Library**: Existing photos are exposed via a bind mount from `/home/zipang/Pictures/Digicam` to `/media/immich`.
-  * Configure this in the Immich UI under **Administration > Libraries > External Libraries**.
+* **Managed Data**: Managed uploads, thumbnails, and encoded videos are stored in `/var/lib/immich` (on the SSD pool **BUZZ** for performance).
+* **External Library**: Existing photo collections are stored on `/share/Storage/WOODY/photos` (on the HDD mirror pool **WOODY**).
+  * To connect them: Configure an **External Library** in the Immich UI under **Administration > Libraries**.
+  * Path to use in the UI: `/share/Storage/WOODY/photos`
 
 ## Operational Guides
 

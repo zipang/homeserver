@@ -12,7 +12,7 @@
     port = 2283;
 
     # The location where the uploaded media is stored.
-    mediaLocation = "/share/Storage/WOODY/photos";
+    mediaLocation = "/var/lib/immich";
 
     # The user to run the Immich service as.
     # user = "immich";
