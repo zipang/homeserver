@@ -7,10 +7,45 @@ This document tracks the implementation of a local Certificate Authority (CA) to
 - [x] Phase 2: System Preparation (mkcert added to core packages)
 - [x] Phase 3: Nginx SSL Configuration (forceSSL enabled for Immich & Syncthing)
 - [ ] Phase 4: Certificate Generation & Deployment (Pending Manual Action)
+- [ ] Phase 5: Authelia SSO Implementation (Google OAuth)
 
 ---
 
-## Phase 4: Certificate Generation & Deployment (Manual)
+## Phase 5: Authelia SSO Implementation
+
+We will implement Authelia as a central Identity Provider (IdP) for all services, using your Google accounts as the upstream source of truth.
+
+### 1. External Dependencies (Manual)
+*   **Google Cloud Console**:
+    *   Setup OAuth 2.0 Client ID for `https://auth.skylab.local`.
+    *   Authorized Redirect URI: `https://auth.skylab.local/api/oidc/authorization`.
+*   **PostgreSQL**:
+    *   Create a dedicated `authelia` database and user in the existing PostgreSQL instance.
+
+### 2. Secrets Preparation (SOPS)
+Generate and encrypt the following secrets in `secrets/authelia.env`:
+*   `JWT_SECRET`: Random string for JWT signing.
+*   `SESSION_SECRET`: Random string for session cookies.
+*   `STORAGE_ENCRYPTION_KEY`: Random string for DB encryption.
+*   `OIDC_HMAC_SECRET`: Random string for OIDC tokens.
+*   `OIDC_ISSUER_PRIVATE_KEY`: RSA private key for OIDC.
+*   `GOOGLE_CLIENT_SECRET`: From Google Cloud Console.
+
+### 3. Implementation Steps
+*   **`modules/services/authelia.nix`**: 
+    *   Backend: PostgreSQL (shared).
+    *   Sessions: Redis (shared, DB index 1).
+    *   Identity Provider: Google (Upstream).
+    *   OIDC Clients: Define Immich as a client.
+*   **`modules/services/nginx.nix`**:
+    *   Create `auth.skylab.local`.
+    *   Implement `auth_request` gating for Syncthing.
+*   **`modules/services/immich.nix`**:
+    *   Switch authentication to Authelia OIDC.
+
+---
+
+## Detailed Plan
 
 Since we want to keep private keys out of Git, we are using a manual deployment to a persistent directory on SKYLAB.
 
