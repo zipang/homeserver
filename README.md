@@ -78,6 +78,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Tmux](./docs/tmux.md)
 * [Immich](./docs/immich.md)
 * [ZFS Storage](./docs/zfs-storage.md)
+* [SSL/TLS Setup](./docs/ssl-setup.md)
 
 ## IMPORTANT: Note for LLM Agents
 

@@ -1,84 +1,60 @@
-# Work In Progress: Immich Implementation (ZFS Migration)
+# Work In Progress: SSL/TLS Certificate Setup (HTTPS)
 
-This document tracks the step-by-step implementation of Immich on the SKYLAB homeserver, including the transition to ZFS storage for BUZZ (SSD) and WOODY (HDD Mirror).
+This document tracks the implementation of a local Certificate Authority (CA) to enable HTTPS across all SKYLAB services using `.skylab.local` domains.
 
 ## Current Status
-- [x] Phase 1: Storage & Secrets Preparation (ZFS Migration)
-- [x] Phase 2: Reverse Proxy (Nginx) (Configured for local network)
-- [x] Phase 3: Immich Service Implementation (Module created and enabled)
-- [/] Phase 4: Network Sharing & Verification
+- [x] Phase 1: Storage & Immich Service (DONE)
+- [x] Phase 2: System Preparation (mkcert added to core packages)
+- [x] Phase 3: Nginx SSL Configuration (forceSSL enabled for Immich & Syncthing)
+- [ ] Phase 4: Certificate Generation & Deployment (Pending Manual Action)
 
 ---
 
-## Phase 1: Storage & Secrets Preparation (ZFS Implementation)
+## Phase 4: Certificate Generation & Deployment (Manual)
 
-The Nix configuration has been updated to support ZFS on SKYLAB (HostId: `8425e349`).
+Since we want to keep private keys out of Git, we are using a manual deployment to a persistent directory on SKYLAB.
 
-### 1. ZFS Pools Creation (Manual Action Required)
-Run these commands on your workstation or the server to create the pools using the identified disk IDs:
-
-**Pool BUZZ (4TB SSD)**:
+### 1. Generate Root CA (On your Management Machine)
+Run this once on the machine you use to manage the server:
 ```bash
-sudo zpool create -f -o ashift=12 -o autotrim=on \
-  -O compression=zstd -O acltype=posixacl -O xattr=sa -O relatime=on \
-  BUZZ usb-Realtek_RTL9210B-CG_012345678944-0:0
+mkcert -install
 ```
 
-**Pool WOODY (12TB HDD Mirror)**:
+### 2. Create Wildcard Certificates
 ```bash
-sudo zpool create -f -o ashift=12 \
-  -O compression=zstd -O acltype=posixacl -O xattr=sa -O relatime=on \
-  WOODY mirror \
-  usb-ASMT_ASM1352R-PM_AAAABBBB0003-0:0 \
-  usb-ASMT_ASM1352R-PM_AAAABBBB0003-0:1
+# In a temporary directory
+mkcert "*.skylab.local" skylab.local 127.0.0.1 ::1
 ```
 
-### 2. Create Datasets for Immich
+### 3. Copy to SKYLAB
+Move the resulting `.pem` files to the server using `scp`:
 ```bash
-# Set pools to legacy mode to allow NixOS to manage mounts
-sudo zfs set mountpoint=legacy BUZZ
-sudo zfs set mountpoint=legacy WOODY
-
-# Create datasets and set to legacy mode
-sudo zfs create BUZZ/immich
-sudo zfs set mountpoint=legacy BUZZ/immich
-
-sudo zfs create WOODY/photos
-sudo zfs set mountpoint=legacy WOODY/photos
+scp _wildcard.skylab.local+3.pem skylab:/var/lib/secrets/certs/skylab.crt
+scp _wildcard.skylab.local+3-key.pem skylab:/var/lib/secrets/certs/skylab.key
 ```
+*Note: The `/var/lib/secrets/certs` directory is declaratively managed by NixOS with `nginx:nginx` ownership.*
 
-### 3. Update Immich configuration
-Update `modules/services/immich.nix` to point `mediaLocation` to `/share/Storage/WOODY/photos`.
-Database and thumbnails will be stored in `/var/lib/immich` (mounted on `BUZZ/immich`).
+### 4. Apply Configuration
+Run `update-nix` on SKYLAB to apply the Nginx SSL configuration.
 
 ---
 
 ## Detailed Plan
 
-### Phase 1: Storage Migration (DONE)
-- [x] Update `modules/system/storage.nix` with ZFS pool mounts.
-- [x] Verify `systemd.tmpfiles.rules` ownership for the new mount.
+### Phase 2: System Preparation (DONE)
+- [x] Add `mkcert` to `environment.systemPackages` in `modules/system/core.nix`.
+- [x] Add `systemd.tmpfiles.rules` to ensure `/var/lib/secrets/certs` existence and permissions.
 
-### Phase 2: Reverse Proxy (DONE)
-- [x] Configure `immich.skylab.local` in `modules/services/nginx.nix` (DONE).
+### Phase 3: Nginx SSL Configuration (DONE)
+- [x] Enable `forceSSL = true` for all virtual hosts.
+- [x] Map `sslCertificate` and `sslCertificateKey` to `/var/lib/secrets/certs/skylab.crt` and `.key`.
 
-### Phase 3: Immich Implementation (READY)
-- [x] Complete `modules/services/immich.nix` with full options (DONE).
-- [x] Add `services.immich.user` and `services.immich.group` (DONE).
-- [x] Add `services.immich-public-proxy` to documentation (DONE).
-
-### Phase 4: Network Sharing & Verification
-- [x] Export `/share/Storage` via NFS and Samba.
-- [ ] Apply configuration via `sudo nixos-rebuild switch`.
-- [ ] Verify `/share/Storage/BUZZ` and `/share/Storage/WOODY` are correctly mounted.
-- [ ] Test indexing performance with Immich.
-- [ ] Verify NFS and Samba access to the new pools.
+### Phase 4: Verification
+- [ ] Verify that `http://immich.skylab.local` automatically redirects to `https://`.
+- [ ] Verify that browsers show a "Secure" green lock (after importing the Root CA).
+- [ ] Verify Syncthing GUI remains accessible via HTTPS.
 
 ---
 
-## Technical Choices
-- **Storage**: Offloading Immich media to ZFS mirror pool `WOODY` and database/cache to ZFS SSD pool `BUZZ`.
-- **Mount Strategy**: Using ZFS `legacy` mountpoints managed by NixOS `fileSystems` with `nofail`, `X-systemd.automount`, and a shortened `x-systemd.mount-timeout=5s` for maximum boot resilience.
-- **Networking**: Exporting `/share/Storage` via NFS and Samba for easy access to photos and backups.
-- **Compression**: `zstd` enabled on ZFS pools to save space on thumbnails and database logs.
-- **Proxy**: Nginx for local resolution.
+## Documentation
+- [SSL Setup Guide](./docs/ssl-setup.md)

@@ -16,6 +16,9 @@
 
     # Virtual Hosts will be added as we implement services
     virtualHosts."syncthing.skylab.local" = {
+      forceSSL = true;
+      sslCertificate = "/var/lib/secrets/certs/skylab.crt";
+      sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
       # Security: Only allow local network access
       extraConfig = ''
         allow 192.168.1.0/24;
