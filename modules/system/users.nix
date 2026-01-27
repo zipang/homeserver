@@ -5,7 +5,6 @@
   users.users.zipang = {
     isNormalUser = true;
     extraGroups = [ "wheel" "docker" "networkmanager" ];
-    openssh.authorizedKeys.keyFiles = [ /etc/nixos/ssh/authorized_keys ];
   };
 
   # Tie git to user zipang
@@ -22,7 +21,6 @@
   users.users.master = {
     isNormalUser = true;
     extraGroups = [ "wheel" "docker" "networkmanager" ];
-    openssh.authorizedKeys.keyFiles = [ /etc/nixos/ssh/authorized_keys ];
   };
 
   # Add scripts/ directory to the path

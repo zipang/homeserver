@@ -51,6 +51,7 @@
   systemd.tmpfiles.rules = [
     "d /var/lib/secrets 0755 root root -"
     "d /var/lib/secrets/certs 0700 nginx nginx -"
+    "d /var/lib/secrets/ssh 0755 root root -"
   ];
 
 }

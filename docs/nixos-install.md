@@ -29,13 +29,7 @@ nix.settings.experimental-features = [ "nix-command" "flakes" ];
 ```
 Then run `sudo nixos-rebuild switch`.
 
-### 2. Prepare Secrets & Labels
-- Ensure `/etc/nixos/ssh/authorized_keys` exists with your public keys.
-- Ensure your disks are labeled correctly:
-  - `MEDIAS` for the storage drive.
-  - `SWAP` for the swap partition.
-
-### 3. Clone this Repository
+### 2. Clone this Repository
 
 ```bash
 git clone https://github.com/youruser/homeserver.git /home/master/homeserver
