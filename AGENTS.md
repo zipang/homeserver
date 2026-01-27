@@ -28,10 +28,9 @@ You will provide your assistance to guide the user through the installation of v
    * **Compatible** with our current NixOS version (24.05) and our Flake-based architecture.
     * **Up to date** with modern Nix practices (avoiding legacy patterns unless necessary).
 3. **Pending Session Context**: At the user's demand, multi-step tasks that cannot be completed in a single session, must be saved into a [WORK IN  PROGRESS](./WORK_IN_PROGRESS.md) file (detailed plan, current progress, and pending requirements). This file acts as a memory bridge for future sessions.
-4. Do NOT commit immediately after each change.
-5. Commit only after user review and explicit approval.
-6. **Commit Message Standard**: Use standard prefixes for every commit message (e.g., `feat:`, `chore:`, `fix:`, `docs:`, `refactor:`).
-7. After a commit is made, follow with a `git push origin master` to share the changes.
+4. **Approval Required**: Do NOT commit or push any work in progress without explicit user review and approval of the modifications.
+5. **Commit Message Standard**: Use standard prefixes for every commit message (e.g., `feat:`, `chore:`, `fix:`, `docs:`, `refactor:`).
+6. After a commit is made, follow with a `git push origin master` to share the changes.
 
 ## Hardware
 
@@ -58,17 +57,18 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] NFS to share the Skylab root folder for Linux-to-Linux performance testing
 * [x] `tmux` for terminal multiplexing and persistent sessions
 * [x] `syncthing` to sync files between devices
+* [x] SSL/TLS certificates with `mkcert` and `sops`
+* [x] `immich` to backup and index photos
 * [ ] `jellyfin` to stream music and local movies
 * [ ] `authelia` SSO for secure application access
 * [ ] `copyparty` with Authelia SSO integration (currently disabled due to build failure)
-* [ ] `immich` to backup and index photos
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)
 
 ## Documentation
 
 * **README.md**: Contains high-level project goals, repository structure, and core operational workflows (installation, deployment, recovery).
 * **docs/**: Contains detailed, step-by-step documentation for each specific feature or service.
-* Each time a task from the TODO List is completed, update the relevant docs and ensure the README.md reflects the overall progress.
+* Each time a task from the TODO List is completed, update the relevant docs and ensure the README.md contains a link to this docs.
 
 ### Service Documentation Standard
 
