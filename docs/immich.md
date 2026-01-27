@@ -158,10 +158,10 @@ NixOS Module: `modules/services/immich.nix`
 Access the service at: [http://immich.skylab.local](http://immich.skylab.local)
 
 ### DNS Resolution (Local Domain)
-Since we are using a virtual domain name (`immich.skylab.local`) that is not known by your router's DNS, you need to tell your client machines how to find it.
+Since we are using a virtual domain name (`immich.skylab.local`) that is not known by your router's DNS, you need to manually tell your client machines how to find it using the **hosts file**.
 
-#### Option 1: Static DNS Mapping (Hosts file)
-This is the simplest method for a few clients. You manually map the domain name to the server's IP address.
+#### Static DNS Mapping (Hosts file)
+This is the simplest method for local resolution without a dedicated DNS server. You manually map the domain name to the server's IP address.
 
 1. Find the local IP address of the SKYLAB server (e.g., `192.168.1.XX`).
 2. Edit the `/etc/hosts` file on your client machine (requires `sudo`):
@@ -173,9 +173,6 @@ This is the simplest method for a few clients. You manually map the domain name 
    192.168.1.XX  immich.skylab.local
    ```
    *(Replace `192.168.1.XX` with the actual IP of SKYLAB)*
-
-#### Option 2: mDNS / DNS Resolution
-Ensure your client can resolve `.local` domains. This usually requires **Avahi** (on Linux) or **Bonjour** (on macOS/Windows) to be running on the server. Currently, SKYLAB relies on the hosts file method if mDNS is not explicitly configured.
 
 ### How to reload /etc/hosts without rebooting
 Changes to `/etc/hosts` are usually picked up immediately by the operating system's resolver. However, applications like web browsers often cache DNS results.
