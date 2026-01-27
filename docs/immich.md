@@ -173,26 +173,41 @@ This is the simplest method for local resolution without a dedicated DNS server.
    ```text
    192.168.1.XX  immich.skylab.local
    ```
-   *(Replace `192.168.1.XX` with the actual IP of SKYLAB)*
+    *(Replace `192.168.1.XX` with the actual IP of SKYLAB)*
 
-### How to reload /etc/hosts without rebooting
-Changes to `/etc/hosts` are usually picked up immediately by the operating system's resolver. However, applications like web browsers often cache DNS results.
+## Headless Operations & Troubleshooting
 
-If the change doesn't seem to work, you can force a refresh:
+### Monitoring Logs
+Since Immich is split into several services on NixOS, you may need to check logs for specific components:
+* **Main Server**: `journalctl -u immich-server.service -f`
+* **Microservices**: `journalctl -u immich-microservices.service -f`
+* **Machine Learning**: `journalctl -u immich-machine-learning.service -f`
 
-*   **Flush System DNS Cache (Linux with systemd-resolved):**
-    ```bash
-    sudo resolvectl flush-caches
-    ```
-*   **Restart Browser**: Close and reopen your web browser to clear its internal DNS cache.
-*   **Check with ping**: Run `ping immich.skylab.local` to verify the IP mapping is active.
+### Common Issues
 
-## Performance & Memory Usage
-Immich is a feature-rich service that includes machine learning capabilities (object detection, face recognition). 
+#### 1. 502 Bad Gateway
+If Nginx reports a 502 error, the `immich-server` is likely failing to start or restarting in a loop. 
+Check `systemctl status immich-server.service`.
 
-*   **Memory Footprint**: Enabling Immich can significantly increase system memory usage (around 1.5 - 2 GiB additional RAM).
-*   **Machine Learning**: The `machine-learning` service is the most resource-intensive part. If memory becomes a critical issue, some ML features can be tuned or disabled in the configuration.
-* **Logs Monitoring**: `journalctl -u immich.service -f`
-* **Status Check**: `systemctl status immich.service`
-* **Microservices**: Immich runs several microservices (server, machine-learning, etc.). Check them if some features are missing.
-* **Database**: `systemctl status postgresql.service`
+#### 2. PostgresError: must be owner of extension vectors
+During updates or migrations, Immich may try to drop the legacy `vectors` extension but fail due to permissions.
+**Fix**: Run this manually as the database superuser:
+```bash
+sudo -u postgres psql -d immich -c "DROP EXTENSION IF EXISTS vectors CASCADE;"
+```
+
+#### 3. Folder Integrity Check (Missing .immich file)
+Immich requires a hidden `.immich` file in every storage subfolder to prevent data loss if a disk is unmounted. If these are missing, the server will crash on startup.
+**Fix**: Create the markers:
+```bash
+sudo touch /var/lib/immich/{upload,library,thumbs,backups,profile,encoded-video}/.immich
+sudo chown -R immich:immich /var/lib/immich
+```
+
+### Fresh Re-install (Factory Reset)
+If the database or storage state is corrupted and you wish to start from scratch:
+1. Comment out the Immich import in `hosts/SKYLAB/configuration.nix`.
+2. Run `sudo nixos-rebuild switch --flake .#SKYLAB`.
+3. Execute the cleanup script: `sudo ./scripts/drop-immich.sh`.
+4. Uncomment the import and rebuild again.
+
