@@ -64,6 +64,10 @@ sslCertificate = "/var/lib/secrets/certs/skylab.crt";
 sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
 ```
 
+> [!IMPORTANT]
+> Because these paths are outside the Git repository, you must use the `--impure` flag when rebuilding your configuration:
+> `sudo nixos-rebuild switch --impure --flake .#SKYLAB`
+
 ## 6. Trust the Root CA on other devices
 
 For other devices (phones, other laptops) to trust SKYLAB:

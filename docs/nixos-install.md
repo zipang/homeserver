@@ -47,7 +47,7 @@ cp /etc/nixos/hardware-configuration.nix /home/master/homeserver/hosts/SKYLAB/ha
 sudo nixos-rebuild switch --impure --flake .#SKYLAB
 ```
 
-*Note: The `--impure` flag is required because the configuration references an external file (`/etc/nixos/ssh/authorized_keys`) which is not tracked in the Git repository.*
+*Note: The `--impure` flag is required because the configuration references external files (like `/var/lib/secrets/ssh/authorized_keys` and SSL certificates) which are not tracked in the Git repository. This is intentional to keep sensitive keys out of the Git history.*
 
 ## Phase 3: Post-Installation
 
