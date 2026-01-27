@@ -5,7 +5,6 @@
 
 # 0. Cleanup: Unmount any existing partitions to avoid "in use" errors
 echo "Cleaning up existing mounts..."
-sudo umount /run/media/zipang/NIMITZ 2>/dev/null || true
 sudo zpool export BUZZ 2>/dev/null || true
 sudo zpool export WOODY 2>/dev/null || true
 

@@ -3,7 +3,8 @@
 This document describes the ZFS configuration used for high-performance and redundant storage on the SKYLAB homelab server.
 
 ## Overview
-We use ZFS to manage external drives connected via USB-C. This provides superior data integrity, compression, and logical volume management compared to traditional partitions or BTRFS subvolumes.
+We use ZFS to manage storage on our external drives connected via USB-C (10Gbs USB 4). 
+This provides superior data integrity, compression, and logical volume management compared to traditional partitions or BTRFS subvolumes.
 
 *   **Pool `BUZZ`**: Single-disk pool on a 4TB SSD. Optimized for high-speed access (Immich database, active workspace).
 *   **Pool `WOODY`**: Mirrored pool (RAID1) on two 12TB HDDs. Optimized for long-term redundant storage (Photos, Archives).
@@ -14,12 +15,12 @@ We use ZFS to manage external drives connected via USB-C. This provides superior
 
 ## ZFS Installation on Fedora
 
-Because ZFS is not included into latest Fedora we have to use openzfs.
+Because ZFS is not included into latest Fedora we have to install it from the OpenZFS releases page.
 
 Instructions found on the [OpenZFS documentation](https://openzfs.github.io/openzfs-docs/Getting%20Started/Fedora/index.html)
 
 ```
-# Add ZFS repo:
+# Add ZFS package from external repo:
 dnf install -y https://zfsonlinux.org/fedora/zfs-release-3-0$(rpm --eval "%{dist}").noarch.rpm
 
 # Install kernel headers:
