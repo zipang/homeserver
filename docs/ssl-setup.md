@@ -80,6 +80,45 @@ For other devices (phones, other laptops) to trust SKYLAB:
 3. **Android/iOS**: Email it to yourself or use Syncthing, then open it and install it as a "Trusted Root Certificate" in the security settings.
 4. **Browsers**: Some browsers (like Firefox) use their own trust store. You may need to manually import `rootCA.pem` into Firefox settings.
 
+## Under the Hood: How Trust Works
+
+To have a "Green Lock" in your browser without paying for a commercial certificate, we use a **Trust Chain**:
+
+1.  **The Root CA (The Master Key)**: When you run `mkcert -install` on your Fedora workstation, it generates a unique "Root Certificate Authority". This is essentially your own personal "Passport Office". 
+2.  **The Signing**: When you run the `mkcert` command for `*.skylab.local`, you are using your local "Passport Office" to sign a "Passport" (the certificate) specifically for SKYLAB.
+3.  **The Trust**: Your browser trusts the "Passport" because it was signed by your "Passport Office", which is already in your browser's "Trusted List".
+
+**Why generate on Fedora instead of SKYLAB?**
+If SKYLAB generated the certificate itself, your Fedora browser wouldn't know SKYLAB's "Passport Office" and would still show a security warning. By generating it on Fedora, we leverage the trust already established on your main machine.
+
+## Maintenance & Renewal
+
+The `mkcert` certificates are valid for over 2 years (usually 27 months). 
+
+### How to Renew
+When the certificate is near expiration, follow these steps:
+
+1.  **Regenerate locally**:
+    ```bash
+    mkcert "*.skylab.local" skylab.local 127.0.0.1 ::1
+    ```
+2.  **Update SKYLAB**:
+    ```bash
+    scp _wildcard.skylab.local+3.pem skylab:/var/lib/secrets/certs/skylab.crt
+    scp _wildcard.skylab.local+3-key.pem skylab:/var/lib/secrets/certs/skylab.key
+    ```
+3.  **Reload the Web Server**:
+    You don't need to reboot! Just tell Nginx to reload its configuration:
+    ```bash
+    sudo systemctl reload nginx
+    ```
+
+### Checking Expiration Date
+You can check when your certificate expires directly from the server:
+```bash
+openssl x509 -enddate -noout -in /var/lib/secrets/certs/skylab.crt
+```
+
 ## Troubleshooting
 
 ### Browser still says "Not Secure"
