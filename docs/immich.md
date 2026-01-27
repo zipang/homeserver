@@ -157,10 +157,43 @@ NixOS Module: `modules/services/immich.nix`
 ### Local Network Access
 Access the service at: [http://immich.skylab.local](http://immich.skylab.local)
 
-### mDNS / DNS Resolution
-Ensure your client can resolve `.local` domains (e.g., via Avahi on the server).
+### DNS Resolution (Local Domain)
+Since we are using a virtual domain name (`immich.skylab.local`) that is not known by your router's DNS, you need to tell your client machines how to find it.
 
-## Headless Operations & Troubleshooting
+#### Option 1: Static DNS Mapping (Hosts file)
+This is the simplest method for a few clients. You manually map the domain name to the server's IP address.
+
+1. Find the local IP address of the SKYLAB server (e.g., `192.168.1.XX`).
+2. Edit the `/etc/hosts` file on your client machine (requires `sudo`):
+   ```bash
+   sudo nano /etc/hosts
+   ```
+3. Add the following line at the end:
+   ```text
+   192.168.1.XX  immich.skylab.local
+   ```
+   *(Replace `192.168.1.XX` with the actual IP of SKYLAB)*
+
+#### Option 2: mDNS / DNS Resolution
+Ensure your client can resolve `.local` domains. This usually requires **Avahi** (on Linux) or **Bonjour** (on macOS/Windows) to be running on the server. Currently, SKYLAB relies on the hosts file method if mDNS is not explicitly configured.
+
+### How to reload /etc/hosts without rebooting
+Changes to `/etc/hosts` are usually picked up immediately by the operating system's resolver. However, applications like web browsers often cache DNS results.
+
+If the change doesn't seem to work, you can force a refresh:
+
+*   **Flush System DNS Cache (Linux with systemd-resolved):**
+    ```bash
+    sudo resolvectl flush-caches
+    ```
+*   **Restart Browser**: Close and reopen your web browser to clear its internal DNS cache.
+*   **Check with ping**: Run `ping immich.skylab.local` to verify the IP mapping is active.
+
+## Performance & Memory Usage
+Immich is a feature-rich service that includes machine learning capabilities (object detection, face recognition). 
+
+*   **Memory Footprint**: Enabling Immich can significantly increase system memory usage (around 1.5 - 2 GiB additional RAM).
+*   **Machine Learning**: The `machine-learning` service is the most resource-intensive part. If memory becomes a critical issue, some ML features can be tuned or disabled in the configuration.
 * **Logs Monitoring**: `journalctl -u immich.service -f`
 * **Status Check**: `systemctl status immich.service`
 * **Microservices**: Immich runs several microservices (server, machine-learning, etc.). Check them if some features are missing.
