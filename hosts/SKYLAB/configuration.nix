@@ -24,7 +24,7 @@
     # ../../modules/services/samba.nix
     ../../modules/services/nfs.nix
     ../../modules/services/syncthing.nix
-    # ../../modules/services/immich.nix
+    ../../modules/services/immich.nix
     # ../../modules/services/copyparty.nix
   ];
 
