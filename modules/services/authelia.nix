@@ -49,7 +49,6 @@
       # Authelia relies on session cookies to authorize user access to various protected websites.
       session = {
         name = "authelia_session";
-        secret = "AUTHELIA_SESSION_SECRET"; # Placeholder
         expiration = "1h";
         inactivity = "5m";
         remember_me = "1M";
@@ -69,7 +68,6 @@
 
       # Authelia supports multiple storage backends.
       storage = {
-        encryption_key = "AUTHELIA_STORAGE_ENCRYPTION_KEY"; # Placeholder
         postgres = {
           address = "tcp://127.0.0.1:5432";
           database = "authelia";
@@ -92,12 +90,6 @@
 
       # The identity_providers.oidc section contains the configuration for the OpenID Connect identity provider.
       identity_providers.oidc = {
-        hmac_secret = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET"; # Placeholder
-        jwks = [
-          {
-            key = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_JWKS_0_KEY"; # Placeholder
-          }
-        ];
         cors = {
           allowed_origins = [ "https://immich.skylab.local" ];
         };
@@ -105,7 +97,6 @@
           {
             client_id = "immich";
             client_name = "Immich Photo Management";
-            client_secret = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_CLIENTS_0_CLIENT_SECRET"; # Placeholder
             public = false;
             authorization_policy = "one_factor";
             redirect_uris = [
@@ -121,8 +112,6 @@
           providers = [
             {
               id = "google";
-              client_id = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_UPSTREAM_PROVIDERS_0_CLIENT_ID"; # Placeholder
-              client_secret = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_UPSTREAM_PROVIDERS_0_CLIENT_SECRET"; # Placeholder
               issuer_base_url = "https://accounts.google.com";
             }
           ];

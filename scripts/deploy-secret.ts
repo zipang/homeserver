@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { $ } from "bun";
-import { existsSync } from "fs";
-import { join } from "path";
+import { existsSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
 
 /**
  * SKYLAB Secret Deployer
@@ -74,6 +74,12 @@ async function run() {
       let expression = line.substring(firstEqIndex + 1).trim();
 
       let value = "";
+      let saveToFile = false;
+
+      if (expression.startsWith("file:")) {
+        saveToFile = true;
+        expression = expression.substring(5).trim();
+      }
 
       if (expression.startsWith('prompt("')) {
         // Handle interactive prompt
@@ -99,9 +105,23 @@ async function run() {
         value = prompt(`Enter value for ${key}: `) || "";
       }
 
-      // Handle multiline values (like RSA keys) by escaping newlines for systemd EnvironmentFile
-      if (value.includes("\n")) {
-        // Systemd EnvironmentFile supports multiline values using the backslash (\) as a continuation character
+      if (saveToFile) {
+        const secretFileName = `${key.toLowerCase()}.secret`;
+        const secretFilePath = join(outputDir, secretFileName);
+        
+        console.log(`\x1b[32mSaving ${key} to side-file: ${secretFilePath}\x1b[0m`);
+        
+        if (!existsSync(outputDir)) {
+          mkdirSync(outputDir, { recursive: true });
+        }
+        
+        await Bun.write(secretFilePath, value);
+        await $`chmod 600 ${secretFilePath}`;
+        
+        // Add the _FILE variable to the env
+        envContent += `${key}_FILE=${secretFilePath}\n`;
+      } else if (value.includes("\n")) {
+        // Handle multiline values by escaping newlines for systemd EnvironmentFile
         const escapedValue = value.replace(/\n/g, "\\\n");
         envContent += `${key}="${escapedValue}"\n`;
       } else {
