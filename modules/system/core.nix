@@ -38,6 +38,7 @@
     nano
     nfs-utils
     openssh
+    openssl
     lsd
     lshw
     mkcert
