@@ -4,8 +4,8 @@ import { existsSync } from "fs";
 import { join } from "path";
 
 /**
- * SKYLAB Reusable Secret Generator
- * Usage: bun scripts/generate-secrets.ts --template <file> --sshPublicKey <path> --outputDir <path>
+ * SKYLAB Secret Deployer
+ * Usage: sudo bun scripts/deploy-secret.ts --template <file> --outputDir <path>
  */
 
 const args = Bun.argv.slice(2);
@@ -21,16 +21,14 @@ for (let i = 0; i < args.length; i++) {
 }
 
 const templateFile = values.template;
-const publicKeyPath = values.sshPublicKey;
 const outputDir = values.outputDir;
 
-if (!templateFile || !publicKeyPath || !outputDir) {
+if (!templateFile || !outputDir) {
   console.error("Error: Missing required arguments.");
   console.error(
-    "Usage: generate-secrets --template <file> --sshPublicKey <path> --outputDir <path>",
+    "Usage: sudo bun scripts/deploy-secret.ts --template <file> --outputDir <path>",
   );
   if (!templateFile) console.error("  --template is missing");
-  if (!publicKeyPath) console.error("  --sshPublicKey is missing");
   if (!outputDir) console.error("  --outputDir is missing");
   process.exit(1);
 }
@@ -44,15 +42,8 @@ if (!existsSync(TEMPLATE_PATH)) {
   process.exit(1);
 }
 
-if (!existsSync(publicKeyPath)) {
-  console.error(`Error: Public key not found at ${publicKeyPath}`);
-  process.exit(1);
-}
-
 async function run() {
-  console.log(
-    `\x1b[36m--- SKYLAB Secret Generator: ${templateFile} ---\x1b[0m`,
-  );
+  console.log(`\x1b[36m--- SKYLAB Secret Deployer: ${templateFile} ---\x1b[0m`);
 
   const file = Bun.file(TEMPLATE_PATH);
   const text = await file.text();
@@ -117,71 +108,23 @@ async function run() {
     }
   }
 
-  // Ensure output directory exists (requires sudo if running on server)
-  if (!existsSync(outputDir)) {
-    console.log(`Creating directory ${outputDir}...`);
-    await $`sudo mkdir -p ${outputDir}`;
-    await $`sudo chown $USER ${outputDir}`;
-  }
-
-  console.log(`\x1b[32mFinal secret file\x1b[0m`);
+  // File generation complete
+  console.log(`\x1b[32mFinal secret file (unencrypted)\x1b[0m`);
   console.log(envContent);
 
-  // Encrypt with SOPS
-  console.log(`\x1b[32mEncrypting secrets with sops...\x1b[0m`);
-
-  // Convert SSH public key to age public key
-  const agePublicKey = (await $`ssh-to-age < ${publicKeyPath}`.text()).trim();
-
   try {
-    const sopsProcess = Bun.spawn(
-      [
-        "sops",
-        "--encrypt",
-        `--age ${agePublicKey}`,
-        "--input-type env",
-        "--output-type env",
-        // Prevent Sops Error: error loading config: no matching creation rules found
-        "--config <(echo '')",
-        "/dev/stdin",
-      ],
-      {
-        stdin: "pipe",
-        stderr: "pipe",
-      },
-    );
-
-    sopsProcess.stdin.write(envContent);
-    sopsProcess.stdin.end();
-
-    const encryptedContent = await new Response(sopsProcess.stdout).text();
-    const errorContent = await new Response(sopsProcess.stderr).text();
-
-    if (errorContent && errorContent.trim() !== "") {
-      console.error(`\x1b[31mSops Error: ${errorContent}\x1b[0m`);
-    }
-
-    if (!encryptedContent || encryptedContent.trim() === "") {
-      throw new Error("Sops returned empty content.");
-    }
-
-    console.log(`\x1b[32mEncrypted content successfully generated\x1b[0m`);
-    console.log(encryptedContent);
-
     // Write the final file
-    const tmpPath = `${OUTPUT_PATH}.tmp`;
-    await Bun.write(tmpPath, encryptedContent);
+    await Bun.write(OUTPUT_PATH, envContent, { createPath: true });
 
-    await $`sudo mv ${tmpPath} ${OUTPUT_PATH}`;
-
-    await $`sudo chmod 600 ${OUTPUT_PATH}`;
+    // Set restrictive permissions
+    await $`chmod 600 ${OUTPUT_PATH}`;
 
     console.log(`\x1b[32mSuccess! Secrets saved to ${OUTPUT_PATH}\x1b[0m`);
     console.log(
       `\x1b[33mDon't forget to run 'update-nix' to apply changes.\x1b[0m`,
     );
   } catch (err) {
-    console.error(`\x1b[31mFailed to encrypt secrets: ${err}\x1b[0m`);
+    console.error(`\x1b[31mFailed to save secrets: ${err}\x1b[0m`);
     process.exit(1);
   }
 }

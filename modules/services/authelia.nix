@@ -8,8 +8,8 @@
 
     # Secret Management:
     # All sensitive keys (JWT, Session, OIDC, Google Secrets) are stored
-    # in an encrypted sops file and loaded into the service at runtime.
-    environmentVariablesFile = config.sops.secrets."authelia/env".path;
+    # in a plain file (deployed via scripts/deploy-secret.ts) and loaded into the service at runtime.
+    environmentVariablesFile = "/var/lib/secrets/sso/authelia.env";
 
     settings = {
       # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.
@@ -17,7 +17,7 @@
 
       # Core Security Settings
       # Note: Actual secrets are injected via the environmentVariablesFile
-      jwt_secret = "AUTHELIA_JWT_SECRET";
+      jwt_secret = "$AUTHELIA_JWT_SECRET";
       default_2fa_method = "totp";
 
       # The server section contains the configuration for the HTTP server.

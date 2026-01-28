@@ -30,7 +30,7 @@ The service is defined in `modules/services/authelia.nix` and utilizes PostgreSQ
 ```nix
 services.authelia.instances.main = {
   enable = true;
-  environmentVariablesFile = config.sops.secrets."authelia/env".path;
+  environmentVariablesFile = "/var/lib/secrets/sso/authelia.env";
 
   settings = {
     # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.
@@ -134,29 +134,29 @@ To enable Google SSO, you must create an OAuth 2.0 Client in the [Google Cloud C
 ### 4. Get your Keys
 - Copy the **Client ID** and **Client Secret**. These will be used when running the `generate-secrets.ts` script.
 
-## Secret Management (Reusable Generator)
+## Secret Management (Secret Deployer)
 
-Authelia requires several high-entropy secrets. We use a reusable **Bun + TypeScript** generator to handle this without putting secrets in Git.
+Authelia requires several high-entropy secrets. We use a **Bun + TypeScript** deployer to handle this without putting secrets in Git. 
+
+> **Security Note**: As SOPS encryption was causing issues, secrets are currently stored in a plain file on the server with restricted permissions (600). The script must be run with `sudo`.
 
 ### 1. The Template
 The template file `secrets/authelia.env` defines how each secret is generated:
 - `KEY=command`: Executes the command to generate the value.
 - `KEY=prompt("message")`: Interactively asks for the value.
 
-### 2. Running the Generator
+### 2. Running the Deployer
 Run the script on the SKYLAB server:
 ```bash
-bun scripts/generate-secrets.ts \
+sudo bun scripts/deploy-secret.ts \
   --template authelia.env \
-  --sshPublicKey /etc/ssh/ssh_host_ed25519_key.pub \
   --outputDir /var/lib/secrets/sso
 ```
 The script will:
 - Parse the template.
 - Execute generation commands (like `openssl rand`).
 - Prompt for manual secrets (Google OAuth keys).
-- Encrypt the result with `sops`.
-- Save it to `/var/lib/secrets/sso/authelia.env`.
+- Save the unencrypted result to `/var/lib/secrets/sso/authelia.env` with 600 permissions.
 
 ## Nginx Integration (auth_request)
 
@@ -196,5 +196,5 @@ sudo -u postgres psql -d authelia -c "\dt"
 ## Related Files
 *   `modules/services/authelia.nix`: Core service configuration.
 *   `modules/services/nginx.nix`: Proxy and `auth_request` middleware.
-*   `scripts/generate-secrets.ts`: Reusable secret generator.
-*   `secrets/authelia`: Generation template.
+*   `scripts/deploy-secret.ts`: Secret deployment script.
+*   `secrets/authelia.env`: Generation template.
