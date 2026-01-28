@@ -124,40 +124,47 @@ async function run() {
     await $`sudo chown $USER ${outputDir}`;
   }
 
-  // Encrypt with SOPS
-  console.log(`\x1b[32mEncrypting secrets with sops...\x1b[0m`);
+    // Encrypt with SOPS
+    console.log(`\x1b[32mEncrypting secrets with sops...\x1b[0m`);
+    
+    // Convert SSH public key to age public key
+    const agePublicKey = (await $`ssh-to-age < ${publicKeyPath}`.text()).trim();
 
-  try {
-    const sopsProcess = Bun.spawn(
-      [
-        "sops",
-        "--encrypt",
-        "--ssh-public-key",
-        publicKeyPath,
-        "--input-type",
-        "env",
-        "--output-type",
-        "env",
-        "/dev/stdin",
-      ],
-      {
-        stdin: "pipe",
-      },
-    );
+    try {
+      const sopsProcess = Bun.spawn(
+        [
+          "sops",
+          "--encrypt",
+          "--age",
+          agePublicKey,
+          "--input-type",
+          "env",
+          "--output-type",
+          "env",
+          "/dev/stdin",
+        ],
+        {
+          stdin: "pipe",
+        },
+      );
 
-    sopsProcess.stdin.write(envContent);
-    sopsProcess.stdin.end();
+      sopsProcess.stdin.write(envContent);
+      sopsProcess.stdin.end();
 
-    const encryptedContent = await new Response(sopsProcess.stdout).text();
+      const encryptedContent = await new Response(sopsProcess.stdout).text();
+      
+      if (!encryptedContent || encryptedContent.trim() === "") {
+        throw new Error("Sops returned empty content. Check if sops and the public key are valid.");
+      }
 
-    // Write the final file
-    await Bun.write(`${TEMPLATE_PATH}.tmp`, encryptedContent);
-    await $`sudo mv ${TEMPLATE_PATH}.tmp ${OUTPUT_PATH}`;
+      // Write the final file
+      const tmpPath = `${OUTPUT_PATH}.tmp`;
+      await Bun.write(tmpPath, encryptedContent);
+      await $`sudo mv ${tmpPath} ${OUTPUT_PATH}`;
+      
+      await $`sudo chmod 600 ${OUTPUT_PATH}`;
 
-    // We'll leave it as root:root for now, or let NixOS manage it via sops-nix
-    await $`sudo chmod 600 ${OUTPUT_PATH}`;
-
-    console.log(`\x1b[32mSuccess! Secrets saved to ${OUTPUT_PATH}\x1b[0m`);
+      console.log(`\x1b[32mSuccess! Secrets saved to ${OUTPUT_PATH}\x1b[0m`);
     console.log(
       `\x1b[33mDon't forget to run 'update-nix' to apply changes.\x1b[0m`,
     );

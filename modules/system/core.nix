@@ -39,6 +39,7 @@
     nfs-utils
     openssh
     openssl
+    ssh-to-age
     lsd
     lshw
     mkcert
