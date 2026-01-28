@@ -30,6 +30,7 @@ The service is defined in `modules/services/authelia.nix` and utilizes PostgreSQ
 ```nix
 services.authelia.instances.main = {
   enable = true;
+  secrets.manual = true;
 
   settings = {
     # ... 

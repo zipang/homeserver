@@ -9,6 +9,8 @@
     # Secret Management:
     # All sensitive keys are stored in a plain file deployed via scripts/deploy-secret.ts.
     # We inject them into the systemd service directly via EnvironmentFile.
+    # We set manual = true to bypass the module's built-in secret assertions.
+    secrets.manual = true;
     
     settings = {
       # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.
