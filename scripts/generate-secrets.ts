@@ -135,6 +135,7 @@ async function run() {
         [
           "sops",
           "--encrypt",
+          "--no-config",
           "--age",
           agePublicKey,
           "--input-type",
@@ -145,6 +146,7 @@ async function run() {
         ],
         {
           stdin: "pipe",
+          stderr: "pipe",
         },
       );
 
@@ -152,9 +154,14 @@ async function run() {
       sopsProcess.stdin.end();
 
       const encryptedContent = await new Response(sopsProcess.stdout).text();
+      const errorContent = await new Response(sopsProcess.stderr).text();
       
+      if (errorContent && errorContent.trim() !== "") {
+        console.error(`\x1b[31mSops Error: ${errorContent}\x1b[0m`);
+      }
+
       if (!encryptedContent || encryptedContent.trim() === "") {
-        throw new Error("Sops returned empty content. Check if sops and the public key are valid.");
+        throw new Error("Sops returned empty content.");
       }
 
       // Write the final file
