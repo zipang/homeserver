@@ -99,9 +99,11 @@ async function run() {
         value = prompt(`Enter value for ${key}: `) || "";
       }
 
-      // Handle multiline values (like RSA keys) by wrapping in single quotes
+      // Handle multiline values (like RSA keys) by escaping newlines for systemd EnvironmentFile
       if (value.includes("\n")) {
-        envContent += `${key}='${value}'\n`;
+        // Systemd EnvironmentFile supports multiline values using the backslash (\) as a continuation character
+        const escapedValue = value.replace(/\n/g, "\\\n");
+        envContent += `${key}="${escapedValue}"\n`;
       } else {
         envContent += `${key}=${value}\n`;
       }

@@ -44,20 +44,12 @@
         file = {
           path = "/var/lib/authelia-main/users.yml";
         };
-        # OIDC External Provider (Google)
-        oidc = {
-          google = {
-            issuer_base_url = "https://accounts.google.com";
-            # client_id and client_secret are injected via:
-            # AUTHELIA_AUTHENTICATION_BACKEND_OIDC_GOOGLE_CLIENT_ID
-            # AUTHELIA_AUTHENTICATION_BACKEND_OIDC_GOOGLE_CLIENT_SECRET
-          };
-        };
       };
 
       # Authelia relies on session cookies to authorize user access to various protected websites.
       session = {
         name = "authelia_session";
+        secret = "AUTHELIA_SESSION_SECRET"; # Placeholder
         expiration = "1h";
         inactivity = "5m";
         remember_me = "1M";
@@ -77,6 +69,7 @@
 
       # Authelia supports multiple storage backends.
       storage = {
+        encryption_key = "AUTHELIA_STORAGE_ENCRYPTION_KEY"; # Placeholder
         postgres = {
           address = "tcp://127.0.0.1:5432";
           database = "authelia";
@@ -99,9 +92,10 @@
 
       # The identity_providers.oidc section contains the configuration for the OpenID Connect identity provider.
       identity_providers.oidc = {
+        hmac_secret = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET"; # Placeholder
         jwks = [
           {
-            key = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_JWKS_0_KEY";
+            key = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_JWKS_0_KEY"; # Placeholder
           }
         ];
         cors = {
@@ -111,8 +105,7 @@
           {
             client_id = "immich";
             client_name = "Immich Photo Management";
-            # client_secret is injected via environment variable:
-            # AUTHELIA_IDENTITY_PROVIDERS_OIDC_CLIENTS_0_CLIENT_SECRET
+            client_secret = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_CLIENTS_0_CLIENT_SECRET"; # Placeholder
             public = false;
             authorization_policy = "one_factor";
             redirect_uris = [
@@ -123,6 +116,17 @@
             userinfo_signed_response_alg = "none";
           }
         ];
+        # OIDC External Provider (Google)
+        upstream = {
+          providers = [
+            {
+              id = "google";
+              client_id = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_UPSTREAM_PROVIDERS_0_CLIENT_ID"; # Placeholder
+              client_secret = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_UPSTREAM_PROVIDERS_0_CLIENT_SECRET"; # Placeholder
+              issuer_base_url = "https://accounts.google.com";
+            }
+          ];
+        };
       };
     };
   };
