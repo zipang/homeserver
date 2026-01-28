@@ -7,10 +7,9 @@
     enable = true;
 
     # Secret Management:
-    # All sensitive keys (JWT, Session, OIDC, Google Secrets) are stored
-    # in a plain file (deployed via scripts/deploy-secret.ts) and loaded into the service at runtime.
-    environmentFile = "/var/lib/secrets/sso/authelia.env";
-
+    # All sensitive keys are stored in a plain file deployed via scripts/deploy-secret.ts.
+    # We inject them into the systemd service directly via EnvironmentFile.
+    
     settings = {
       # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.
       theme = "dark";
@@ -135,4 +134,7 @@
     "d /var/lib/authelia-main 0700 authelia-main authelia-main -"
     "f /var/lib/authelia-main/users.yml 0600 authelia-main authelia-main - -"
   ];
+
+  # Inject the environment file into the systemd service
+  systemd.services.authelia-main.serviceConfig.EnvironmentFile = "/var/lib/secrets/sso/authelia.env";
 }

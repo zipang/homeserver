@@ -30,10 +30,14 @@ The service is defined in `modules/services/authelia.nix` and utilizes PostgreSQ
 ```nix
 services.authelia.instances.main = {
   enable = true;
-  environmentFile = "/var/lib/secrets/sso/authelia.env";
 
   settings = {
-    # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.
+    # ... 
+  };
+};
+
+# Secrets are injected directly into the systemd service
+systemd.services.authelia-main.serviceConfig.EnvironmentFile = "/var/lib/secrets/sso/authelia.env";
     theme = "dark";
 
     # The server section contains the configuration for the HTTP server.
