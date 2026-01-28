@@ -119,7 +119,7 @@ To enable Google SSO, you must create an OAuth 2.0 Client in the [Google Cloud C
 - Go to **APIs & Services > OAuth consent screen**.
 - Select **External** (unless you have a Google Workspace org).
 - Fill in the required app information.
-- Add the scope `.../auth/userinfo.email`, `.../auth/userinfo.profile`, and `openid`.
+- Inside **Data Access** add the following scopes (data shared with our Authelia Client): `.../auth/userinfo.email`, `.../auth/userinfo.profile`, and `openid`.
 
 ### 3. Create Credentials
 - Go to **APIs & Services > Credentials**.

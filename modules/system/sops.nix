@@ -11,11 +11,11 @@
 
     # Secrets definition
     secrets = {
-      # "authelia/env" = {
-      #   sopsFile = "/var/lib/secrets/sso/authelia.env";
-      #   format = "dotenv";
-      #   owner = "authelia-main";
-      # };
+      "authelia/env" = {
+        sopsFile = "/var/lib/secrets/sso/authelia.env";
+        format = "dotenv";
+        owner = "authelia-main";
+      };
     };
   };
 }
