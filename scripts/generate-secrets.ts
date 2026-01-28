@@ -124,54 +124,59 @@ async function run() {
     await $`sudo chown $USER ${outputDir}`;
   }
 
-    // Encrypt with SOPS
-    console.log(`\x1b[32mEncrypting secrets with sops...\x1b[0m`);
-    
-    // Convert SSH public key to age public key
-    const agePublicKey = (await $`ssh-to-age < ${publicKeyPath}`.text()).trim();
+  console.log(`\x1b[32mFinal secret file\x1b[0m`);
+  console.log(envContent);
 
-    try {
-      const sopsProcess = Bun.spawn(
-        [
-          "sops",
-          "--encrypt",
-          "--no-config",
-          "--age",
-          agePublicKey,
-          "--input-type",
-          "env",
-          "--output-type",
-          "env",
-          "/dev/stdin",
-        ],
-        {
-          stdin: "pipe",
-          stderr: "pipe",
-        },
-      );
+  // Encrypt with SOPS
+  console.log(`\x1b[32mEncrypting secrets with sops...\x1b[0m`);
 
-      sopsProcess.stdin.write(envContent);
-      sopsProcess.stdin.end();
+  // Convert SSH public key to age public key
+  const agePublicKey = (await $`ssh-to-age < ${publicKeyPath}`.text()).trim();
 
-      const encryptedContent = await new Response(sopsProcess.stdout).text();
-      const errorContent = await new Response(sopsProcess.stderr).text();
-      
-      if (errorContent && errorContent.trim() !== "") {
-        console.error(`\x1b[31mSops Error: ${errorContent}\x1b[0m`);
-      }
+  try {
+    const sopsProcess = Bun.spawn(
+      [
+        "sops",
+        "--encrypt",
+        "--age",
+        agePublicKey,
+        "--input-type",
+        "env",
+        "--output-type",
+        "env",
+        "/dev/stdin",
+      ],
+      {
+        stdin: "pipe",
+        stderr: "pipe",
+      },
+    );
 
-      if (!encryptedContent || encryptedContent.trim() === "") {
-        throw new Error("Sops returned empty content.");
-      }
+    sopsProcess.stdin.write(envContent);
+    sopsProcess.stdin.end();
 
-      // Write the final file
-      const tmpPath = `${OUTPUT_PATH}.tmp`;
-      await Bun.write(tmpPath, encryptedContent);
-      await $`sudo mv ${tmpPath} ${OUTPUT_PATH}`;
-      
-      await $`sudo chmod 600 ${OUTPUT_PATH}`;
+    const encryptedContent = await new Response(sopsProcess.stdout).text();
+    const errorContent = await new Response(sopsProcess.stderr).text();
 
-      console.log(`\x1b[32mSuccess! Secrets saved to ${OUTPUT_PATH}\x1b[0m`);
+    if (errorContent && errorContent.trim() !== "") {
+      console.error(`\x1b[31mSops Error: ${errorContent}\x1b[0m`);
+    }
+
+    if (!encryptedContent || encryptedContent.trim() === "") {
+      throw new Error("Sops returned empty content.");
+    }
+
+    console.log(`\x1b[32mEncrypted content successfully generated\x1b[0m`);
+    console.log(encryptedContent);
+
+    // Write the final file
+    const tmpPath = `${OUTPUT_PATH}.tmp`;
+    await Bun.write(tmpPath, encryptedContent);
+    await $`sudo mv ${tmpPath} ${OUTPUT_PATH}`;
+
+    await $`sudo chmod 600 ${OUTPUT_PATH}`;
+
+    console.log(`\x1b[32mSuccess! Secrets saved to ${OUTPUT_PATH}\x1b[0m`);
     console.log(
       `\x1b[33mDon't forget to run 'update-nix' to apply changes.\x1b[0m`,
     );
