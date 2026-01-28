@@ -30,15 +30,18 @@ The service is defined in `modules/services/authelia.nix` and utilizes PostgreSQ
 ```nix
 services.authelia.instances.main = {
   enable = true;
-  secrets.manual = true;
+  
+  # Recommended way to handle secrets in NixOS 25.11
+  secrets = {
+    jwtSecretFile = "/var/lib/secrets/sso/authelia_identity_validation_reset_password_jwt_secret.secret";
+    storageEncryptionKeyFile = "/var/lib/secrets/sso/authelia_storage_encryption_key.secret";
+    # ... other secret files
+  };
 
   settings = {
     # ... 
   };
 };
-
-# Secrets are injected directly into the systemd service
-systemd.services.authelia-main.serviceConfig.EnvironmentFile = "/var/lib/secrets/sso/authelia.env";
     theme = "dark";
 
     # The server section contains the configuration for the HTTP server.
