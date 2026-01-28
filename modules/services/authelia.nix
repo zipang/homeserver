@@ -9,7 +9,7 @@
     # Secret Management:
     # All sensitive keys (JWT, Session, OIDC, Google Secrets) are stored
     # in a plain file (deployed via scripts/deploy-secret.ts) and loaded into the service at runtime.
-    environmentVariablesFile = "/var/lib/secrets/sso/authelia.env";
+    environmentFile = "/var/lib/secrets/sso/authelia.env";
 
     settings = {
       # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.

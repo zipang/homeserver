@@ -30,7 +30,7 @@ The service is defined in `modules/services/authelia.nix` and utilizes PostgreSQ
 ```nix
 services.authelia.instances.main = {
   enable = true;
-  environmentVariablesFile = "/var/lib/secrets/sso/authelia.env";
+  environmentFile = "/var/lib/secrets/sso/authelia.env";
 
   settings = {
     # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.
