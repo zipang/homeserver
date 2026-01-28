@@ -108,6 +108,32 @@ services.authelia.instances.main = {
 };
 ```
 
+## Google Cloud Console Setup
+
+To enable Google SSO, you must create an OAuth 2.0 Client in the [Google Cloud Console](https://console.cloud.google.com/).
+
+### 1. Create a Project
+- Create a new project (e.g., `SKYLAB-SSO`).
+
+### 2. Configure OAuth Consent Screen
+- Go to **APIs & Services > OAuth consent screen**.
+- Select **External** (unless you have a Google Workspace org).
+- Fill in the required app information.
+- Add the scope `.../auth/userinfo.email`, `.../auth/userinfo.profile`, and `openid`.
+
+### 3. Create Credentials
+- Go to **APIs & Services > Credentials**.
+- Click **Create Credentials > OAuth client ID**.
+- Application type: **Web application**.
+- Name: `Authelia SKYLAB`.
+- **Authorized JavaScript origins**:
+  - `https://auth.skylab.local`
+- **Authorized redirect URIs**:
+  - `https://auth.skylab.local/api/oidc/authorization`
+
+### 4. Get your Keys
+- Copy the **Client ID** and **Client Secret**. These will be used when running the `generate-secrets.ts` script.
+
 ## Secret Management (Reusable Generator)
 
 Authelia requires several high-entropy secrets. We use a reusable **Bun + TypeScript** generator to handle this without putting secrets in Git.
