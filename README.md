@@ -77,6 +77,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Secrets Management](./docs/secrets.md)
 * [Tmux](./docs/tmux.md)
 * [Immich](./docs/immich.md)
+* [Authelia SSO](./docs/authelia.md)
 * [ZFS Storage](./docs/zfs-storage.md)
 * [SSL/TLS Setup](./docs/ssl-setup.md)
 

@@ -1,0 +1,50 @@
+# Node / JavaScript
+node_modules/
+
+# Bun (cache & temp)
+.bun/
+# Note: bun.lockb is usually committed to lock dependencies. Uncomment the next line to ignore it:
+# bun.lockb
+
+# TypeScript
+*.tsbuildinfo
+dist/
+build/
+out/
+lib/
+generated/
+*.d.ts
+
+# Bundlers / Frameworks / Tooling caches
+.cache/
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# IDEs and editors
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# Misc
+*.bak
+*.tmp
+tmp/
+
+# ESLint / Prettier cache
+.eslintcache
+.prettierignore
+
+# GitHub / CI artifacts
+.github/
+.gitattributes
+.gitmodules
+
+# Keep this file tracked
+!.gitignore

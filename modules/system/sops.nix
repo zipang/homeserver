@@ -10,10 +10,12 @@
     defaultSopsFormat = "binary";
 
     # Secrets definition
-    # Example usage in other modules:
-    # systemd.services.jellyfin.serviceConfig.EnvironmentFile = config.sops.secrets."jellyfin.env".path;
     secrets = {
-      # Add your secrets here
+      "authelia/env" = {
+        sopsFile = "/var/lib/secrets/sso/authelia.env";
+        format = "dotenv";
+        owner = "authelia-main";
+      };
     };
   };
 }
