@@ -138,12 +138,11 @@ async function run() {
       [
         "sops",
         "--encrypt",
-        "--age",
-        agePublicKey,
-        "--input-type",
-        "env",
-        "--output-type",
-        "env",
+        `--age ${agePublicKey}`,
+        "--input-type env",
+        "--output-type env",
+        // Prevent Sops Error: error loading config: no matching creation rules found
+        "--config <(echo '')",
         "/dev/stdin",
       ],
       {
@@ -172,6 +171,7 @@ async function run() {
     // Write the final file
     const tmpPath = `${OUTPUT_PATH}.tmp`;
     await Bun.write(tmpPath, encryptedContent);
+
     await $`sudo mv ${tmpPath} ${OUTPUT_PATH}`;
 
     await $`sudo chmod 600 ${OUTPUT_PATH}`;
