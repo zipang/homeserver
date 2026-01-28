@@ -28,7 +28,7 @@ You will provide your assistance to guide the user through the installation of v
    * **Compatible** with our current NixOS version (24.05) and our Flake-based architecture.
     * **Up to date** with modern Nix practices (avoiding legacy patterns unless necessary).
 3. **Pending Session Context**: At the user's demand, multi-step tasks that cannot be completed in a single session, must be saved into a [WORK IN  PROGRESS](./WORK_IN_PROGRESS.md) file (detailed plan, current progress, and pending requirements). This file acts as a memory bridge for future sessions.
-4. **Approval Required**: Do NOT commit or push any work in progress without explicit user review and approval of the modifications.
+4. **Approval Required**: Do NOT commit or push any work in progress without explicit user review and approval of the modifications, except for minor bug fixes or adjustments to an already approved plan.
 5. **Commit Message Standard**: Use standard prefixes for every commit message (e.g., `feat:`, `chore:`, `fix:`, `docs:`, `refactor:`).
 6. After a commit is made, follow with a `git push origin master` to share the changes.
 

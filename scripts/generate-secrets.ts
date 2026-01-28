@@ -2,29 +2,36 @@
 import { $ } from "bun";
 import { existsSync } from "fs";
 import { join } from "path";
-import { parseArgs } from "util";
 
 /**
  * SKYLAB Reusable Secret Generator
  * Usage: bun scripts/generate-secrets.ts --template <file> --sshPublicKey <path> --outputDir <path>
  */
 
-const { values } = parseArgs({
-  args: Bun.argv.slice(2),
-  options: {
-    template: { type: "string" },
-    sshPublicKey: { type: "string" },
-    outputDir: { type: "string" },
-  },
-  strict: false,
-});
+const args = Bun.argv.slice(2);
+const values: Record<string, string> = {};
 
-const { templateFile, publicKeyPath, outputDir } = values;
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if (arg.startsWith("--")) {
+    const key = arg.slice(2);
+    const value = args[++i];
+    if (value) values[key] = value;
+  }
+}
+
+const templateFile = values.template;
+const publicKeyPath = values.sshPublicKey;
+const outputDir = values.outputDir;
 
 if (!templateFile || !publicKeyPath || !outputDir) {
+  console.error("Error: Missing required arguments.");
   console.error(
     "Usage: generate-secrets --template <file> --sshPublicKey <path> --outputDir <path>",
   );
+  if (!templateFile) console.error("  --template is missing");
+  if (!publicKeyPath) console.error("  --sshPublicKey is missing");
+  if (!outputDir) console.error("  --outputDir is missing");
   process.exit(1);
 }
 
