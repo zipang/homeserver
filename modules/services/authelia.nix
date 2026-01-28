@@ -16,15 +16,9 @@
       # The theme to use for the portal. Available options are 'light', 'dark', and 'grey'.
       theme = "dark";
 
-      # Core Security Settings
-      # Note: Actual secrets are injected via the environmentVariablesFile
-      jwt_secret = "$AUTHELIA_JWT_SECRET";
-      default_2fa_method = "totp";
-
       # The server section contains the configuration for the HTTP server.
       server = {
-        host = "127.0.0.1";
-        port = 9091;
+        address = "tcp://127.0.0.1:9091";
       };
 
       # The log section contains the configuration for the logging.
@@ -33,24 +27,46 @@
         format = "text";
       };
 
+      # Identity Validation (JWT Secret moved here in v4.38.0)
+      identity_validation = {
+        reset_password.jwt_secret = "AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET";
+      };
+
+      # Notifier is mandatory (using filesystem for now)
+      notifier = {
+        filesystem = {
+          filename = "/var/lib/authelia-main/notification.txt";
+        };
+      };
+
       # The authentication_backend section contains the configuration for the authentication backend.
-      # This is the primary source of user information. While we use Google OIDC for SSO,
-      # Authelia requires a primary backend to manage its internal user representation.
       authentication_backend = {
         file = {
           path = "/var/lib/authelia-main/users.yml";
-          search_email = true;
+        };
+        # OIDC External Provider (Google)
+        oidc = {
+          google = {
+            issuer_base_url = "https://accounts.google.com";
+            # client_id and client_secret are injected via:
+            # AUTHELIA_AUTHENTICATION_BACKEND_OIDC_GOOGLE_CLIENT_ID
+            # AUTHELIA_AUTHENTICATION_BACKEND_OIDC_GOOGLE_CLIENT_SECRET
+          };
         };
       };
 
       # Authelia relies on session cookies to authorize user access to various protected websites.
-      # This section configures the session cookie behavior and the domains which Authelia can service authorization requests for.
       session = {
         name = "authelia_session";
         expiration = "1h";
         inactivity = "5m";
-        remember_me_duration = "1M";
-        domain = "skylab.local";
+        remember_me = "1M";
+        cookies = [
+          {
+            domain = "skylab.local";
+            authelia_url = "https://auth.skylab.local";
+          }
+        ];
 
         # We use Redis for high-performance, persistent session storage.
         redis = {
@@ -59,10 +75,8 @@
         };
       };
 
-      # Authelia supports multiple storage backends. The backend is used to store user
-      # preferences, 2FA device handles and secrets, authentication logs, etc…
+      # Authelia supports multiple storage backends.
       storage = {
-        # The storage.postgres section contains the configuration for the PostgreSQL storage backend.
         postgres = {
           address = "tcp://127.0.0.1:5432";
           database = "authelia";
@@ -71,17 +85,9 @@
       };
 
       # The access_control section contains the configuration for the access control rules.
-      # Rules are evaluated from top to bottom. The first matching rule is applied.
       access_control = {
         default_policy = "deny";
         rules = [
-          # Local Network Bypass (Commented for testing)
-          # {
-          #   domain = [ "*.skylab.local" ];
-          #   networks = [ "192.168.1.0/24" ];
-          #   policy = "bypass";
-          # }
-          
           # General Protection:
           # For all other cases, require at least one-factor authentication (Google SSO).
           {
@@ -92,17 +98,21 @@
       };
 
       # The identity_providers.oidc section contains the configuration for the OpenID Connect identity provider.
-      # This allows Authelia to act as an IdP for applications like Immich.
       identity_providers.oidc = {
+        jwks = [
+          {
+            key = "AUTHELIA_IDENTITY_PROVIDERS_OIDC_JWKS_0_KEY";
+          }
+        ];
         cors = {
           allowed_origins = [ "https://immich.skylab.local" ];
         };
         clients = [
           {
-            id = "immich";
-            description = "Immich Photo Management";
-            # Secret set in environmentVariablesFile as AUTHELIA_IDENTITY_PROVIDERS_OIDC_CLIENTS_0_SECRET
-            secret = "$AUTHELIA_IDENTITY_PROVIDERS_OIDC_IMMICH_SECRET";
+            client_id = "immich";
+            client_name = "Immich Photo Management";
+            # client_secret is injected via environment variable:
+            # AUTHELIA_IDENTITY_PROVIDERS_OIDC_CLIENTS_0_CLIENT_SECRET
             public = false;
             authorization_policy = "one_factor";
             redirect_uris = [
@@ -110,7 +120,7 @@
               "https://immich.skylab.local/user-settings"
             ];
             scopes = [ "openid" "profile" "email" ];
-            userinfo_signing_algorithm = "none";
+            userinfo_signed_response_alg = "none";
           }
         ];
       };
