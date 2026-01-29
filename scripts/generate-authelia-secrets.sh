@@ -62,12 +62,13 @@ else
     echo "   Authelia expects a HASHED password in users.yml."
     
     # Generate hash using Nix
-    echo "🔑 Hashing password using 'nix run nixpkgs#authelia' (this may take a moment)..."
-    HASHED_PASSWORD=$(nix run nixpkgs#authelia -- hash-password "$ADMIN_PASSWORD" | awk '{print $3}')
+    echo "🔑 Hashing password using 'nix run nixpkgs#authelia -- crypto hash generate' (this may take a moment)..."
+    # We use grep to find the Argon2 hash in the output
+    HASHED_PASSWORD=$(nix run nixpkgs#authelia -- crypto hash generate argon2 --password "$ADMIN_PASSWORD" | grep -o '\$argon2id\$[^ ]*')
     
-    if [ -z "$HASHED_PASSWORD" ] || [[ ! "$HASHED_PASSWORD" =~ ^\$argon2id ]]; then
+    if [ -z "$HASHED_PASSWORD" ]; then
         echo "❌ Failed to generate hash automatically."
-        echo "   Please run: 'nix run nixpkgs#authelia -- hash-password $ADMIN_PASSWORD'"
+        echo "   Please run: 'nix run nixpkgs#authelia -- crypto hash generate argon2 --password $ADMIN_PASSWORD'"
         echo "   and replace the plain text password in $USERS_FILE."
         HASHED_PASSWORD="<REPLACE_WITH_HASH_OF_$ADMIN_PASSWORD>"
     fi
