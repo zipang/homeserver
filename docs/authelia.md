@@ -220,7 +220,7 @@ journalctl -u authelia-main.service -f
 ### Database Management
 Authelia's tables are managed automatically by the service. To check the database status:
 ```bash
-sudo -u postgres psql -d authelia -c "\dt"
+sudo -u postgres psql -d authelia-main -c "\dt"
 ```
 
 ## Related Files
