@@ -61,12 +61,13 @@ else
     echo "⚠️  IMPORTANT: The password for '$ADMIN_USER' is: $ADMIN_PASSWORD"
     echo "   Authelia expects a HASHED password in users.yml."
     
-    # If authelia binary is available, we try to hash it, otherwise we leave it to the user
-    if command -v authelia &> /dev/null; then
-        echo "🔑 Hashing password using authelia CLI..."
-        HASHED_PASSWORD=$(authelia hash-password "$ADMIN_PASSWORD" | cut -d' ' -f3)
-    else
-        echo "   Please run: 'authelia hash-password $ADMIN_PASSWORD'"
+    # Generate hash using Nix
+    echo "🔑 Hashing password using 'nix run nixpkgs#authelia' (this may take a moment)..."
+    HASHED_PASSWORD=$(nix run nixpkgs#authelia -- hash-password "$ADMIN_PASSWORD" | awk '{print $3}')
+    
+    if [ -z "$HASHED_PASSWORD" ] || [[ ! "$HASHED_PASSWORD" =~ ^\$argon2id ]]; then
+        echo "❌ Failed to generate hash automatically."
+        echo "   Please run: 'nix run nixpkgs#authelia -- hash-password $ADMIN_PASSWORD'"
         echo "   and replace the plain text password in $USERS_FILE."
         HASHED_PASSWORD="<REPLACE_WITH_HASH_OF_$ADMIN_PASSWORD>"
     fi
