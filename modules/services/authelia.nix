@@ -67,11 +67,12 @@
       storage = {
         postgres = {
           address = "unix:///run/postgresql";
-          database = "authelia";
+          database = "authelia-main";
           username = "authelia-main";
         };
       };
 
+      # Access Control Rules
       access_control = {
         default_policy = "deny";
         rules = [
@@ -80,6 +81,62 @@
             networks = [ "192.168.1.0/24" ];
             policy = "bypass";
           }
+          {
+            domain = [ "*.skylab.local" ];
+            subject = [ "group:admins" ];
+            policy = "one_factor";
+          }
+        ];
+      };
+    };
+  };
+
+  # Dependencies
+  services.redis.servers."".enable = true;
+
+  services.postgresql = {
+    enable = true;
+    ensureDatabases = [ "authelia-main" ];
+    ensureUsers = [{
+      name = "authelia-main";
+      ensureDBOwnership = true;
+    }];
+  };
+
+  # File permissions and directory structure
+  systemd.tmpfiles.rules = [
+    "d /var/lib/authelia-main 0700 authelia-main authelia-main -"
+    "d /var/lib/secrets/authelia 0700 authelia-main authelia-main -"
+  ];
+}
+          {
+            domain = [ "*.skylab.local" ];
+            subject = [ "group:admins" ];
+            policy = "one_factor";
+          }
+        ];
+      };
+    };
+  };
+
+  # Dependencies
+  services.redis.servers."".enable = true;
+
+  services.postgresql = {
+    enable = true;
+    ensureDatabases = [ "authelia-main" ];
+    ensureUsers = [{
+      name = "authelia-main";
+      ensureDBOwnership = true;
+    }];
+  };
+
+  # File permissions and directory structure
+  systemd.tmpfiles.rules = [
+    "d /var/lib/authelia-main 0700 authelia-main authelia-main -"
+    "d /var/lib/secrets/authelia 0700 authelia-main authelia-main -"
+  ];
+}
           {
             domain = [ "*.skylab.local" ];
             policy = "one_factor";

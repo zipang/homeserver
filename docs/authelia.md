@@ -87,7 +87,7 @@ services.authelia.instances.main = {
     storage = {
       postgres = {
         address = "unix:///run/postgresql";
-        database = "authelia";
+        database = "authelia-main";
         username = "authelia-main";
       };
     };
@@ -103,8 +103,10 @@ services.authelia.instances.main = {
           policy = "bypass";
         }
         # General Protection (One Factor)
+        # Restricted to users in the 'admins' group
         {
           domain = ["*.skylab.local"];
+          subject = ["group:admins"];
           policy = "one_factor";
         }
       ];
@@ -123,13 +125,17 @@ services.authelia.instances.main = {
 services.redis.servers."".enable = true;
 services.postgresql = {
   enable = true;
-  ensureDatabases = [ "authelia" ];
+  ensureDatabases = [ "authelia-main" ];
   ensureUsers = [{
     name = "authelia-main";
     ensureDBOwnership = true;
   }];
 };
 ```
+
+### Initial User Setup
+
+To keep user details out of Git, the `users.yml` file is initialized manually on the server using the setup script. This script will prompt for your administrator username and email, generate a strong random password, and provide instructions on how to hash it for Authelia.
 
 ## Google Cloud Console Setup
 

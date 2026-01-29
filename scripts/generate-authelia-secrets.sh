@@ -40,4 +40,50 @@ generate_secret "SESSION_SECRET" 32
 # 3. STORAGE_ENCRYPTION_KEY (Min 20 chars, using 32)
 generate_secret "STORAGE_ENCRYPTION_KEY" 32
 
-echo "Done. All secrets are ready in $SECRETS_DIR."
+echo "-------------------------------------------------------"
+echo "Initializing users.yml..."
+echo "-------------------------------------------------------"
+
+STATE_DIR="/var/lib/authelia-main"
+USERS_FILE="$STATE_DIR/users.yml"
+
+if [ -f "$USERS_FILE" ] && [ -s "$USERS_FILE" ] && [ "$(cat "$USERS_FILE")" != "users:" ]; then
+    echo "✅ $USERS_FILE already exists and is not empty. Skipping."
+else
+    echo "👤 Setting up the initial administrator user..."
+    read -p "Enter admin username (e.g. zipang): " ADMIN_USER
+    read -p "Enter admin email: " ADMIN_EMAIL
+    
+    # Generate a strong random password for the user
+    ADMIN_PASSWORD=$(openssl rand -base64 24)
+    
+    echo "✨ User database initialized."
+    echo "⚠️  IMPORTANT: The password for '$ADMIN_USER' is: $ADMIN_PASSWORD"
+    echo "   Authelia expects a HASHED password in users.yml."
+    
+    # If authelia binary is available, we try to hash it, otherwise we leave it to the user
+    if command -v authelia &> /dev/null; then
+        echo "🔑 Hashing password using authelia CLI..."
+        HASHED_PASSWORD=$(authelia hash-password "$ADMIN_PASSWORD" | cut -d' ' -f3)
+    else
+        echo "   Please run: 'authelia hash-password $ADMIN_PASSWORD'"
+        echo "   and replace the plain text password in $USERS_FILE."
+        HASHED_PASSWORD="<REPLACE_WITH_HASH_OF_$ADMIN_PASSWORD>"
+    fi
+    
+    cat <<EOF > "$USERS_FILE"
+users:
+  $ADMIN_USER:
+    displayname: "$ADMIN_USER"
+    password: "$HASHED_PASSWORD"
+    email: $ADMIN_EMAIL
+    groups:
+      - admins
+EOF
+    chown "$AUTHELIA_USER:$AUTHELIA_GROUP" "$USERS_FILE"
+    chmod 600 "$USERS_FILE"
+    
+    echo "✅ /var/lib/authelia-main/users.yml created."
+fi
+
+echo "Done. All secrets and user database are ready."
