@@ -40,7 +40,4 @@ generate_secret "SESSION_SECRET" 32
 # 3. STORAGE_ENCRYPTION_KEY (Min 20 chars, using 32)
 generate_secret "STORAGE_ENCRYPTION_KEY" 32
 
-# 4. STORAGE_PASSWORD (PostgreSQL user password)
-generate_secret "STORAGE_PASSWORD" 32
-
 echo "Done. All secrets are ready in $SECRETS_DIR."

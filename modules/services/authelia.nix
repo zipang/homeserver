@@ -22,12 +22,6 @@
       sessionSecretFile = "/var/lib/secrets/authelia/SESSION_SECRET";
     };
 
-    # Injecting the PostgreSQL password via environment variable file reference.
-    # This is necessary because it's not currently supported by the 'secrets' Nix attribute.
-    environmentVariables = {
-      AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE = "/var/lib/secrets/authelia/STORAGE_PASSWORD";
-    };
-
     settings = {
       theme = "dark";
 
@@ -72,9 +66,9 @@
 
       storage = {
         postgres = {
-          address = "tcp://127.0.0.1:5432";
+          address = "unix:///run/postgresql";
           database = "authelia";
-          username = "authelia";
+          username = "authelia-main";
         };
       };
 
@@ -102,7 +96,7 @@
     enable = true;
     ensureDatabases = [ "authelia" ];
     ensureUsers = [{
-      name = "authelia";
+      name = "authelia-main";
       ensureDBOwnership = true;
     }];
   };
@@ -110,7 +104,7 @@
   # File permissions and directory structure
   systemd.tmpfiles.rules = [
     "d /var/lib/authelia-main 0700 authelia-main authelia-main -"
-    "f /var/lib/authelia-main/users.yml 0600 authelia-main authelia-main - -"
+    "f /var/lib/authelia-main/users.yml 0600 authelia-main authelia-main - users: {}"
     "d /var/lib/secrets/authelia 0700 authelia-main authelia-main -"
   ];
 }

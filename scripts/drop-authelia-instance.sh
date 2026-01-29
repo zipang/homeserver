@@ -21,7 +21,7 @@ systemctl stop authelia-main.service 2>/dev/null
 
 echo "🗑️  Dropping PostgreSQL database..."
 sudo -u postgres psql -c "DROP DATABASE IF EXISTS authelia;" 2>/dev/null
-sudo -u postgres psql -c "DROP USER IF EXISTS authelia;" 2>/dev/null
+sudo -u postgres psql -c "DROP USER IF EXISTS \"authelia-main\";" 2>/dev/null
 
 echo "🧹 Cleaning up state directory..."
 rm -rf /var/lib/authelia-main/*

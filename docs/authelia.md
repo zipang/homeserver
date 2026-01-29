@@ -43,11 +43,6 @@ services.authelia.instances.main = {
     storageEncryptionKeyFile = "/var/lib/secrets/authelia/STORAGE_ENCRYPTION_KEY";
   };
 
-  # Injecting the PostgreSQL password via environment variable file reference.
-  environmentVariables = {
-    AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE = "/var/lib/secrets/authelia/STORAGE_PASSWORD";
-  };
-
   settings = {
     theme = "dark";
 
@@ -61,6 +56,8 @@ services.authelia.instances.main = {
     };
 
     # Authentication Backend (Local Users File)
+    # The users.yml file MUST be valid YAML. If empty, Authelia will fail.
+    # Initialize with "users: {}" if no users are defined yet.
     authentication_backend = {
       file = {
         path = "/var/lib/authelia-main/users.yml";
@@ -86,12 +83,12 @@ services.authelia.instances.main = {
       };
     };
 
-    # Storage Backend (PostgreSQL)
+    # Storage Backend (PostgreSQL via Unix Socket & Peer Auth)
     storage = {
       postgres = {
-        address = "tcp://127.0.0.1:5432";
+        address = "unix:///run/postgresql";
         database = "authelia";
-        username = "authelia";
+        username = "authelia-main";
       };
     };
 
@@ -128,7 +125,7 @@ services.postgresql = {
   enable = true;
   ensureDatabases = [ "authelia" ];
   ensureUsers = [{
-    name = "authelia";
+    name = "authelia-main";
     ensureDBOwnership = true;
   }];
 };
@@ -176,7 +173,6 @@ sudo ./scripts/generate-authelia-secrets.sh
 - `JWT_SECRET`: Used to sign/verify JWTs (64 chars hex).
 - `SESSION_SECRET`: Used for Redis session encryption.
 - `STORAGE_ENCRYPTION_KEY`: Used to encrypt database content.
-- `STORAGE_PASSWORD`: PostgreSQL user password.
 
 ### 2. Dropping the Instance (Dangerous)
 If you need to start from a completely fresh state (e.g., after a major configuration change or for testing), use the `drop-authelia-instance.sh` script.
