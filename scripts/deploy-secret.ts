@@ -106,7 +106,7 @@ async function run() {
       }
 
       if (saveToFile) {
-        const secretFileName = `${key.toLowerCase()}.secret`;
+        const secretFileName = key;
         const secretFilePath = join(outputDir, secretFileName);
         
         console.log(`\x1b[32mSaving ${key} to side-file: ${secretFilePath}\x1b[0m`);

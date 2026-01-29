@@ -16,12 +16,9 @@ In the SKYLAB ecosystem, Authelia serves as the **Identity Provider (IdP)**, bri
 
 ## Architecture & Logic
 
-### 1. Hybrid Authentication Flow
-*   **Internal Access**: When accessing `*.skylab.local` from the home network (`192.168.1.0/24`), Authelia is configured to **bypass** authentication. This ensures a seamless experience while at home.
-*   **External Access**: When accessing via the public domain or non-local networks, Authelia intercepts the request and requires a login (Google SSO).
-
-### 2. OIDC Provider
-Authelia acts as an OpenID Connect (OIDC) provider for modern applications like **Immich**, allowing them to delegate user management and login entirely to Authelia.
+### 1. Unified Authentication
+*   **Access Control**: Authelia intercepts requests and requires a login.
+*   **Local Network Bypass**: When accessing `*.skylab.local` from the home network (`192.168.1.0/24`), Authelia is configured to **bypass** authentication. This ensures a seamless experience while at home.
 
 ## Full Configuration Template
 
@@ -32,59 +29,69 @@ services.authelia.instances.main = {
   enable = true;
   
   # Recommended way to handle secrets in NixOS 25.11
+  # We follow the "Standalone" naming convention for secrets.
   secrets = {
-    jwtSecretFile = "/var/lib/secrets/sso/authelia_identity_validation_reset_password_jwt_secret.secret";
-    storageEncryptionKeyFile = "/var/lib/secrets/sso/authelia_storage_encryption_key.secret";
-    # ... other secret files
+    # The secret used with the HMAC algorithm to sign the JWT. 
+    # It is strongly recommended this is a Random Alphanumeric String with 64 or more characters.
+    jwtSecretFile = "/var/lib/secrets/authelia/JWT_SECRET";
+
+    # The secret to encrypt the session data. This is only used with Redis.
+    sessionSecretFile = "/var/lib/secrets/authelia/SESSION_SECRET";
+
+    # The encryption key that is used to encrypt sensitive information in the database. 
+    # Must be a string with a minimum length of 20.
+    storageEncryptionKeyFile = "/var/lib/secrets/authelia/STORAGE_ENCRYPTION_KEY";
   };
 
   settings = {
-    # ... 
-  };
-};
     theme = "dark";
 
-    # The server section contains the configuration for the HTTP server.
     server = {
-      host = "127.0.0.1";
-      port = 9091;
+      address = "tcp://127.0.0.1:9091";
     };
 
-    # The authentication_backend section contains the configuration for the authentication backend.
+    log = {
+      level = "info";
+      format = "text";
+    };
+
+    # Authentication Backend (Local Users File)
     authentication_backend = {
       file = {
         path = "/var/lib/authelia-main/users.yml";
-        search_email = true;
       };
     };
 
-    # The session section contains the configuration for the session management.
+    # Session Management (Redis)
     session = {
       name = "authelia_session";
       expiration = "1h";
       inactivity = "5m";
-      remember_me_duration = "1M";
-      domain = "skylab.local"; 
+      remember_me = "1M";
+      cookies = [
+        {
+          domain = "skylab.local"; 
+          authelia_url = "https://auth.skylab.local";
+        }
+      ];
       
-      # The session.redis section contains the configuration for the Redis session storage.
       redis = {
         host = "127.0.0.1";
         port = 6379;
       };
     };
 
-    # Authelia supports multiple storage backends. The backend is used to store user 
-    # preferences, 2FA device handles and secrets, authentication logs, etc…
+    # Storage Backend (PostgreSQL)
     storage = {
-      # The storage.postgres section contains the configuration for the PostgreSQL storage backend.
       postgres = {
         address = "tcp://127.0.0.1:5432";
         database = "authelia";
         username = "authelia";
+        password_file = "/var/lib/secrets/authelia/STORAGE_PASSWORD";
       };
     };
 
-    # The access_control section contains the configuration for the access control rules.
+    # Access Control Rules
     access_control = {
       default_policy = "deny";
       rules = [
@@ -94,7 +101,7 @@ services.authelia.instances.main = {
           networks = ["192.168.1.0/24"];
           policy = "bypass";
         }
-        # General Protection (Google SSO)
+        # General Protection (One Factor)
         {
           domain = ["*.skylab.local"];
           policy = "one_factor";
@@ -102,17 +109,24 @@ services.authelia.instances.main = {
       ];
     };
 
-    # The identity_providers.oidc section contains the configuration for the OpenID Connect identity provider.
-    identity_providers.oidc = {
-      clients = [
-        {
-          id = "immich";
-          secret = "$AUTHELIA_IDENTITY_PROVIDERS_OIDC_IMMICH_SECRET";
-          redirect_uris = ["https://immich.skylab.local/auth/login"];
-        }
-      ];
+    # Notifier (Filesystem for local testing/setup)
+    notifier = {
+      filesystem = {
+        filename = "/var/lib/authelia-main/notification.txt";
+      };
     };
   };
+};
+
+# Dependencies
+services.redis.servers."".enable = true;
+services.postgresql = {
+  enable = true;
+  ensureDatabases = [ "authelia" ];
+  ensureUsers = [{
+    name = "authelia";
+    ensureDBOwnership = true;
+  }];
 };
 ```
 
@@ -140,31 +154,33 @@ To enable Google SSO, you must create an OAuth 2.0 Client in the [Google Cloud C
   - `https://auth.skylab.local/api/oidc/authorization`
 
 ### 4. Get your Keys
-- Copy the **Client ID** and **Client Secret**. These will be used when running the `generate-secrets.ts` script.
+- Copy the **Client ID** and **Client Secret**. These will be used when configuring the OIDC upstream provider.
 
-## Secret Management (Secret Deployer)
+## Secret Management & Operations
 
-Authelia requires several high-entropy secrets. We use a **Bun + TypeScript** deployer to handle this without putting secrets in Git. 
+Authelia requires several high-entropy secrets. We use specialized scripts to manage the lifecycle of the Authelia instance.
 
-> **Security Note**: As SOPS encryption was causing issues, secrets are currently stored in a plain file on the server with restricted permissions (600). The script must be run with `sudo`.
+### 1. Generating Secrets (Safe)
+The `generate-authelia-secrets.sh` script creates the required secrets only if they do not exist. It ensures correct permissions and ownership.
 
-### 1. The Template
-The template file `secrets/authelia.env` defines how each secret is generated:
-- `KEY=command`: Executes the command to generate the value.
-- `KEY=prompt("message")`: Interactively asks for the value.
-
-### 2. Running the Deployer
-Run the script on the SKYLAB server:
+Run this once before the first deployment, or whenever you need to ensure missing secrets are present:
 ```bash
-sudo bun scripts/deploy-secret.ts \
-  --template authelia.env \
-  --outputDir /var/lib/secrets/sso
+sudo ./scripts/generate-authelia-secrets.sh
 ```
-The script will:
-- Parse the template.
-- Execute generation commands (like `openssl rand`).
-- Prompt for manual secrets (Google OAuth keys).
-- Save the unencrypted result to `/var/lib/secrets/sso/authelia.env` with 600 permissions.
+
+**Secrets Generated:**
+- `JWT_SECRET`: Used to sign/verify JWTs (64 chars hex).
+- `SESSION_SECRET`: Used for Redis session encryption.
+- `STORAGE_ENCRYPTION_KEY`: Used to encrypt database content.
+- `STORAGE_PASSWORD`: PostgreSQL user password.
+
+### 2. Dropping the Instance (Dangerous)
+If you need to start from a completely fresh state (e.g., after a major configuration change or for testing), use the `drop-authelia-instance.sh` script.
+
+**Warning**: This will stop the service, drop the PostgreSQL database, and delete all secrets and state files.
+```bash
+sudo ./scripts/drop-authelia-instance.sh
+```
 
 ## Nginx Integration (auth_request)
 
@@ -204,5 +220,5 @@ sudo -u postgres psql -d authelia -c "\dt"
 ## Related Files
 *   `modules/services/authelia.nix`: Core service configuration.
 *   `modules/services/nginx.nix`: Proxy and `auth_request` middleware.
-*   `scripts/deploy-secret.ts`: Secret deployment script.
-*   `secrets/authelia.env`: Generation template.
+*   `scripts/generate-authelia-secrets.sh`: Secret generation script.
+*   `scripts/drop-authelia-instance.sh`: Instance cleanup script.
