@@ -22,6 +22,12 @@
       sessionSecretFile = "/var/lib/secrets/authelia/SESSION_SECRET";
     };
 
+    # Injecting the PostgreSQL password via environment variable file reference.
+    # This is necessary because it's not currently supported by the 'secrets' Nix attribute.
+    environmentVariables = {
+      AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE = "/var/lib/secrets/authelia/STORAGE_PASSWORD";
+    };
+
     settings = {
       theme = "dark";
 
@@ -69,8 +75,6 @@
           address = "tcp://127.0.0.1:5432";
           database = "authelia";
           username = "authelia";
-          # The password used for SQL authentication.
-          password_file = "/var/lib/secrets/authelia/STORAGE_PASSWORD";
         };
       };
 

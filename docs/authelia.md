@@ -43,6 +43,11 @@ services.authelia.instances.main = {
     storageEncryptionKeyFile = "/var/lib/secrets/authelia/STORAGE_ENCRYPTION_KEY";
   };
 
+  # Injecting the PostgreSQL password via environment variable file reference.
+  environmentVariables = {
+    AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE = "/var/lib/secrets/authelia/STORAGE_PASSWORD";
+  };
+
   settings = {
     theme = "dark";
 
@@ -87,7 +92,6 @@ services.authelia.instances.main = {
         address = "tcp://127.0.0.1:5432";
         database = "authelia";
         username = "authelia";
-        password_file = "/var/lib/secrets/authelia/STORAGE_PASSWORD";
       };
     };
 
