@@ -8,12 +8,18 @@ SECRETS_DIR="/var/lib/secrets/nextcloud"
 NEXTCLOUD_USER="nextcloud"
 NEXTCLOUD_GROUP="nextcloud"
 
-# Ensure directory exists with correct permissions
+# 1. Ensure directory exists with correct permissions
 if [ ! -d "$SECRETS_DIR" ]; then
     echo "Creating directory $SECRETS_DIR..."
     mkdir -p "$SECRETS_DIR"
     chown "$NEXTCLOUD_USER:$NEXTCLOUD_GROUP" "$SECRETS_DIR"
     chmod 700 "$SECRETS_DIR"
+fi
+
+# 1b. Ensure main data directory ownership (Fixes setup service failures)
+if [ -d "/var/lib/nextcloud" ]; then
+    echo "📂 Ensuring /var/lib/nextcloud ownership..."
+    chown "$NEXTCLOUD_USER:$NEXTCLOUD_GROUP" /var/lib/nextcloud
 fi
 
 generate_secret() {
