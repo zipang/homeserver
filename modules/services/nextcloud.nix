@@ -6,8 +6,8 @@
     hostName = "nextcloud.skylab.local";
     
     # Package to use for the Nextcloud instance.
-    # We target Nextcloud 30 for stability.
-    package = pkgs.nextcloud30;
+    # We target Nextcloud 32 (latest stable).
+    package = pkgs.nextcloud32;
 
     # Nextcloud basic configuration
     config = {

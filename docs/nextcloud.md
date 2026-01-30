@@ -20,7 +20,7 @@ You can use this template in `modules/services/nextcloud.nix` to configure the s
     hostName = "nextcloud.skylab.local";
     
     # Package to use for the Nextcloud instance.
-    package = pkgs.nextcloud30;
+    package = pkgs.nextcloud32;
 
     # Nextcloud basic configuration
     config = {
