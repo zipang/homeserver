@@ -1,41 +1,46 @@
-# Work In Progress: Authelia SSO Implementation
+# Deployment Plan: Nextcloud on SKYLAB
 
-This document tracks the setup of Authelia as a central Identity Provider (IdP) for SKYLAB services, using Google OAuth for external access and providing a seamless bypass for local network traffic.
+Nextcloud has been successfully implemented in the configuration.
 
-## Current Status
-- [x] Phase 1: SSL/TLS Infrastructure (DONE)
-- [x] Phase 2: Reusable Secret Generator (Implemented in Bun/TS)
-- [x] Phase 3: Authelia Service Implementation (Implemented with PostgreSQL & Redis)
-- [x] Phase 4: Nginx Integration & Auth Middleware (Implemented for Syncthing & Immich)
-- [ ] Phase 5: Service Migration (Immich OIDC Configuration)
-- [ ] Phase 6: External Access (Cloudflare Tunnel Updates)
+## Completed Tasks
+- [x] Phase 1: Storage & Database Preparation
+- [x] Phase 2: Secret Generator
+- [x] Phase 3: Nextcloud Service Module
+- [x] Phase 4: Nginx & Authelia Integration
+- [x] Phase 5: System Integration
+- [x] Phase 6: Refactoring (Global PostgreSQL & Redis Modules)
+- [x] Phase 7: Immich Service Migration
+- [x] Phase 8: Documentation
 
----
+## Completed Tasks
+- [x] Created `modules/services/postgresql.nix` and `modules/services/redis.nix`.
+- [x] Refactored `authelia.nix`, `nextcloud.nix`, and `immich.nix` to use these shared modules.
+- [x] Updated permissions for `authelia-main`, `nextcloud`, and `immich` users to access Unix sockets.
+- [x] Created registries in `docs/postgresql.md` and `docs/redis.md`.
+- [x] Enriched `docs/nextcloud.md` with detailed descriptions and allowed values.
 
-## Phase 2: Secret Management
+## Next Steps for User (on SKYLAB)
 
-We implemented a generic secret generator that can be reused for any service.
+1. **Pull and Apply Configuration**:
+   ```bash
+   update-nix
+   ```
 
-*   **Script**: `scripts/generate-secrets.ts` (Bun/TypeScript).
-*   **Template**: `secrets/authelia`.
-*   **Usage**: `bun scripts/generate-secrets.ts --template <template> --sshPublicKey <path> --outputDir <path>`.
-*   **Output**: `<outputDir>/<template>.env` (Encrypted with `sops`).
+2. **Generate Secrets**:
+   ```bash
+   sudo ./scripts/generate-nextcloud-secrets.sh
+   ```
 
-## Phase 3: Authelia Service Implementation
+3. **Set Database Password**:
+   ```bash
+   sudo -u postgres psql -c "ALTER USER nextcloud WITH PASSWORD '$(sudo cat /var/lib/secrets/nextcloud/db_password)';"
+   ```
 
-*   **Backend**: PostgreSQL (Declarative setup in `authelia.nix`).
-*   **Sessions**: Redis.
-*   **Access Control**:
-    *   `*.skylab.local` + `192.168.1.0/24` -> `bypass`.
-    *   Otherwise -> `one_factor` (Google SSO).
+4. **Verify Service**:
+   Check logs for the setup process:
+   ```bash
+   journalctl -u nextcloud-setup.service -f
+   ```
 
-## Phase 4: Nginx Integration
-
-*   Vhost: `auth.skylab.local`.
-*   Middleware: `auth_request` gating for non-OIDC services.
-
----
-
-## Documentation
-- [SSL Setup Guide](./docs/ssl-setup.md)
-- [Authelia SSO Guide](./docs/authelia.md)
+5. **Access Nextcloud**:
+   Navigate to `https://nextcloud.skylab.local` and log in with the `admin` account (password in `/var/lib/secrets/nextcloud/admin_password`).

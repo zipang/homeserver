@@ -23,10 +23,13 @@
     ../../modules/services/docker.nix
     # ../../modules/services/samba.nix
     ../../modules/services/nfs.nix
-    ../../modules/services/syncthing.nix
-    ../../modules/services/immich.nix
+    ../../modules/services/postgresql.nix
+    ../../modules/services/redis.nix
     ../../modules/services/authelia.nix
+    ../../modules/services/immich.nix
+    # ../../modules/services/nextcloud.nix
     # ../../modules/services/copyparty.nix
+
   ];
 
   networking.hostName = "SKYLAB";

@@ -78,6 +78,9 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Tmux](./docs/tmux.md)
 * [Immich](./docs/immich.md)
 * [Authelia SSO](./docs/authelia.md)
+* [Nextcloud](./docs/nextcloud.md)
+* [PostgreSQL (Global)](./docs/postgresql.md)
+* [Redis (Global)](./docs/redis.md)
 * [ZFS Storage](./docs/zfs-storage.md)
 * [SSL/TLS Setup](./docs/ssl-setup.md)
 

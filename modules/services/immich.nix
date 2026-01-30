@@ -23,13 +23,13 @@
     # Whether to open the firewall for the Immich port.
     # openFirewall = false;
     
-    # Database configuration (managed automatically by the module)
+    # Database configuration (using global shared PostgreSQL)
     database = {
       # Whether to enable the local PostgreSQL database.
-      enable = true;
+      enable = false;
 
       # The host of the PostgreSQL database.
-      # host = "localhost";
+      host = "/run/postgresql";
 
       # The port of the PostgreSQL database.
       # port = 5432;
@@ -41,16 +41,16 @@
       # user = "immich";
     };
 
-    # Redis configuration (managed automatically by the module)
+    # Redis configuration (using global shared Redis)
     redis = {
       # Whether to enable the local Redis instance.
-      enable = true;
+      enable = false;
 
       # The host of the Redis instance.
-      # host = "localhost";
+      host = "/run/redis/redis.sock";
 
       # The port of the Redis instance.
-      # port = 6379;
+      port = 0; # Required for unix socket
     };
 
     # Machine learning service configuration
@@ -105,8 +105,18 @@
     };
   };
 
-  # Ensure the immich user can read the bind-mounted photos
-  users.users.immich.extraGroups = [ "zipang" ];
+  # Ensure the immich user can read the bind-mounted photos and access sockets
+  users.users.immich.extraGroups = [ "zipang" "postgres" "redis" ];
+
+  services.postgresql = {
+    ensureDatabases = [ "immich" ];
+    ensureUsers = [
+      {
+        name = "immich";
+        ensureDBOwnership = true;
+      }
+    ];
+  };
   
   # Add zipang to the immich group to manage the generated thumbnails/metadata if needed
   users.users.zipang.extraGroups = [ "immich" ];

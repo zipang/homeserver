@@ -46,23 +46,24 @@
         };
       };
 
-      session = {
-        name = "authelia_session";
-        expiration = "1h";
-        inactivity = "5m";
-        remember_me = "1M";
-        cookies = [
-          {
-            domain = "skylab.local";
-            authelia_url = "https://auth.skylab.local";
-          }
-        ];
+        session = {
+          name = "authelia_session";
+          expiration = "1h";
+          inactivity = "5m";
+          remember_me = "1M";
+          cookies = [
+            {
+              domain = "skylab.local";
+              authelia_url = "https://auth.skylab.local";
+            }
+          ];
 
-        redis = {
-          host = "127.0.0.1";
-          port = 6379;
+          redis = {
+            host = "/run/redis/redis.sock";
+            port = 0; # Required when using a unix socket
+          };
         };
-      };
+
 
       storage = {
         postgres = {
@@ -82,6 +83,11 @@
             policy = "bypass";
           }
           {
+            domain = [ "nextcloud.skylab.local" ];
+            subject = [ "group:admins" ];
+            policy = "one_factor";
+          }
+          {
             domain = [ "*.skylab.local" ];
             subject = [ "group:admins" ];
             policy = "one_factor";
@@ -91,16 +97,17 @@
     };
   };
 
-  # Dependencies
-  services.redis.servers."".enable = true;
+  # Allow services to access the shared sockets
+  users.users.authelia-main.extraGroups = [ "redis" "postgres" ];
 
   services.postgresql = {
-    enable = true;
     ensureDatabases = [ "authelia-main" ];
-    ensureUsers = [{
-      name = "authelia-main";
-      ensureDBOwnership = true;
-    }];
+    ensureUsers = [
+      {
+        name = "authelia-main";
+        ensureDBOwnership = true;
+      }
+    ];
   };
 
   # File permissions and directory structure

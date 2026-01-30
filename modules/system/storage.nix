@@ -96,6 +96,12 @@ in
     options = [ "nofail" "X-systemd.automount" "x-systemd.mount-timeout=5s" ];
   };
 
+  fileSystems."/var/lib/nextcloud" = {
+    device = "WOODY/nextcloud";
+    fsType = "zfs";
+    options = [ "nofail" "X-systemd.automount" "x-systemd.mount-timeout=5s" ];
+  };
+
   # Ensure only the parent directory exists
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
@@ -104,6 +110,7 @@ in
     "d /share/Storage/BUZZ 0755 zipang users -"
     "d /share/Storage/WOODY 0755 zipang users -"
     "d /share/Storage/WOODY/photos 0755 zipang users -"
+    "d /var/lib/nextcloud 0750 nextcloud nextcloud -"
     "d /media 0755 root root -"
   ];
 }
