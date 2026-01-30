@@ -16,11 +16,11 @@ if [ ! -d "$SECRETS_DIR" ]; then
     chmod 700 "$SECRETS_DIR"
 fi
 
-# 1b. Ensure main data directory ownership (Fixes setup service failures)
-if [ -d "/var/lib/nextcloud" ]; then
-    echo "📂 Ensuring /var/lib/nextcloud ownership..."
-    chown "$NEXTCLOUD_USER:$NEXTCLOUD_GROUP" /var/lib/nextcloud
-fi
+# 1b. Ensure main data directory structure and ownership (Fixes setup service failures)
+echo "📂 Ensuring /var/lib/nextcloud structure and ownership..."
+mkdir -p /var/lib/nextcloud/config /var/lib/nextcloud/data /var/lib/nextcloud/store-apps
+chown -R "$NEXTCLOUD_USER:$NEXTCLOUD_GROUP" /var/lib/nextcloud
+chmod 750 /var/lib/nextcloud
 
 generate_secret() {
     local NAME=$1
