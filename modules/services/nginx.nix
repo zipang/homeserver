@@ -66,45 +66,6 @@
         '';
       };
     };
-
-    virtualHosts."nextcloud.skylab.local" = {
-      forceSSL = true;
-      sslCertificate = "/var/lib/secrets/certs/skylab.crt";
-      sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
-
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:80";
-        proxyWebsockets = true;
-        extraConfig = ''
-          client_max_body_size 16G;
-          client_body_buffer_size 512k;
-          proxy_read_timeout 600s;
-          proxy_send_timeout 600s;
-          send_timeout 600s;
-
-          # Authelia SSO Protection
-          auth_request /authelia;
-          auth_request_set $target_url $scheme://$http_host$request_uri;
-          error_page 401 = https://auth.skylab.local/?rd=$target_url;
-        '';
-      };
-
-      locations."/authelia" = {
-        proxyPass = "http://127.0.0.1:9091/api/verify";
-        extraConfig = ''
-          internal;
-          proxy_set_header Host auth.skylab.local;
-          proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-          proxy_set_header X-Forwarded-Method $request_method;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          proxy_set_header X-Forwarded-Host $http_host;
-          proxy_set_header X-Forwarded-Uri $request_uri;
-          proxy_set_header X-Forwarded-For $remote_addr;
-          proxy_pass_request_body off;
-          proxy_set_header Content-Length "";
-        '';
-      };
-    };
   };
 
   # Open ports for Nginx (internal traffic manager)
