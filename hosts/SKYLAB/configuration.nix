@@ -28,7 +28,7 @@
     ../../modules/services/redis.nix
     ../../modules/services/authelia.nix
     ../../modules/services/immich.nix
-    # ../../modules/services/nextcloud.nix
+    ../../modules/services/nextcloud.nix
     # ../../modules/services/copyparty.nix
 
   ];
