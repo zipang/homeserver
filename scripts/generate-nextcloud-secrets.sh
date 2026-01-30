@@ -44,11 +44,17 @@ echo "-------------------------------------------------------"
 # 3. Automatically set PostgreSQL password
 DB_PASS=$(cat "$SECRETS_DIR/db_password")
 echo "🐘 Setting PostgreSQL password for 'nextcloud' user..."
+
+# Ensure the role exists before trying to set the password
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='nextcloud'" | grep -q 1; then
+    echo "🏗️  Role 'nextcloud' not found. Creating it..."
+    sudo -u postgres psql -c "CREATE ROLE nextcloud WITH LOGIN;"
+fi
+
 if sudo -u postgres psql -c "ALTER USER nextcloud WITH PASSWORD '$DB_PASS';" > /dev/null 2>&1; then
     echo "✅ PostgreSQL password updated successfully."
 else
     echo "❌ Failed to set PostgreSQL password."
-    echo "   Ensure PostgreSQL is running and the 'nextcloud' user exists."
-    echo "   You might need to run 'update-nix' first to create the user."
+    echo "   Ensure PostgreSQL is running."
 fi
 echo "-------------------------------------------------------"
