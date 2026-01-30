@@ -13,18 +13,17 @@ if [[ $confirm != [yY] && $confirm != [yY][eE][sS] ]]; then
 fi
 
 echo "🛑 Stopping services..."
-systemctl stop nextcloud-setup.service phpfpm-nextcloud.service nginx.service
+systemctl stop nextcloud-setup.service nextcloud-cron.service phpfpm-nextcloud.service nginx.service
 
 echo "🗑️  Dropping PostgreSQL database and user..."
-sudo -u postgres psql -c "DROP DATABASE nextcloud;"
-sudo -u postgres psql -c "DROP ROLE nextcloud;"
+# Use -f to ignore errors if they don't exist
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS nextcloud;"
+sudo -u postgres psql -c "DROP ROLE IF EXISTS nextcloud;"
 
 echo "📂 Erasing Nextcloud data and secrets..."
+# Deep clean including hidden files
+rm -rf /var/lib/nextcloud/.* 2>/dev/null || true
 rm -rf /var/lib/nextcloud/*
 rm -rf /var/lib/secrets/nextcloud/*
-
-# Reset ownership of the root directory to ensure nextcloud can recreate subdirs
-chown nextcloud:nextcloud /var/lib/nextcloud
-chmod 750 /var/lib/nextcloud
 
 echo "✅ Nextcloud instance dropped."

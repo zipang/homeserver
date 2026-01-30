@@ -51,20 +51,24 @@ echo "-------------------------------------------------------"
 echo "Nextcloud secrets are ready in $SECRETS_DIR"
 echo "-------------------------------------------------------"
 
-# 3. Automatically set PostgreSQL password
+# 3. Automatically prepare PostgreSQL
 DB_PASS=$(cat "$SECRETS_DIR/db_password")
-echo "🐘 Setting PostgreSQL password for 'nextcloud' user..."
+echo "🐘 Preparing PostgreSQL for 'nextcloud'..."
 
-# Ensure the role exists before trying to set the password
+# Create role if missing
 if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='nextcloud'" | grep -q 1; then
-    echo "🏗️  Role 'nextcloud' not found. Creating it..."
+    echo "🏗️  Creating role 'nextcloud'..."
     sudo -u postgres psql -c "CREATE ROLE nextcloud WITH LOGIN;"
 fi
 
-if sudo -u postgres psql -c "ALTER USER nextcloud WITH PASSWORD '$DB_PASS';" > /dev/null 2>&1; then
-    echo "✅ PostgreSQL password updated successfully."
-else
-    echo "❌ Failed to set PostgreSQL password."
-    echo "   Ensure PostgreSQL is running."
+# Create database if missing
+if ! sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw nextcloud; then
+    echo "🏗️  Creating database 'nextcloud'..."
+    sudo -u postgres psql -c "CREATE DATABASE nextcloud OWNER nextcloud;"
 fi
+
+echo "🔐 Setting password..."
+sudo -u postgres psql -c "ALTER USER nextcloud WITH PASSWORD '$DB_PASS';"
+
+echo "-------------------------------------------------------"
 echo "-------------------------------------------------------"
