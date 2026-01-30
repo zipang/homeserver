@@ -90,17 +90,17 @@
     
     # Run a regular auto-update of all apps installed from the app store.
     autoUpdateApps.enable = true;
-  };
 
-  # Tune PHP-FPM for Nextcloud performance.
-  # These values are recommended for a server with at least 4GiB of RAM.
-  services.phpfpm.pools.nextcloud.settings = {
-    "pm" = "dynamic";
-    "pm.max_children" = 50;
-    "pm.start_servers" = 5;
-    "pm.min_spare_servers" = 5;
-    "pm.max_spare_servers" = 35;
-    "pm.max_requests" = 500;
+    # Tune PHP-FPM for Nextcloud performance.
+    # These values are recommended for a server with at least 4GiB of RAM.
+    poolSettings = {
+      "pm" = "dynamic";
+      "pm.max_children" = "50";
+      "pm.start_servers" = "5";
+      "pm.min_spare_servers" = "5";
+      "pm.max_spare_servers" = "35";
+      "pm.max_requests" = "500";
+    };
   };
 
   # Database and Group Configuration

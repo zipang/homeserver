@@ -128,16 +128,16 @@ You can use this template in `modules/services/nextcloud.nix` to configure the s
     
     # Run a regular auto-update of all apps installed from the app store.
     autoUpdateApps.enable = true;
-  };
 
-  # Tune PHP-FPM for Nextcloud performance.
-  services.phpfpm.pools.nextcloud.settings = {
-    "pm" = "dynamic";
-    "pm.max_children" = 50;
-    "pm.start_servers" = 5;
-    "pm.min_spare_servers" = 5;
-    "pm.max_spare_servers" = 35;
-    "pm.max_requests" = 500;
+    # Tune PHP-FPM for Nextcloud performance.
+    poolSettings = {
+      "pm" = "dynamic";
+      "pm.max_children" = "50";
+      "pm.start_servers" = "5";
+      "pm.min_spare_servers" = "5";
+      "pm.max_spare_servers" = "35";
+      "pm.max_requests" = "500";
+    };
   };
 }
 ```
