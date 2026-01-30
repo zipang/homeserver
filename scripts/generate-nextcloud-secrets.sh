@@ -40,7 +40,15 @@ generate_secret "db_password" 24
 echo "-------------------------------------------------------"
 echo "Nextcloud secrets are ready in $SECRETS_DIR"
 echo "-------------------------------------------------------"
-echo "⚠️  IMPORTANT: You must manually set the PostgreSQL password for the 'nextcloud' user"
-echo "   if it's the first time you're setting up the database."
-echo "   Run: sudo -u postgres psql -c \"ALTER USER nextcloud WITH PASSWORD '$(cat $SECRETS_DIR/db_password)';\""
+
+# 3. Automatically set PostgreSQL password
+DB_PASS=$(cat "$SECRETS_DIR/db_password")
+echo "🐘 Setting PostgreSQL password for 'nextcloud' user..."
+if sudo -u postgres psql -c "ALTER USER nextcloud WITH PASSWORD '$DB_PASS';" > /dev/null 2>&1; then
+    echo "✅ PostgreSQL password updated successfully."
+else
+    echo "❌ Failed to set PostgreSQL password."
+    echo "   Ensure PostgreSQL is running and the 'nextcloud' user exists."
+    echo "   You might need to run 'update-nix' first to create the user."
+fi
 echo "-------------------------------------------------------"

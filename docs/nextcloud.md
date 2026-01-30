@@ -167,9 +167,9 @@ This script creates:
 The PostgreSQL database and user are automatically created by NixOS. By using `dbhost = "/run/postgresql"`, we enable **Peer Authentication**.
 
 - **Security**: PostgreSQL verifies the OS user (`nextcloud`) matches the database user (`nextcloud`). No password is exchanged over the wire.
-- **Initial Setup**: To set the database password (to satisfy the module's requirement for a password file):
+- **Initial Setup**: The database password is automatically set when running the secrets generation script:
 ```bash
-sudo -u postgres psql -c "ALTER USER nextcloud WITH PASSWORD '$(sudo cat /var/lib/secrets/nextcloud/db_password)';"
+sudo ./scripts/generate-nextcloud-secrets.sh
 ```
 
 ### Redis Management (Unix Sockets)

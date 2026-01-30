@@ -26,21 +26,16 @@ Nextcloud has been successfully implemented in the configuration.
    update-nix
    ```
 
-2. **Generate Secrets**:
+2. **Generate Secrets and Initialize Database**:
    ```bash
    sudo ./scripts/generate-nextcloud-secrets.sh
    ```
 
-3. **Set Database Password**:
-   ```bash
-   sudo -u postgres psql -c "ALTER USER nextcloud WITH PASSWORD '$(sudo cat /var/lib/secrets/nextcloud/db_password)';"
-   ```
-
-4. **Verify Service**:
+3. **Verify Service**:
    Check logs for the setup process:
    ```bash
    journalctl -u nextcloud-setup.service -f
    ```
 
-5. **Access Nextcloud**:
+4. **Access Nextcloud**:
    Navigate to `https://nextcloud.skylab.local` and log in with the `admin` account (password in `/var/lib/secrets/nextcloud/admin_password`).
