@@ -23,6 +23,7 @@
     ../../modules/services/docker.nix
     # ../../modules/services/samba.nix
     ../../modules/services/nfs.nix
+    ../../modules/services/syncthing.nix
     ../../modules/services/postgresql.nix
     ../../modules/services/redis.nix
     ../../modules/services/authelia.nix
