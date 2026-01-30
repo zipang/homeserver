@@ -23,34 +23,25 @@
     # Whether to open the firewall for the Immich port.
     # openFirewall = false;
     
-    # Database configuration (using global shared PostgreSQL)
+    # Database configuration
     database = {
-      # Whether to enable the local PostgreSQL database.
-      enable = false;
+      # We enable the local database module even if we use a shared instance
+      # because the Immich module needs to inject required PostgreSQL extensions 
+      # (like pgvector) into the global services.postgresql configuration.
+      enable = true;
 
-      # The host of the PostgreSQL database.
+      # Setting host to an absolute path forces the use of Unix sockets.
       host = "/run/postgresql";
-
-      # The port of the PostgreSQL database.
-      # port = 5432;
-
-      # The name of the PostgreSQL database.
-      # name = "immich";
-
-      # The user of the PostgreSQL database.
-      # user = "immich";
     };
 
     # Redis configuration (using global shared Redis)
     redis = {
-      # Whether to enable the local Redis instance.
+      # We disable the internal Redis server to use the centralized one.
       enable = false;
 
-      # The host of the Redis instance.
+      # Point to the shared Unix socket.
       host = "/run/redis/redis.sock";
-
-      # The port of the Redis instance.
-      port = 0; # Required for unix socket
+      port = 0; # Required to indicate unix socket usage
     };
 
     # Machine learning service configuration
@@ -108,15 +99,8 @@
   # Ensure the immich user can read the bind-mounted photos and access sockets
   users.users.immich.extraGroups = [ "zipang" "postgres" "redis" ];
 
-  services.postgresql = {
-    ensureDatabases = [ "immich" ];
-    ensureUsers = [
-      {
-        name = "immich";
-        ensureDBOwnership = true;
-      }
-    ];
-  };
+  # Note: PostgreSQL ensureDatabases and ensureUsers for Immich are handled 
+  # automatically by the module when services.immich.database.enable is true.
   
   # Add zipang to the immich group to manage the generated thumbnails/metadata if needed
   users.users.zipang.extraGroups = [ "immich" ];
