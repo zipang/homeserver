@@ -118,11 +118,8 @@ You can use this template in `modules/services/nextcloud.nix` to configure the s
     maxUploadSize = "16G";
     
     # Options for PHP's php.ini file.
-    # These are additive to the defaults provided by the module.
     phpOptions = {
-      "upload_max_filesize" = "16G";
-      "post_max_size" = "16G";
-      "memory_limit" = "1G"; 
+      "memory_limit" = lib.mkForce "4G"; 
       "max_execution_time" = "3600";
     };
 

@@ -78,12 +78,11 @@
     maxUploadSize = "16G";
     
     # Options for PHP's php.ini file.
-    # These are additive to the defaults provided by the module.
+    # We use lib.mkForce for memory_limit because otherwise the module 
+    # would default it to maxUploadSize (16G), which is too high for SKYLAB.
     phpOptions = {
-      "upload_max_filesize" = "16G";
-      "post_max_size" = "16G";
-      "memory_limit" = "1G"; # Increased for better performance with large files
-      "max_execution_time" = "3600"; # Increased for long-running uploads/tasks
+      "memory_limit" = lib.mkForce "4G";
+      "max_execution_time" = "3600";
     };
 
     # Automatically enable apps listed in extraApps.
