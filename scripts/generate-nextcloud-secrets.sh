@@ -19,6 +19,10 @@ fi
 # 1b. Ensure main data directory structure and ownership (Fixes setup service failures)
 echo "📂 Ensuring /var/lib/nextcloud structure and ownership..."
 mkdir -p /var/lib/nextcloud/config /var/lib/nextcloud/data /var/lib/nextcloud/store-apps
+
+# Create CAN_INSTALL to authorize the installation process
+touch /var/lib/nextcloud/config/CAN_INSTALL
+
 chown -R "$NEXTCLOUD_USER:$NEXTCLOUD_GROUP" /var/lib/nextcloud
 chmod 750 /var/lib/nextcloud
 
