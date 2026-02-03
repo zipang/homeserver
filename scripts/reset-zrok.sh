@@ -9,9 +9,11 @@ set -e
 # Define services
 SERVICES=(
     "podman-zrok-frontend.service"
+    "zrok-bootstrap.service"
     "podman-zrok-controller.service"
     "podman-ziti-controller.service"
     "zrok-init.service"
+    "zrok-network.service"
 )
 
 # Define data directories
@@ -42,6 +44,7 @@ echo "Reset complete. Automation is taking over."
 echo "Starting services in sequence..."
 echo "--------------------------------------------------------"
 
+sudo systemctl start zrok-network.service
 sudo systemctl start zrok-init.service
 sudo systemctl start podman-ziti-controller.service
 sudo systemctl start podman-zrok-controller.service

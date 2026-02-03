@@ -14,6 +14,9 @@ in
   # This module implements a self-hosted zrok instance using OCI containers.
   # Permissions are handled via UIDs to allow containers to run as non-root.
 
+  virtualisation.podman.enable = true;
+  virtualisation.oci-containers.backend = "podman";
+
   virtualisation.oci-containers.containers = {
     # 1. OpenZiti Controller & Router (Quickstart)
     ziti-controller = {
@@ -68,18 +71,14 @@ in
   systemd.services.zrok-init = {
     description = "Initialize zrok and Ziti configuration files";
     wantedBy = [ "multi-user.target" ];
-    before = let 
-      backend = config.virtualisation.oci-containers.backend;
-    in [ "${backend}-ziti-controller.service" "${backend}-zrok-controller.service" ];
-    path = [ pkgs.podman ];
+    before = [ "podman-ziti-controller.service" "podman-zrok-controller.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
-      # 1. Ensure directories and network exist
+      # 1. Ensure directories exist
       mkdir -p /var/lib/ziti /var/lib/zrok-controller /var/lib/zrok-frontend
-      podman network inspect zrok-net >/dev/null 2>&1 || podman network create zrok-net
 
       # 2. Load Secrets for Config Generation
       if [ -f /var/lib/secrets/zrok/controller.env ]; then
@@ -151,6 +150,22 @@ EOF
 
 
   networking.firewall.allowedTCPPorts = [ 80 443 ziti_ctrl_port 3022 10080 10081 10082 ];
+
+  # Dedicated service for creating the podman network
+  # This is separated from zrok-init to avoid deadlocks
+  systemd.services.zrok-network = {
+    description = "Create zrok podman network";
+    before = [ "podman-ziti-controller.service" "podman-zrok-controller.service" "podman-zrok-frontend.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      podman network inspect zrok-net >/dev/null 2>&1 || podman network create zrok-net
+    '';
+  };
 
   # Install zrok CLI on the host for management
   environment.systemPackages = [ pkgs.zrok ];
