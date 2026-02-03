@@ -116,6 +116,10 @@ v: 4
 host_match: ${zrok_dns_zone}
 address: 0.0.0.0:8080
 ziti_identity: "/var/lib/zrok-frontend/identity.json"
+ziti:
+  api_endpoint: https://ziti.${zrok_dns_zone}:${toString ziti_ctrl_port}/edge/management/v1
+  username: admin
+  password: "$ZITI_PWD"
 oauth:
   bind_address: 0.0.0.0:8081
   endpoint_url: https://oauth.${zrok_dns_zone}
@@ -154,4 +158,37 @@ EOF
   # Slow down restart loop to let Ziti initialize
   systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
   systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
+
+  # Automated Bootstrap Service
+  # This runs after the controller is up and registers the frontend identity if missing.
+  systemd.services.zrok-bootstrap = {
+    description = "Automated zrok frontend bootstrap";
+    after = [ "podman-zrok-controller.service" ];
+    requires = [ "podman-zrok-controller.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      Restart = "on-failure";
+      RestartSec = "10s";
+    };
+    script = ''
+      if [ ! -f /var/lib/zrok-frontend/identity.json ]; then
+        echo "Registering public frontend identity in OpenZiti..."
+        # We retry because the Ziti API inside the container takes a few seconds to be ready
+        until podman exec zrok-controller zrok admin bootstrap /var/lib/zrok-frontend/config.yml; do
+          echo "Waiting for OpenZiti API to be ready..."
+          sleep 5
+        done
+        chown ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-frontend/identity.json
+      fi
+    '';
+  };
+
+  # Ensure the frontend waits for the bootstrap to finish
+  systemd.services."podman-zrok-frontend" = {
+    after = [ "zrok-bootstrap.service" ];
+    requires = [ "zrok-bootstrap.service" ];
+  };
 }

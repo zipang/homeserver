@@ -181,11 +181,10 @@ Run the recovery script:
 sudo ./scripts/reset-zrok.sh
 ```
 
-Then restart the services in order:
-1. `sudo systemctl start zrok-init.service`
-2. `sudo systemctl start podman-ziti-controller.service`
-3. Wait 15s for initialization, then: `sudo systemctl start podman-zrok-controller.service`
-4. `sudo systemctl start podman-zrok-frontend.service`
+The script will automatically wipe the state and trigger the **automated bootstrap** process. You can monitor the progress by watching the bootstrap logs:
+```bash
+journalctl -u zrok-bootstrap.service -f
+```
 
 ### Troubleshooting Connectivity
 If a public share is not reachable:

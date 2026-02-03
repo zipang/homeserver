@@ -33,18 +33,22 @@ echo "Wiping persistent state (keeping secrets)..."
 for dir in "${DATA_DIRS[@]}"; do
     if [ -d "$dir" ]; then
         echo "  Clearing $dir..."
-        # We use find to delete contents but keep the directory itself to preserve permissions
         sudo find "$dir" -mindepth 1 -delete
     fi
 done
 
 echo "--------------------------------------------------------"
-echo "Reset complete. To restart the stack:"
-echo "  1. sudo systemctl start zrok-init.service"
-echo "  2. sudo systemctl start podman-ziti-controller.service"
-echo "  3. (Wait 15s) Run bootstrap to generate frontend identity:"
-echo "     sudo podman exec -it zrok-controller zrok admin bootstrap /var/lib/zrok-frontend/config.yml"
-echo "  4. sudo systemctl start podman-zrok-controller.service"
-echo "  5. sudo systemctl start podman-zrok-frontend.service"
+echo "Reset complete. Automation is taking over."
+echo "Starting services in sequence..."
 echo "--------------------------------------------------------"
-echo "Monitor logs with: journalctl -u podman-zrok-controller.service -f"
+
+sudo systemctl start zrok-init.service
+sudo systemctl start podman-ziti-controller.service
+sudo systemctl start podman-zrok-controller.service
+sudo systemctl start zrok-bootstrap.service
+sudo systemctl start podman-zrok-frontend.service
+
+echo ""
+echo "Stack is starting. Monitor the bootstrap process with:"
+echo "  journalctl -u zrok-bootstrap.service -f"
+echo "--------------------------------------------------------"
