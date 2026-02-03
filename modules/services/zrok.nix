@@ -18,7 +18,7 @@ in
         ZITI_CTRL_ADVERTISED_PORT = "${toString ziti_ctrl_port}";
       };
       volumes = [ "/var/lib/ziti:/persistent" ];
-      cmd = [ "edge", "quickstart", "controller" ];
+      cmd = [ "edge" "quickstart" "controller" ];
       ports = [ 
         "${toString ziti_ctrl_port}:${toString ziti_ctrl_port}"
         "10080:10080" # Edge API
@@ -34,7 +34,7 @@ in
         "/var/lib/zrok-controller:/var/lib/zrok-controller"
         "/var/lib/ziti:/persistent" 
       ];
-      cmd = [ "controller", "/var/lib/zrok-controller/config.yml" ];
+      cmd = [ "controller" "/var/lib/zrok-controller/config.yml" ];
     };
 
     # 3. zrok Frontend (Public Access & OAuth)
@@ -47,7 +47,7 @@ in
       ];
       environmentFiles = [ "/var/lib/secrets/zrok/frontend.env" ];
       volumes = [ "/var/lib/zrok-frontend:/var/lib/zrok-frontend" ];
-      cmd = [ "access", "public", "/var/lib/zrok-frontend/config.yml" ];
+      cmd = [ "access" "public" "/var/lib/zrok-frontend/config.yml" ];
     };
   };
 
