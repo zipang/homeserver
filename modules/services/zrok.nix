@@ -4,10 +4,15 @@ let
   zrok_dns_zone = "skylab.quest";
   ziti_ctrl_port = 1280;
   zrok_ctrl_port = 18080;
+
+  # Container UIDs from official images
+  ziti_uid = 2171; # 'ziti' user in openziti/ziti-cli
+  zrok_uid = 1001; # 'ziggy' user in openziti/zrok
 in
 {
   # zrok Infrastructure & Homepage
   # This module implements a self-hosted zrok instance using OCI containers.
+  # Permissions are handled via UIDs to allow containers to run as non-root.
 
   virtualisation.oci-containers.containers = {
     # 1. OpenZiti Controller & Router (Quickstart)
@@ -115,7 +120,10 @@ oauth:
       client_secret: "''${ZROK_OAUTH_GOOGLE_CLIENT_SECRET:-placeholder}"
 EOF
       
-      chown -R root:root /var/lib/ziti /var/lib/zrok-controller /var/lib/zrok-frontend
+      # 6. Set correct ownership for containers
+      chown -R ${toString ziti_uid}:${toString ziti_uid} /var/lib/ziti
+      chown -R ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-controller /var/lib/zrok-frontend
+      
       chmod 600 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
     '';
   };
@@ -123,9 +131,9 @@ EOF
   # Storage and Firewall
   systemd.tmpfiles.rules = [
     "d /var/lib/secrets/zrok 0700 root root -"
-    "d /var/lib/ziti 0700 root root -"
-    "d /var/lib/zrok-controller 0700 root root -"
-    "d /var/lib/zrok-frontend 0700 root root -"
+    "d /var/lib/ziti 0755 ${toString ziti_uid} ${toString ziti_uid} -"
+    "d /var/lib/zrok-controller 0700 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-frontend 0700 ${toString zrok_uid} ${toString zrok_uid} -"
   ];
 
 
