@@ -1,41 +1,63 @@
-# Deployment Plan: Nextcloud on SKYLAB
+# Deployment Plan: zrok SSO & Public Access on SKYLAB
 
-Nextcloud has been successfully implemented in the configuration.
+We are transitioning from Authelia + Cloudflare Tunnels to a self-hosted `zrok` (OpenZiti) instance to provide secure public access with OAuth (Google/GitHub) authentication.
 
-## Completed Tasks
-- [x] Phase 1: Storage & Database Preparation
-- [x] Phase 2: Secret Generator
-- [x] Phase 3: Nextcloud Service Module
-- [x] Phase 4: Nginx & Authelia Integration
-- [x] Phase 5: System Integration
-- [x] Phase 6: Refactoring (Global PostgreSQL & Redis Modules)
-- [x] Phase 7: Immich Service Migration
-- [x] Phase 8: Documentation
+## Goals
+- Self-host a full `zrok` instance (controller, router, and public frontend).
+- Replace Cloudflare Tunnels for public access.
+- Replace Authelia with `zrok`'s built-in OAuth support for SSO.
+- Securely expose Immich and Nextcloud.
 
-## Completed Tasks
-- [x] Created `modules/services/postgresql.nix` and `modules/services/redis.nix`.
-- [x] Refactored `authelia.nix`, `nextcloud.nix`, and `immich.nix` to use these shared modules.
-- [x] Updated permissions for `authelia-main`, `nextcloud`, and `immich` users to access Unix sockets.
-- [x] Created registries in `docs/postgresql.md` and `docs/redis.md`.
-- [x] Enriched `docs/nextcloud.md` with detailed descriptions and allowed values.
+## Phase 1: Research & Preparation
+- [ ] Verify `zrok-instance` Docker configuration and OAuth requirements.
+- [ ] Identify necessary network ports and DNS requirements (zrok needs a wildcard DNS or specific subdomains).
+- [ ] Prepare Google/GitHub OAuth application credentials.
 
-## Next Steps for User (on SKYLAB)
+## Phase 2: zrok Infrastructure Implementation
+- [ ] Create `modules/services/zrok.nix` using `virtualisation.oci-containers`.
+- [ ] Set up `sops-nix` secrets for zrok admin and OAuth credentials.
+- [ ] Configure systemd services to manage the zrok lifecycle.
+
+## Phase 3: Service Migration
+- [ ] Configure `zrok` to share Nextcloud and Immich.
+- [ ] Update Nginx configuration if necessary (or bypass it if zrok talks directly to services).
+- [ ] Test public access and OAuth flow.
+
+## Phase 4: Cleanup
+- [ ] Disable and remove `modules/services/authelia.nix`.
+- [ ] Disable and remove `modules/services/cloudflared.nix`.
+- [ ] Update documentation (`docs/zrok.md`).
+
+## Current Status
+- [x] Implemented `zrok.nix` infrastructure with bootstrap logic and static homepage.
+- [x] Created `scripts/generate-zrok-secrets.sh` for manual secret management.
+- [ ] Deploying to SKYLAB and verifying root domain share.
+
+## Deployment Steps (on SKYLAB)
 
 1. **Pull and Apply Configuration**:
    ```bash
    update-nix
    ```
 
-2. **Generate Secrets and Initialize Database**:
+2. **Initialize Secrets**:
    ```bash
-   sudo ./scripts/generate-nextcloud-secrets.sh
+   sudo ./scripts/generate-zrok-secrets.sh
+   # Edit /var/lib/secrets/zrok/frontend.env to add Google OAuth credentials
    ```
 
-3. **Verify Service**:
-   Check logs for the setup process:
+3. **Verify Configuration Generation**:
+   Check if YAML files are generated correctly:
    ```bash
-   journalctl -u nextcloud-setup.service -f
+   systemctl status zrok-init.service
+   ls -l /var/lib/zrok-controller/config.yml
    ```
 
-4. **Access Nextcloud**:
-   Navigate to `https://nextcloud.skylab.local` and log in with the `admin` account (password in `/var/lib/secrets/nextcloud/admin_password`).
+4. **Monitor Infrastructure**:
+   ```bash
+   journalctl -u docker-ziti-controller.service -f
+   journalctl -u docker-zrok-controller.service -f
+   ```
+
+5. **Expose Homepage**:
+   Once the controller is healthy, we will need to perform the initial zrok invite and share (I will provide commands for this in the next session).

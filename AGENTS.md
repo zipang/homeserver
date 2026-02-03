@@ -61,8 +61,7 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] `immich` to backup and index photos
 * [x] `nextcloud` to share files and collaborate
 * [ ] `jellyfin` to stream music and local movies
-* [ ] `authelia` SSO for secure application access
-* [ ] `copyparty` with Authelia SSO integration (currently disabled due to build failure)
+* [ ] `zrok` SSO & Tunnel (Replacing Authelia & Cloudflare)
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)
 
 ## Documentation

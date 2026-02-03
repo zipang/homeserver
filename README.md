@@ -81,6 +81,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Nextcloud](./docs/nextcloud.md)
 * [PostgreSQL (Global)](./docs/postgresql.md)
 * [Redis (Global)](./docs/redis.md)
+* [zrok (SSO & Tunnel)](./docs/zrok.md)
 * [ZFS Storage](./docs/zfs-storage.md)
 * [SSL/TLS Setup](./docs/ssl-setup.md)
 
