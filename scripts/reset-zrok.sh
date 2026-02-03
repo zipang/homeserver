@@ -39,17 +39,21 @@ for dir in "${DATA_DIRS[@]}"; do
     fi
 done
 
+# Ensure permissions are reset immediately via tmpfiles
+echo "  Applying tmpfiles rules..."
+sudo systemd-tmpfiles --create /etc/tmpfiles.d/*.conf || true
+
 echo "--------------------------------------------------------"
 echo "Reset complete. Automation is taking over."
 echo "Starting services in sequence..."
 echo "--------------------------------------------------------"
 
-sudo systemctl start zrok-network.service
+# Starting zrok-init first as it's required by others
 sudo systemctl start zrok-init.service
+sudo systemctl start zrok-network.service
 sudo systemctl start podman-ziti-controller.service
 sudo systemctl start podman-zrok-controller.service
-sudo systemctl start zrok-bootstrap.service
-sudo systemctl start podman-zrok-frontend.service
+# Bootstrap and Frontend will follow automatically due to dependencies
 
 echo ""
 echo "Stack is starting. Monitor the bootstrap process with:"

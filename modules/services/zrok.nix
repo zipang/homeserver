@@ -70,25 +70,23 @@ in
   # Generates YAML configs from environment variables before containers start
   systemd.services.zrok-init = {
     description = "Initialize zrok and Ziti configuration files";
-    wantedBy = [ "multi-user.target" ];
-    before = [ "podman-ziti-controller.service" "podman-zrok-controller.service" ];
+    # No wantedBy - it will be pulled in by the containers that need it
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
+    path = [ pkgs.coreutils ];
     script = ''
-      # 1. Ensure directories exist
-      mkdir -p /var/lib/ziti /var/lib/zrok-controller /var/lib/zrok-frontend
-
-      # 2. Load Secrets for Config Generation
+      set -ex
+      # 1. Load Secrets for Config Generation
       if [ -f /var/lib/secrets/zrok/controller.env ]; then
         source /var/lib/secrets/zrok/controller.env
       else
-        echo "Error: /var/lib/secrets/zrok/controller.env not found. Run generate-zrok-secrets.sh first."
+        echo "Error: /var/lib/secrets/zrok/controller.env not found."
         exit 1
       fi
 
-      # 4. Generate zrok Controller Config
+      # 2. Generate zrok Controller Config
       cat <<EOF > /var/lib/zrok-controller/config.yml
 v: 4
 admin:
@@ -105,7 +103,7 @@ ziti:
   password: "$ZITI_PWD"
 EOF
 
-      # 5. Generate zrok Frontend Config
+      # 3. Generate zrok Frontend Config
       if [ -f /var/lib/secrets/zrok/frontend.env ]; then
         source /var/lib/secrets/zrok/frontend.env
       fi
@@ -132,10 +130,8 @@ oauth:
       client_secret: "''${ZROK_OAUTH_GOOGLE_CLIENT_SECRET:-placeholder}"
 EOF
       
-      # 6. Set correct ownership for containers
-      chown -R ${toString ziti_uid}:${toString ziti_uid} /var/lib/ziti
-      chown -R ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-controller /var/lib/zrok-frontend
-      
+      # 4. Set correct ownership for the new config files
+      chown ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
       chmod 600 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
     '';
   };
@@ -144,8 +140,8 @@ EOF
   systemd.tmpfiles.rules = [
     "d /var/lib/secrets/zrok 0700 root root -"
     "d /var/lib/ziti 0755 ${toString ziti_uid} ${toString ziti_uid} -"
-    "d /var/lib/zrok-controller 0700 ${toString zrok_uid} ${toString zrok_uid} -"
-    "d /var/lib/zrok-frontend 0700 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-controller 0755 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-frontend 0755 ${toString zrok_uid} ${toString zrok_uid} -"
   ];
 
 
@@ -173,6 +169,17 @@ EOF
   # Slow down restart loop to let Ziti initialize
   systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
   systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
+
+  # Ensure the container services depend on zrok-init
+  systemd.services."podman-ziti-controller" = {
+    after = [ "zrok-init.service" "zrok-network.service" ];
+    requires = [ "zrok-init.service" "zrok-network.service" ];
+  };
+
+  systemd.services."podman-zrok-controller" = {
+    after = [ "zrok-init.service" "zrok-network.service" ];
+    requires = [ "zrok-init.service" "zrok-network.service" ];
+  };
 
   # Automated Bootstrap Service
   # This runs after the controller is up and registers the frontend identity if missing.
