@@ -127,4 +127,7 @@ EOF
 
 
   networking.firewall.allowedTCPPorts = [ 80 443 ziti_ctrl_port 10080 ];
+
+  # Install zrok CLI on the host for management
+  environment.systemPackages = [ pkgs.zrok ];
 }

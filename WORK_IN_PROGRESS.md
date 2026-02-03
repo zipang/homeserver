@@ -31,33 +31,38 @@ We are transitioning from Authelia + Cloudflare Tunnels to a self-hosted `zrok` 
 ## Current Status
 - [x] Implemented `zrok.nix` infrastructure with bootstrap logic and static homepage.
 - [x] Created `scripts/generate-zrok-secrets.sh` for manual secret management.
-- [ ] Deploying to SKYLAB and verifying root domain share.
+- [x] Successfully applied configuration on SKYLAB.
+- [ ] Finalizing zrok account setup and public shares.
 
 ## Deployment Steps (on SKYLAB)
 
-1. **Pull and Apply Configuration**:
+1. **Create Initial Account**:
+   Run this to create your first admin/user account:
    ```bash
-   update-nix
+   docker exec -it zrok-controller zrok admin create account <email> <password>
+   ```
+   *Note: Save the token returned by this command.*
+
+2. **Configure Host CLI**:
+   Point the local `zrok` CLI to your self-hosted instance:
+   ```bash
+   zrok config set apiEndpoint http://localhost:18080
    ```
 
-2. **Initialize Secrets**:
+3. **Enable Environment**:
+   Activate the SKYLAB server in your zrok instance:
    ```bash
-   sudo ./scripts/generate-zrok-secrets.sh
-   # Edit /var/lib/secrets/zrok/frontend.env to add Google OAuth credentials
+   zrok enable <token_from_step_1>
    ```
 
-3. **Verify Configuration Generation**:
-   Check if YAML files are generated correctly:
+4. **Reserve and Share Homepage**:
    ```bash
-   systemctl status zrok-init.service
-   ls -l /var/lib/zrok-controller/config.yml
+   # Reserve the root domain name
+   zrok reserve public --name homepage --backend-mode proxy http://localhost:8085
+   
+   # Start the public share
+   zrok share reserved homepage
    ```
 
-4. **Monitor Infrastructure**:
-   ```bash
-   journalctl -u docker-ziti-controller.service -f
-   journalctl -u docker-zrok-controller.service -f
-   ```
-
-5. **Expose Homepage**:
-   Once the controller is healthy, we will need to perform the initial zrok invite and share (I will provide commands for this in the next session).
+5. **Verify Access**:
+   Navigate to `https://skylab.quest` to see your "SKYLAB HOMELAB" page.
