@@ -124,7 +124,7 @@ EOF
       chown -R ${toString ziti_uid}:${toString ziti_uid} /var/lib/ziti
       chown -R ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-controller /var/lib/zrok-frontend
       
-      chmod 600 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
+      chmod 644 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
     '';
   };
 
@@ -132,12 +132,12 @@ EOF
   systemd.tmpfiles.rules = [
     "d /var/lib/secrets/zrok 0700 root root -"
     "d /var/lib/ziti 0755 ${toString ziti_uid} ${toString ziti_uid} -"
-    "d /var/lib/zrok-controller 0700 ${toString zrok_uid} ${toString zrok_uid} -"
-    "d /var/lib/zrok-frontend 0700 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-controller 0755 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-frontend 0755 ${toString zrok_uid} ${toString zrok_uid} -"
   ];
 
 
-  networking.firewall.allowedTCPPorts = [ 80 443 ziti_ctrl_port 10080 ];
+  networking.firewall.allowedTCPPorts = [ 80 443 ziti_ctrl_port 3022 10080 ];
 
   # Install zrok CLI on the host for management
   environment.systemPackages = [ pkgs.zrok ];
