@@ -51,7 +51,12 @@ sudo ./scripts/generate-zrok-secrets.sh
 - **`frontend.env`**: Contains Google OAuth credentials and the `ZROK_OAUTH_HASH_KEY`.
 
 ### Static Homepage
-The `zrok.nix` module includes a local Nginx container and a `zrok-init` service that generates a basic `index.html` at `/var/www/homepage/index.html`. This is intended to be shared on the root domain (`skylab.quest`).
+The `zrok.nix` module leverages the system's existing Nginx service to serve a home page on local port **8085**.
+
+In NixOS, the home page content is managed **declaratively**:
+- The source files are located in the `www/` directory of this repository.
+- The `nginx.nix` module uses a relative path (`root = ../../www;`), which causes Nix to copy the files into the immutable **Nix Store** during deployment.
+- This ensures the home page is always consistent with the Git repository, regardless of where the repo is cloned on the server.
 
 ## Operational Guides
 

@@ -17,9 +17,8 @@
     # Virtual Hosts will be added as we implement services
     virtualHosts."skylab.quest" = {
       listen = [{ addr = "127.0.0.1"; port = 8085; }];
-      # Path to the static content in the repository
-      # Note: This path assumes the repository is cloned at /home/zipang/Workspace/projects/homeserver
-      root = "/home/zipang/Workspace/projects/homeserver/www";
+      # Path to the static content, baked into the Nix store
+      root = ../../www;
     };
 
     virtualHosts."auth.skylab.local" = {
