@@ -156,8 +156,14 @@ EOF
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      TimeoutStartSec = "1min";
     };
     script = ''
+      # We check if podman is actually responsive before trying
+      until podman version >/dev/null 2>&1; do
+        echo "Waiting for podman daemon..."
+        sleep 2
+      done
       podman network inspect zrok-net >/dev/null 2>&1 || podman network create zrok-net
     '';
   };
@@ -170,22 +176,38 @@ EOF
   systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
 
   # Ensure the container services start after our helper services
-  systemd.services."podman-ziti-controller".after = [ "zrok-init.service" "zrok-network.service" ];
-  systemd.services."podman-zrok-controller".after = [ "zrok-init.service" "zrok-network.service" "podman-ziti-controller.service" ];
-  systemd.services."podman-zrok-frontend".after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" "zrok-bootstrap.service" ];
+  # We use 'wants' and 'after' instead of 'requires' to prevent system hangs
+  systemd.services."podman-ziti-controller" = {
+    after = [ "zrok-init.service" "zrok-network.service" ];
+    wants = [ "zrok-init.service" "zrok-network.service" ];
+  };
+
+  systemd.services."podman-zrok-controller" = {
+    after = [ "zrok-init.service" "zrok-network.service" "podman-ziti-controller.service" ];
+    wants = [ "zrok-init.service" "zrok-network.service" ];
+  };
+
+  systemd.services."podman-zrok-frontend" = {
+    after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" "zrok-bootstrap.service" ];
+    wants = [ "zrok-init.service" "zrok-network.service" "zrok-bootstrap.service" ];
+  };
 
   # Automated Bootstrap Service
   # This runs after the controller is up and registers the frontend identity if missing.
   systemd.services.zrok-bootstrap = {
     description = "Automated zrok frontend bootstrap";
     after = [ "podman-zrok-controller.service" ];
+    wants = [ "podman-zrok-controller.service" ];
     wantedBy = [ "multi-user.target" ];
     path = [ pkgs.podman pkgs.gnugrep pkgs.coreutils ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      TimeoutStartSec = "5min"; # Allow time for image pulling
+      # No Restart policy here - let it fail so we can see the error, 
+      # but it won't block the rest of the system because of 'wants'.
+      TimeoutStartSec = "5min";
     };
+
     script = ''
       set -ex
       

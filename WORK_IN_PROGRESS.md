@@ -1,46 +1,24 @@
-# Deployment Plan: zrok SSO & Public Access on SKYLAB
+# WORK IN PROGRESS: zrok Deployment & Self-Healing Fixes
 
-We are transitioning from Authelia + Cloudflare Tunnels to a self-hosted `zrok` (OpenZiti) instance to provide secure public access with OAuth (Google/GitHub) authentication.
+We encountered significant issues with systemd deadlocks and authentication failures during the initial `zrok` deployment. The current goal is to implement a **Decoupled, Self-Healing** architecture.
 
-## Goals
-- Self-host a full `zrok` instance (controller, router, and public frontend).
-- Replace Cloudflare Tunnels for public access.
-- Replace Authelia with `zrok`'s built-in OAuth support for SSO.
-- Securely expose Immich and Nextcloud.
+## Current Issues & Failures
+1.  **Systemd Deadlock**: `zrok-init` and `zrok-network` were blocking `nixos-rebuild` when they called `podman` while the podman daemon was being managed by the same rebuild process.
+2.  **Authentication Race Condition**: `ziti-controller` was not consistently using the password provided in secrets during quickstart initialization.
+3.  **Dependency Loops**: Rigid `requires` and `after` chains caused the entire system manager to hang when a single component failed.
 
-## Phase 1: Research & Preparation
-- [ ] Verify `zrok-instance` Docker configuration and OAuth requirements.
-- [ ] Identify necessary network ports and DNS requirements (zrok needs a wildcard DNS or specific subdomains).
-- [ ] Prepare Google/GitHub OAuth application credentials.
+## The New Strategy: Decoupled Startup
+We are moving away from rigid systemd dependencies to a "convergent" model where each component tries to reach its target state independently.
 
-## Phase 2: zrok Infrastructure Implementation
-- [ ] Create `modules/services/zrok.nix` using `virtualisation.oci-containers`.
-- [ ] Set up `sops-nix` secrets for zrok admin and OAuth credentials.
-- [ ] Configure systemd services to manage the zrok lifecycle.
+- [ ] **Remove Hard Dependencies**: Replace `requires` with `wants` and remove `before` triggers that block the system switch.
+- [ ] **Deterministic Password Sync**: The `zrok-bootstrap` service will forcefully sync the Ziti admin password instead of relying on the initial setup.
+- [ ] **Lightweight Init**: Ensure `zrok-init` only performs file operations and never calls `podman`.
+- [ ] **Background Retries**: All services will use `Restart=on-failure` with backoffs, allowing them to eventually connect without blocking other services.
 
-## Phase 3: Service Migration
-- [ ] Configure `zrok` to share Nextcloud and Immich.
-- [ ] Update Nginx configuration if necessary (or bypass it if zrok talks directly to services).
-- [ ] Test public access and OAuth flow.
+## Status: Temporarily Disabled
+The `zrok.nix` module is currently commented out in `hosts/SKYLAB/configuration.nix` to allow for safe server maintenance and reboots.
 
-## Phase 4: Cleanup
-- [ ] Disable and remove `modules/services/authelia.nix`.
-- [ ] Disable and remove `modules/services/cloudflared.nix`.
-- [ ] Update documentation (`docs/zrok.md`).
-
-## Current Status
-- [x] Implemented `zrok.nix` infrastructure with bootstrap logic and static homepage.
-- [x] Created `scripts/generate-zrok-secrets.sh` for manual secret management.
-- [x] Successfully applied configuration on SKYLAB.
-- [ ] Finalizing zrok account setup and public shares.
-
-## Deployment Steps (on SKYLAB)
-
-Please refer to the detailed **First-Time Setup** guide in [docs/zrok.md](./docs/zrok.md) to:
-1. Create your user account.
-2. Configure the local CLI.
-3. Enable your environment.
-4. Expose the homepage.
-
-## Verification
-Navigate to `https://skylab.quest` to see your "SKYLAB HOMELAB" page.
+## Pending Tasks
+1.  Refactor `modules/services/zrok.nix` to implement the decoupled strategy.
+2.  Test the `reset-zrok.sh` script with the new architecture.
+3.  Re-enable the module in `configuration.nix`.
