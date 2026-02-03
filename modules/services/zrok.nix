@@ -24,6 +24,7 @@ in
       environment = {
         ZITI_CTRL_ADVERTISED_ADDRESS = "ziti.${zrok_dns_zone}";
         ZITI_CTRL_ADVERTISED_PORT = "${toString ziti_ctrl_port}";
+        ZITI_CTRL_LISTENER_ADDRESS = "0.0.0.0";
       };
       volumes = [ "/var/lib/ziti:/persistent" ];
       cmd = [ "edge" "quickstart" "controller" "--home" "/persistent" ];
@@ -148,4 +149,8 @@ EOF
 
   # Install zrok CLI on the host for management
   environment.systemPackages = [ pkgs.zrok ];
+
+  # Slow down restart loop to let Ziti initialize
+  systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
+  systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
 }
