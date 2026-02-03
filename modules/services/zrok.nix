@@ -151,8 +151,7 @@ EOF
   # This is separated from zrok-init to avoid deadlocks
   systemd.services.zrok-network = {
     description = "Create zrok podman network";
-    before = [ "podman-ziti-controller.service" "podman-zrok-controller.service" "podman-zrok-frontend.service" ];
-    wantedBy = [ "multi-user.target" ];
+    after = [ "network.target" ];
     path = [ pkgs.podman ];
     serviceConfig = {
       Type = "oneshot";
@@ -170,30 +169,21 @@ EOF
   systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
   systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
 
-  # Ensure the container services depend on zrok-init and zrok-network
-  # We use additive assignment to avoid overwriting default oci-containers dependencies
+  # Ensure the container services start after our helper services
   systemd.services."podman-ziti-controller".after = [ "zrok-init.service" "zrok-network.service" ];
-  systemd.services."podman-ziti-controller".requires = [ "zrok-init.service" "zrok-network.service" ];
-
   systemd.services."podman-zrok-controller".after = [ "zrok-init.service" "zrok-network.service" "podman-ziti-controller.service" ];
-  systemd.services."podman-zrok-controller".requires = [ "zrok-init.service" "zrok-network.service" ];
-
   systemd.services."podman-zrok-frontend".after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" "zrok-bootstrap.service" ];
-  systemd.services."podman-zrok-frontend".requires = [ "zrok-init.service" "zrok-network.service" "zrok-bootstrap.service" ];
 
   # Automated Bootstrap Service
   # This runs after the controller is up and registers the frontend identity if missing.
   systemd.services.zrok-bootstrap = {
     description = "Automated zrok frontend bootstrap";
     after = [ "podman-zrok-controller.service" ];
-    requires = [ "podman-zrok-controller.service" ];
     wantedBy = [ "multi-user.target" ];
     path = [ pkgs.podman pkgs.gnugrep pkgs.coreutils ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      Restart = "on-failure";
-      RestartSec = "10s";
       TimeoutStartSec = "5min"; # Allow time for image pulling
     };
     script = ''
