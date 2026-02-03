@@ -189,26 +189,43 @@ EOF
     script = ''
       set -ex
       
-      # 1. Wait for the container to actually exist
+      # 1. Load Secrets
+      if [ -f /var/lib/secrets/zrok/controller.env ]; then
+        source /var/lib/secrets/zrok/controller.env
+      else
+        echo "Error: /var/lib/secrets/zrok/controller.env not found."
+        exit 1
+      fi
+
+      # 2. Wait for ziti-controller and sync password
+      echo "Waiting for ziti-controller to be running..."
+      until [ "$(podman inspect -f '{{.State.Running}}' ziti-controller 2>/dev/null)" == "true" ]; do
+        sleep 5
+      done
+
+      echo "Force-syncing Ziti admin password..."
+      # Use the local ziti-controller's own CLI to reset its admin password
+      until podman exec ziti-controller ziti edge update identity admin --password "$ZITI_PWD"; do
+        echo "Waiting for Ziti API to allow password sync..."
+        sleep 5
+      done
+
+      # 3. Wait for zrok-controller to be running
       echo "Waiting for zrok-controller container to exist..."
       until podman ps -a --format "{{.Names}}" | grep -q "^zrok-controller$"; do
-        echo "Container zrok-controller not found yet. Sleeping..."
         sleep 5
       done
 
-      # 2. Wait for it to be running
       echo "Waiting for zrok-controller to be running..."
-      until [ "$(podman inspect -f '{{.State.Running}}' zrok-controller)" == "true" ]; do
-        echo "Container zrok-controller is not running yet. Sleeping..."
+      until [ "$(podman inspect -f '{{.State.Running}}' zrok-controller 2>/dev/null)" == "true" ]; do
         sleep 5
       done
 
-      # 3. Proceed with bootstrap if needed
+      # 4. Proceed with bootstrap if needed
       if [ ! -f /var/lib/zrok-frontend/identity.json ]; then
         echo "Registering public frontend identity in OpenZiti..."
-        # We retry because the Ziti API inside the container takes a few seconds to be ready
         until podman exec zrok-controller zrok admin bootstrap /var/lib/zrok-frontend/config.yml; do
-          echo "Waiting for OpenZiti API to be ready..."
+          echo "Waiting for zrok-controller to allow bootstrap..."
           sleep 5
         done
         chown ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-frontend/identity.json
