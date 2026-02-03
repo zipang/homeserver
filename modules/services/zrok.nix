@@ -19,6 +19,7 @@ in
     ziti-controller = {
       image = "openziti/ziti-cli:latest";
       hostname = "ziti.${zrok_dns_zone}";
+      extraOptions = [ "--network=zrok-net" ];
       environment = {
         ZITI_CTRL_ADVERTISED_ADDRESS = "ziti.${zrok_dns_zone}";
         ZITI_CTRL_ADVERTISED_PORT = "${toString ziti_ctrl_port}";
@@ -28,6 +29,7 @@ in
       ports = [ 
         "${toString ziti_ctrl_port}:${toString ziti_ctrl_port}"
         "10080:10080" # Edge API
+        "3022:3022"  # Router
       ];
     };
 
@@ -35,6 +37,7 @@ in
     zrok-controller = {
       image = "openziti/zrok:latest";
       dependsOn = [ "ziti-controller" ];
+      extraOptions = [ "--network=zrok-net" ];
       environmentFiles = [ "/var/lib/secrets/zrok/controller.env" ];
       volumes = [
         "/var/lib/zrok-controller:/var/lib/zrok-controller"
@@ -47,6 +50,7 @@ in
     zrok-frontend = {
       image = "openziti/zrok:latest";
       dependsOn = [ "zrok-controller" ];
+      extraOptions = [ "--network=zrok-net" ];
       ports = [
         "80:8080"
         "443:8080"
@@ -65,13 +69,15 @@ in
     before = let 
       backend = config.virtualisation.oci-containers.backend;
     in [ "${backend}-ziti-controller.service" "${backend}-zrok-controller.service" ];
+    path = [ pkgs.podman ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
-      # 1. Ensure directories exist
+      # 1. Ensure directories and network exist
       mkdir -p /var/lib/ziti /var/lib/zrok-controller /var/lib/zrok-frontend
+      podman network inspect zrok-net >/dev/null 2>&1 || podman network create zrok-net
 
       # 2. Load Secrets for Config Generation
       if [ -f /var/lib/secrets/zrok/controller.env ]; then
