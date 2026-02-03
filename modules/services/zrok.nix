@@ -54,8 +54,8 @@ in
       dependsOn = [ "zrok-controller" ];
       extraOptions = [ "--network=zrok-net" ];
       ports = [
-        "80:8080"
-        "443:8080"
+        "10081:8080" # Public Access
+        "10082:8081" # OAuth Callback
       ];
       environmentFiles = [ "/var/lib/secrets/zrok/frontend.env" ];
       volumes = [ "/var/lib/zrok-frontend:/var/lib/zrok-frontend" ];
@@ -145,7 +145,7 @@ EOF
   ];
 
 
-  networking.firewall.allowedTCPPorts = [ 80 443 ziti_ctrl_port 3022 10080 ];
+  networking.firewall.allowedTCPPorts = [ 80 443 ziti_ctrl_port 3022 10080 10081 10082 ];
 
   # Install zrok CLI on the host for management
   environment.systemPackages = [ pkgs.zrok ];

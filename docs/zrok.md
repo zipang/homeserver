@@ -121,6 +121,39 @@ Private sharing does **not** expose the service to the internet. Instead, it cre
 1. Set the **Authorized Redirect URI** to `https://oauth.skylab.quest/google/callback`.
 2. Ensure the scope `openid email profile` is requested.
 
+### Nginx Reverse Proxy Integration (Optional)
+If you already have Nginx running on ports 80/443, you can configure it to proxy traffic to the `zrok-frontend` (running on ports 10081 and 10082).
+
+Add these virtual hosts to your Nginx configuration:
+
+```nix
+# Wildcard for all zrok public shares
+services.nginx.virtualHosts."*.skylab.quest" = {
+  forceSSL = true;
+  sslCertificate = "/var/lib/secrets/certs/skylab.crt";
+  sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
+  locations."/" = {
+    proxyPass = "http://127.0.0.1:10081";
+    proxyWebsockets = true;
+    extraConfig = ''
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+    '';
+  };
+};
+
+# OAuth handler
+services.nginx.virtualHosts."oauth.skylab.quest" = {
+  forceSSL = true;
+  sslCertificate = "/var/lib/secrets/certs/skylab.crt";
+  sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
+  locations."/" = {
+    proxyPass = "http://127.0.0.1:10082";
+    proxyWebsockets = true;
+  };
+};
+```
+
 ## Headless Operations & Troubleshooting
 
 ### Monitoring Logs
