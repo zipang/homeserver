@@ -15,6 +15,13 @@
     clientMaxBodySize = "10G";
 
     # Virtual Hosts will be added as we implement services
+    virtualHosts."skylab.quest" = {
+      listen = [{ addr = "127.0.0.1"; port = 8085; }];
+      # Path to the static content in the repository
+      # Note: This path assumes the repository is cloned at /home/zipang/Workspace/projects/homeserver
+      root = "/home/zipang/Workspace/projects/homeserver/www";
+    };
+
     virtualHosts."auth.skylab.local" = {
       forceSSL = true;
       sslCertificate = "/var/lib/secrets/certs/skylab.crt";

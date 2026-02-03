@@ -49,14 +49,6 @@ in
       volumes = [ "/var/lib/zrok-frontend:/var/lib/zrok-frontend" ];
       cmd = [ "access", "public", "/var/lib/zrok-frontend/config.yml" ];
     };
-
-    # 4. Static Homepage (Nginx)
-    homepage = {
-      image = "nginx:alpine";
-      volumes = [ "/var/www/homepage:/usr/share/nginx/html:ro" ];
-      # Only accessible locally, zrok will proxy to it
-      ports = [ "127.0.0.1:8000:80" ];
-    };
   };
 
   # Configuration Generator
@@ -71,20 +63,9 @@ in
     };
     script = ''
       # 1. Ensure directories exist
-      mkdir -p /var/lib/ziti /var/lib/zrok-controller /var/lib/zrok-frontend /var/www/homepage
+      mkdir -p /var/lib/ziti /var/lib/zrok-controller /var/lib/zrok-frontend
 
-      # 2. Generate Homepage index.html
-      cat <<EOF > /var/www/homepage/index.html
-<!DOCTYPE html>
-<html>
-<head><title>SKYLAB HOMELAB</title></head>
-<body style="background-color: #121212; color: #ffffff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-    <h1>SKYLAB HOMELAB</h1>
-</body>
-</html>
-EOF
-
-      # 3. Load Secrets for Config Generation
+      # 2. Load Secrets for Config Generation
       if [ -f /var/lib/secrets/zrok/controller.env ]; then
         source /var/lib/secrets/zrok/controller.env
       else
@@ -143,6 +124,7 @@ EOF
     "d /var/lib/zrok-controller 0700 root root -"
     "d /var/lib/zrok-frontend 0700 root root -"
   ];
+
 
   networking.firewall.allowedTCPPorts = [ 80 443 ziti_ctrl_port 10080 ];
 }
