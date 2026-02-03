@@ -84,6 +84,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [zrok (SSO & Tunnel)](./docs/zrok.md)
 * [ZFS Storage](./docs/zfs-storage.md)
 * [SSL/TLS Setup](./docs/ssl-setup.md)
+* [Monitoring & Troubleshooting](./docs/monitoring.md)
 
 ## IMPORTANT: Note for LLM Agents
 

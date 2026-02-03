@@ -34,7 +34,10 @@
     docker-compose
     fastfetch
     fd
+    fatrace
     inetutils
+    iotop
+    lsof
     nano
     nfs-utils
     openssh
