@@ -21,7 +21,6 @@ in
     # 1. OpenZiti Controller & Router (Quickstart)
     ziti-controller = {
       image = "openziti/ziti-cli:latest";
-      containerName = "ziti-controller";
       hostname = "ziti.${zrok_dns_zone}";
       extraOptions = [ "--network=zrok-net" ];
       environmentFiles = [ "/var/lib/secrets/zrok/controller.env" ];
@@ -42,7 +41,6 @@ in
     # 2. zrok Controller
     zrok-controller = {
       image = "openziti/zrok:latest";
-      containerName = "zrok-controller";
       dependsOn = [ "ziti-controller" ];
       extraOptions = [ "--network=zrok-net" ];
       environmentFiles = [ "/var/lib/secrets/zrok/controller.env" ];
@@ -56,7 +54,6 @@ in
     # 3. zrok Frontend (Public Access & OAuth)
     zrok-frontend = {
       image = "openziti/zrok:latest";
-      containerName = "zrok-frontend";
       dependsOn = [ "zrok-controller" ];
       extraOptions = [ "--network=zrok-net" ];
       ports = [
