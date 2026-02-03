@@ -20,6 +20,7 @@ in
       image = "openziti/ziti-cli:latest";
       hostname = "ziti.${zrok_dns_zone}";
       extraOptions = [ "--network=zrok-net" ];
+      environmentFiles = [ "/var/lib/secrets/zrok/controller.env" ];
       environment = {
         ZITI_CTRL_ADVERTISED_ADDRESS = "ziti.${zrok_dns_zone}";
         ZITI_CTRL_ADVERTISED_PORT = "${toString ziti_ctrl_port}";
