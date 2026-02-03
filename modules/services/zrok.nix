@@ -13,12 +13,13 @@ in
     # 1. OpenZiti Controller & Router (Quickstart)
     ziti-controller = {
       image = "openziti/ziti-cli:latest";
+      hostname = "ziti.${zrok_dns_zone}";
       environment = {
         ZITI_CTRL_ADVERTISED_ADDRESS = "ziti.${zrok_dns_zone}";
         ZITI_CTRL_ADVERTISED_PORT = "${toString ziti_ctrl_port}";
       };
       volumes = [ "/var/lib/ziti:/persistent" ];
-      cmd = [ "edge" "quickstart" "controller" ];
+      cmd = [ "edge" "quickstart" "controller" "--home" "/persistent" ];
       ports = [ 
         "${toString ziti_ctrl_port}:${toString ziti_ctrl_port}"
         "10080:10080" # Edge API
@@ -56,7 +57,9 @@ in
   systemd.services.zrok-init = {
     description = "Initialize zrok and Ziti configuration files";
     wantedBy = [ "multi-user.target" ];
-    before = [ "docker-ziti-controller.service" "docker-zrok-controller.service" ];
+    before = let 
+      backend = config.virtualisation.oci-containers.backend;
+    in [ "${backend}-ziti-controller.service" "${backend}-zrok-controller.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;

@@ -36,33 +36,11 @@ We are transitioning from Authelia + Cloudflare Tunnels to a self-hosted `zrok` 
 
 ## Deployment Steps (on SKYLAB)
 
-1. **Create Initial Account**:
-   Run this to create your first admin/user account:
-   ```bash
-   docker exec -it zrok-controller zrok admin create account <email> <password>
-   ```
-   *Note: Save the token returned by this command.*
+Please refer to the detailed **First-Time Setup** guide in [docs/zrok.md](./docs/zrok.md) to:
+1. Create your user account.
+2. Configure the local CLI.
+3. Enable your environment.
+4. Expose the homepage.
 
-2. **Configure Host CLI**:
-   Point the local `zrok` CLI to your self-hosted instance:
-   ```bash
-   zrok config set apiEndpoint http://localhost:18080
-   ```
-
-3. **Enable Environment**:
-   Activate the SKYLAB server in your zrok instance:
-   ```bash
-   zrok enable <token_from_step_1>
-   ```
-
-4. **Reserve and Share Homepage**:
-   ```bash
-   # Reserve the root domain name
-   zrok reserve public --name homepage --backend-mode proxy http://localhost:8085
-   
-   # Start the public share
-   zrok share reserved homepage
-   ```
-
-5. **Verify Access**:
-   Navigate to `https://skylab.quest` to see your "SKYLAB HOMELAB" page.
+## Verification
+Navigate to `https://skylab.quest` to see your "SKYLAB HOMELAB" page.

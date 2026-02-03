@@ -50,28 +50,35 @@ sudo ./scripts/generate-zrok-secrets.sh
 - **`controller.env`**: Contains `ZROK_ADMIN_TOKEN` and `ZITI_PWD`.
 - **`frontend.env`**: Contains Google OAuth credentials and the `ZROK_OAUTH_HASH_KEY`.
 
-### Static Homepage
-The `zrok.nix` module leverages the system's existing Nginx service to serve a home page on local port **8085**.
+### Administrative Commands (The `docker exec` logic)
+Administrative commands (like creating accounts) must be run inside the `zrok-controller` container because it has direct access to the `ZROK_ADMIN_TOKEN` and the internal database.
 
-In NixOS, the home page content is managed **declaratively**:
-- The source files are located in the `www/` directory of this repository.
-- The `nginx.nix` module uses a relative path (`root = ../../www;`), which causes Nix to copy the files into the immutable **Nix Store** during deployment.
-- This ensures the home page is always consistent with the Git repository, regardless of where the repo is cloned on the server.
+We use `docker exec -it zrok-controller zrok ...` to run the `zrok` binary that is already installed inside the container.
 
 ## Operational Guides
 
-### Initial Setup
-Before sharing any service, you must initialize your environment:
+### First-Time Setup
+After the infrastructure is deployed and containers are running, follow these steps to initialize your user environment:
 
-1.  **Configure API Endpoint**:
+1.  **Create your User Account**:
+    Run this command to create your first admin/user account:
+    ```bash
+    docker exec -it zrok-controller zrok admin create account <your_email> <a_password>
+    ```
+    *Note: This command will return an **Account Token**. This is your personal "debit card" to use zrok.*
+
+2.  **Configure the Host CLI**:
+    Point the local `zrok` CLI (installed on SKYLAB) to your self-hosted instance:
     ```bash
     zrok config set apiEndpoint http://localhost:18080
     ```
-2.  **Enable Environment**:
-    Use the token generated during account creation (see `WORK_IN_PROGRESS.md`):
+
+3.  **Enable the Environment**:
+    Activate the SKYLAB server for your new account:
     ```bash
-    zrok enable <account_token>
+    zrok enable <your_account_token>
     ```
+    *This creates a hidden `.zrok` folder in your home directory containing your environment identity.*
 
 ### Public Sharing (with OAuth)
 Public sharing makes a service accessible via the internet on your domain (e.g., `skylab.quest`). In our self-hosted setup, these are automatically protected by Google OAuth.
