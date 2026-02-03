@@ -70,10 +70,10 @@ in
   # Generates YAML configs from environment variables before containers start
   systemd.services.zrok-init = {
     description = "Initialize zrok and Ziti configuration files";
-    # No wantedBy - it will be pulled in by the containers that need it
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      TimeoutStartSec = "30s";
     };
     path = [ pkgs.coreutils ];
     script = ''
@@ -170,16 +170,13 @@ EOF
   systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
   systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
 
-  # Ensure the container services depend on zrok-init
-  systemd.services."podman-ziti-controller" = {
-    after = [ "zrok-init.service" "zrok-network.service" ];
-    requires = [ "zrok-init.service" "zrok-network.service" ];
-  };
+  # Ensure the container services depend on zrok-init and zrok-network
+  # We use additive assignment to avoid overwriting default oci-containers dependencies
+  systemd.services."podman-ziti-controller".after = [ "zrok-init.service" "zrok-network.service" ];
+  systemd.services."podman-ziti-controller".requires = [ "zrok-init.service" "zrok-network.service" ];
 
-  systemd.services."podman-zrok-controller" = {
-    after = [ "zrok-init.service" "zrok-network.service" ];
-    requires = [ "zrok-init.service" "zrok-network.service" ];
-  };
+  systemd.services."podman-zrok-controller".after = [ "zrok-init.service" "zrok-network.service" "podman-ziti-controller.service" ];
+  systemd.services."podman-zrok-controller".requires = [ "zrok-init.service" "zrok-network.service" ];
 
   # Automated Bootstrap Service
   # This runs after the controller is up and registers the frontend identity if missing.
@@ -188,14 +185,32 @@ EOF
     after = [ "podman-zrok-controller.service" ];
     requires = [ "podman-zrok-controller.service" ];
     wantedBy = [ "multi-user.target" ];
-    path = [ pkgs.podman ];
+    path = [ pkgs.podman pkgs.gnugrep pkgs.coreutils ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
       Restart = "on-failure";
       RestartSec = "10s";
+      TimeoutStartSec = "5min"; # Allow time for image pulling
     };
     script = ''
+      set -ex
+      
+      # 1. Wait for the container to actually exist
+      echo "Waiting for zrok-controller container to exist..."
+      until podman ps -a --format "{{.Names}}" | grep -q "^zrok-controller$"; do
+        echo "Container zrok-controller not found yet. Sleeping..."
+        sleep 5
+      done
+
+      # 2. Wait for it to be running
+      echo "Waiting for zrok-controller to be running..."
+      until [ "$(podman inspect -f '{{.State.Running}}' zrok-controller)" == "true" ]; do
+        echo "Container zrok-controller is not running yet. Sleeping..."
+        sleep 5
+      done
+
+      # 3. Proceed with bootstrap if needed
       if [ ! -f /var/lib/zrok-frontend/identity.json ]; then
         echo "Registering public frontend identity in OpenZiti..."
         # We retry because the Ziti API inside the container takes a few seconds to be ready
