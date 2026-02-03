@@ -115,6 +115,7 @@ EOF
 v: 4
 host_match: ${zrok_dns_zone}
 address: 0.0.0.0:8080
+ziti_identity: "/var/lib/zrok-frontend/identity.json"
 oauth:
   bind_address: 0.0.0.0:8081
   endpoint_url: https://oauth.${zrok_dns_zone}
