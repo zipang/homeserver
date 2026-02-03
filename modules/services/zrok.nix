@@ -181,8 +181,8 @@ EOF
   systemd.services."podman-zrok-controller".after = [ "zrok-init.service" "zrok-network.service" "podman-ziti-controller.service" ];
   systemd.services."podman-zrok-controller".requires = [ "zrok-init.service" "zrok-network.service" ];
 
-  systemd.services."podman-zrok-frontend".after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" ];
-  systemd.services."podman-zrok-frontend".requires = [ "zrok-init.service" "zrok-network.service" ];
+  systemd.services."podman-zrok-frontend".after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" "zrok-bootstrap.service" ];
+  systemd.services."podman-zrok-frontend".requires = [ "zrok-init.service" "zrok-network.service" "zrok-bootstrap.service" ];
 
   # Automated Bootstrap Service
   # This runs after the controller is up and registers the frontend identity if missing.
@@ -227,11 +227,5 @@ EOF
         chown ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-frontend/identity.json
       fi
     '';
-  };
-
-  # Ensure the frontend waits for the bootstrap to finish
-  systemd.services."podman-zrok-frontend" = {
-    after = [ "zrok-bootstrap.service" ];
-    requires = [ "zrok-bootstrap.service" ];
   };
 }
