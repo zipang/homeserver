@@ -60,13 +60,58 @@ In NixOS, the home page content is managed **declaratively**:
 
 ## Operational Guides
 
-### Adding a New Service to zrok
-To share a service like Nextcloud:
-1. Ensure the service is running locally (e.g., `localhost:8080`).
-2. Use the `zrok` CLI to reserve and share the service (details in Phase 3 of WIP).
+### Initial Setup
+Before sharing any service, you must initialize your environment:
+
+1.  **Configure API Endpoint**:
+    ```bash
+    zrok config set apiEndpoint http://localhost:18080
+    ```
+2.  **Enable Environment**:
+    Use the token generated during account creation (see `WORK_IN_PROGRESS.md`):
+    ```bash
+    zrok enable <account_token>
+    ```
+
+### Public Sharing (with OAuth)
+Public sharing makes a service accessible via the internet on your domain (e.g., `skylab.quest`). In our self-hosted setup, these are automatically protected by Google OAuth.
+
+#### Method 1: Reserved Share (Recommended for permanent services)
+This ensures the subdomain remains the same across restarts.
+
+1.  **Reserve the name**:
+    ```bash
+    zrok reserve public --name <service_name> --backend-mode proxy http://localhost:<port>
+    ```
+2.  **Start the share**:
+    ```bash
+    zrok share reserved <service_name>
+    ```
+
+#### Method 2: Ephemeral Share (For testing)
+```bash
+zrok share public http://localhost:<port> --backend-mode proxy
+```
+*Note: This will generate a random subdomain.*
+
+### Private Sharing
+Private sharing does **not** expose the service to the internet. Instead, it creates a peer-to-peer tunnel between your server and a specific client. This is ideal for highly sensitive services or internal tools.
+
+1.  **Start the private share on the server**:
+    ```bash
+    zrok share private http://localhost:<port> --backend-mode proxy
+    ```
+    *Note: This command will output a **Share Token** (e.g., `v3rt1g0`).*
+
+2.  **Access the share from a client**:
+    On your laptop or another machine with `zrok` installed:
+    ```bash
+    zrok access private <share_token>
+    ```
+    This will start a local proxy (usually on `localhost:9191`) that tunnels directly to your server.
 
 ### Google OAuth Configuration
-1. Set the **Authorized Redirect URI** to `https://oauth.example.com/google/callback`.
+1. Set the **Authorized Redirect URI** to `https://oauth.skylab.quest/google/callback`.
 2. Ensure the scope `openid email profile` is requested.
 
 ## Headless Operations & Troubleshooting
