@@ -7,7 +7,7 @@ let
 
   # Container UIDs from official images
   ziti_uid = 2171; # 'ziti' user in openziti/ziti-cli
-  zrok_uid = 1001; # 'ziggy' user in openziti/zrok
+  zrok_uid = 2171; # Many OpenZiti images share this UID
 in
 {
   # zrok Infrastructure & Homepage
@@ -124,7 +124,7 @@ EOF
       chown -R ${toString ziti_uid}:${toString ziti_uid} /var/lib/ziti
       chown -R ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-controller /var/lib/zrok-frontend
       
-      chmod 644 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
+      chmod 600 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
     '';
   };
 
@@ -132,8 +132,8 @@ EOF
   systemd.tmpfiles.rules = [
     "d /var/lib/secrets/zrok 0700 root root -"
     "d /var/lib/ziti 0755 ${toString ziti_uid} ${toString ziti_uid} -"
-    "d /var/lib/zrok-controller 0755 ${toString zrok_uid} ${toString zrok_uid} -"
-    "d /var/lib/zrok-frontend 0755 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-controller 0700 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-frontend 0700 ${toString zrok_uid} ${toString zrok_uid} -"
   ];
 
 
