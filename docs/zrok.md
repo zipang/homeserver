@@ -50,10 +50,10 @@ sudo ./scripts/generate-zrok-secrets.sh
 - **`controller.env`**: Contains `ZROK_ADMIN_TOKEN` and `ZITI_PWD`.
 - **`frontend.env`**: Contains Google OAuth credentials and the `ZROK_OAUTH_HASH_KEY`.
 
-### Administrative Commands (The `docker exec` logic)
+### Administrative Commands (The `podman exec` logic)
 Administrative commands (like creating accounts) must be run inside the `zrok-controller` container because it has direct access to the `ZROK_ADMIN_TOKEN` and the internal database.
 
-We use `docker exec -it zrok-controller zrok ...` to run the `zrok` binary that is already installed inside the container.
+We use `podman exec -it zrok-controller zrok ...` to run the `zrok` binary that is already installed inside the container.
 
 ## Operational Guides
 
@@ -63,7 +63,7 @@ After the infrastructure is deployed and containers are running, follow these st
 1.  **Create your User Account**:
     Run this command to create your first admin/user account:
     ```bash
-    docker exec -it zrok-controller zrok admin create account <your_email> <a_password>
+    podman exec -it zrok-controller zrok admin create account <your_email> <a_password>
     ```
     *Note: This command will return an **Account Token**. This is your personal "debit card" to use zrok.*
 
@@ -126,19 +126,33 @@ Private sharing does **not** expose the service to the internet. Instead, it cre
 ### Monitoring Logs
 ```bash
 # Monitor OpenZiti Controller
-journalctl -u docker-ziti-controller.service -f
+journalctl -u podman-ziti-controller.service -f
 
 # Monitor zrok Controller
-journalctl -u docker-zrok-controller.service -f
+journalctl -u podman-zrok-controller.service -f
 
 # Monitor zrok Frontend
-journalctl -u docker-zrok-frontend.service -f
+journalctl -u podman-zrok-frontend.service -f
 ```
 
 ### Checking Container Status
 ```bash
-docker ps | grep -E "ziti|zrok"
+podman ps | grep -E "ziti|zrok"
 ```
+
+### Recovery & State Reset
+If the Ziti database becomes out of sync with your secrets (e.g., authentication failures for `admin`), you can perform a fresh start of the data stack without losing your generated secrets.
+
+Run the recovery script:
+```bash
+sudo ./scripts/reset-zrok.sh
+```
+
+Then restart the services in order:
+1. `sudo systemctl start zrok-init.service`
+2. `sudo systemctl start podman-ziti-controller.service`
+3. Wait 15s for initialization, then: `sudo systemctl start podman-zrok-controller.service`
+4. `sudo systemctl start podman-zrok-frontend.service`
 
 ### Troubleshooting Connectivity
 If a public share is not reachable:
