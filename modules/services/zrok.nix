@@ -87,17 +87,17 @@ systemd.services.zrok-init = {
     )
 
     missing_files=()
-    for file in "${required_files[@]}"; do
+    for file in "''${required_files[@]}"; do
       if [ ! -f "$file" ]; then
         missing_files+=("$file")
       fi
     done
 
-    if [ ${#missing_files[@]} -gt 0 ]; then
+    if [ ''${#missing_files[@]} -gt 0 ]; then
       echo "ERROR: Required files or identities are missing!"
       echo ""
       echo "The following files need to be created/generated:"
-      for file in "${missing_files[@]}"; do
+      for file in "''${missing_files[@]}"; do
         echo "  - $file"
       done
       echo ""
