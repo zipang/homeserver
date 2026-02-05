@@ -143,8 +143,8 @@ systemd.services.zrok-init = {
     '';
   };
 
-# Install zrok and ziti CLIs on the host for management
-environment.systemPackages = [ pkgs.zrok pkgs.openziti ];
+# Install zrok CLI on the host for management
+environment.systemPackages = [ pkgs.zrok ];
 
 # Manual service control - no autostart allows manual systemctl start
 # The following lines would enable automatic startup - commented out for manual control:
