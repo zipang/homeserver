@@ -83,25 +83,28 @@ systemd.services.zrok-init = {
       "/var/lib/secrets/zrok/frontend.env"
       "/var/lib/zrok-controller/config.yml"
       "/var/lib/zrok-frontend/config.yml"
+      "/var/lib/zrok-frontend/identity.json"
     )
 
     missing_files=()
-    for file in "''${required_files[@]}"; do
+    for file in "${required_files[@]}"; do
       if [ ! -f "$file" ]; then
         missing_files+=("$file")
       fi
     done
 
-    if [ ''${#missing_files[@]} -gt 0 ]; then
-      echo "ERROR: Required files are missing!"
+    if [ ${#missing_files[@]} -gt 0 ]; then
+      echo "ERROR: Required files or identities are missing!"
       echo ""
-      echo "The following files need to be created:"
-      for file in "''${missing_files[@]}"; do
+      echo "The following files need to be created/generated:"
+      for file in "${missing_files[@]}"; do
         echo "  - $file"
       done
       echo ""
-      echo "Please run the setup script to generate all required files:"
-      echo "  sudo /home/master/homeserver/scripts/generate-zrok-setup.sh"
+      echo "Please run the setup and bootstrap scripts:"
+      echo "  1. sudo /home/master/homeserver/scripts/generate-zrok-setup.sh"
+      echo "  2. (Start ziti-controller first) sudo systemctl start podman-ziti-controller.service"
+      echo "  3. sudo /home/master/homeserver/scripts/bootstrap-zrok-identities.sh"
       echo ""
       echo "Then start the zrok services again."
       exit 1

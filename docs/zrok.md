@@ -10,8 +10,9 @@ In SKYLAB, `zrok` replaces both Cloudflare Tunnels and Authelia for public acces
 
 ## Initial Setup
 
-Before starting any zrok services, you must run the setup script to generate all required secrets and configuration files:
+Before starting any zrok services, you must run the setup script to generate all required secrets and configuration files, and then bootstrap the identities:
 
+### 1. Generate Configuration
 ```bash
 # Generate all secrets and configuration files
 sudo /home/master/homeserver/scripts/generate-zrok-setup.sh
@@ -22,10 +23,25 @@ This script will:
 2. Generate secure random secrets (admin tokens, passwords)
 3. Create environment files (controller.env, frontend.env)
 4. Create configuration files (config.yml for controller and frontend)
-5. Set proper permissions and ownership for all files
-6. Display a summary of created files
 
-**Important**: After running the setup script, edit `/var/lib/secrets/zrok/frontend.env` to add your Google OAuth credentials:
+### 2. Bootstrap Identities
+After running the setup script and starting the Ziti controller, you must generate the identity for the frontend:
+
+```bash
+# Start Ziti first
+sudo systemctl start podman-ziti-controller.service
+
+# Generate and enroll identities
+sudo /home/master/homeserver/scripts/bootstrap-zrok-identities.sh
+```
+
+The bootstrap script will:
+1. Synchronize the Ziti admin password with your secrets.
+2. Create the `zrok-frontend` identity in the Ziti database.
+3. Enroll the identity and create `/var/lib/zrok-frontend/identity.json`.
+4. Set correct permissions for the identity file.
+
+**Important**: After setup, edit `/var/lib/secrets/zrok/frontend.env` to add your Google OAuth credentials:
 - `ZROK_OAUTH_GOOGLE_CLIENT_ID`
 - `ZROK_OAUTH_GOOGLE_CLIENT_SECRET`
 
