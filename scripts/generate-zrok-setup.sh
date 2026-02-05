@@ -152,7 +152,7 @@ store:
   path: /var/lib/zrok-controller/sqlite3.db
   type: sqlite3
 ziti:
-  api_endpoint: https://ziti.${ZROK_DNS_ZONE}:${ZITI_CTRL_PORT}/edge/management/v1
+  api_endpoint: https://ziti-controller:${ZITI_CTRL_PORT}/edge/management/v1
   username: admin
   password: \"$ZITI_PWD\""
 
@@ -164,7 +164,7 @@ host_match: ${ZROK_DNS_ZONE}
 address: 0.0.0.0:8080
 ziti_identity: \"/var/lib/zrok-frontend/identity.json\"
 ziti:
-  api_endpoint: https://ziti.${ZROK_DNS_ZONE}:${ZITI_CTRL_PORT}/edge/management/v1
+  api_endpoint: https://ziti-controller:${ZITI_CTRL_PORT}/edge/management/v1
   username: admin
   password: \"${ZITI_PWD:-}\"
 oauth:
