@@ -146,23 +146,21 @@ systemd.services.zrok-init = {
 # Install zrok CLI on the host for management
 environment.systemPackages = [ pkgs.zrok ];
 
-# Disable automatic container startup and restart for manual debugging
-systemd.services."podman-ziti-controller".enable = false;
-systemd.services."podman-zrok-controller".enable = false;
-systemd.services."podman-zrok-frontend".enable = false;
+# Manual service control - no autostart allows manual systemctl start
+# The following lines would enable automatic startup - commented out for manual control:
 
-# Prevent restart loops until configuration is fixed
-systemd.services."podman-ziti-controller".serviceConfig.Restart = "no";
-systemd.services."podman-zrok-controller".serviceConfig.Restart = "no";
-systemd.services."podman-zrok-frontend".serviceConfig.Restart = "no";
+# # Uncomment these lines to enable automatic startup on boot:
+# systemd.services."podman-ziti-controller".wantedBy = [ "multi-user.target" ];
+# systemd.services."podman-zrok-controller".wantedBy = [ "multi-user.target" ];
+# systemd.services."podman-zrok-frontend".wantedBy = [ "multi-user.target" ];
 
-# Simplified service dependencies
+# Service dependencies for ordering only (no autostart triggers)
 # 'after': ordering - wait for services to complete startup
-# 'wants': soft dependency - try to start these services but don't fail if they don't
-# Using 'wants' instead of 'requires' prevents system hangs if helper services fail
+# Uncomment 'wants' lines below to enable autostart chains:
+
 systemd.services."podman-ziti-controller" = {
   after = [ "zrok-init.service" "zrok-network.service" ];
-  wants = [ "zrok-init.service" "zrok-network.service" ];
+  # wants = [ "zrok-init.service" "zrok-network.service" ];  # Commented to prevent autostart
 };
 
 systemd.services."podman-zrok-controller" = {
