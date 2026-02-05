@@ -2,7 +2,8 @@
 name: git-commit
 description: Create well-formatted commits with conventional commit messages and emoji
 license: MIT
-compatibility: opencodemetadata:
+compatibility: opencode
+metadata:
   audience: all
   workflow: git
 ---
