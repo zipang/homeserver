@@ -197,70 +197,7 @@ EOF
   };
 
   systemd.services."podman-zrok-frontend" = {
-    after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" "zrok-bootstrap.service" ];
-    wants = [ "zrok-init.service" "zrok-network.service" "zrok-bootstrap.service" ];
-  };
-
-  # Automated Bootstrap Service
-  # This runs after the controller is up and registers the frontend identity if missing.
-  systemd.services.zrok-bootstrap = {
-    description = "Automated zrok frontend bootstrap";
-    after = [ "podman-zrok-controller.service" ];
-    wants = [ "podman-zrok-controller.service" ];
-    wantedBy = [ "multi-user.target" ];
-path = [ pkgs.podman pkgs.gnugrep pkgs.coreutils ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      # No Restart policy here - let it fail so we can see the error, 
-      # but it won't block the rest of the system because of 'wants'.
-      TimeoutStartSec = "5min";
-    };
-
-    script = ''
-      set -ex
-      
-      # 1. Load Secrets
-      if [ -f /var/lib/secrets/zrok/controller.env ]; then
-        source /var/lib/secrets/zrok/controller.env
-      else
-        echo "Error: /var/lib/secrets/zrok/controller.env not found."
-        exit 1
-      fi
-
-      # 2. Wait for ziti-controller and sync password
-      echo "Waiting for ziti-controller to be running..."
-      until [ "$(podman inspect -f '{{.State.Running}}' ziti-controller 2>/dev/null)" == "true" ]; do
-        sleep 5
-      done
-
-      echo "Force-syncing Ziti admin password..."
-      # Use the local ziti-controller's own CLI to reset its admin password
-      until podman exec ziti-controller ziti edge update identity admin --password "$ZITI_PWD"; do
-        echo "Waiting for Ziti API to allow password sync..."
-        sleep 5
-      done
-
-      # 3. Wait for zrok-controller to be running
-      echo "Waiting for zrok-controller container to exist..."
-      until podman ps -a --format "{{.Names}}" | grep -q "^zrok-controller$"; do
-        sleep 5
-      done
-
-      echo "Waiting for zrok-controller to be running..."
-      until [ "$(podman inspect -f '{{.State.Running}}' zrok-controller 2>/dev/null)" == "true" ]; do
-        sleep 5
-      done
-
-      # 4. Proceed with bootstrap if needed
-      if [ ! -f /var/lib/zrok-frontend/identity.json ]; then
-        echo "Registering public frontend identity in OpenZiti..."
-        until podman exec zrok-controller zrok admin bootstrap /var/lib/zrok-frontend/config.yml; do
-          echo "Waiting for zrok-controller to allow bootstrap..."
-          sleep 5
-        done
-        chown ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-frontend/identity.json
-      fi
-    '';
+    after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" ];
+    wants = [ "zrok-init.service" "zrok-network.service" ];
   };
 }
