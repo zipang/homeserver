@@ -154,6 +154,11 @@ environment.systemPackages = [ pkgs.zrok ];
 # systemd.services."podman-zrok-controller".wantedBy = [ "multi-user.target" ];
 # systemd.services."podman-zrok-frontend".wantedBy = [ "multi-user.target" ];
 
+# Prevent restart loops until configuration is fixed
+systemd.services."podman-ziti-controller".serviceConfig.Restart = "no";
+systemd.services."podman-zrok-controller".serviceConfig.Restart = "no";
+systemd.services."podman-zrok-frontend".serviceConfig.Restart = "no";
+
 # Service dependencies for ordering only (no autostart triggers)
 # 'after': ordering - wait for services to complete startup
 # Uncomment 'wants' lines below to enable autostart chains:
