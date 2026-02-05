@@ -11,7 +11,17 @@ CONTROLLER_ENV="$SECRETS_DIR/controller.env"
 FRONTEND_ENV="$SECRETS_DIR/frontend.env"
 CONTROLLER_CONFIG="/var/lib/zrok-controller/config.yml"
 FRONTEND_CONFIG="/var/lib/zrok-frontend/config.yml"
-ZROK_DNS_ZONE="skylab.quest"
+
+# Get DNS Zone from environment or prompt
+if [ -z "$ZROK_DNS_ZONE" ]; then
+    read -p "Enter your DNS zone (e.g., example.com): " ZROK_DNS_ZONE
+fi
+
+if [ -z "$ZROK_DNS_ZONE" ]; then
+    echo "Error: ZROK_DNS_ZONE is required."
+    exit 1
+fi
+
 ZITI_CTRL_PORT=1280
 ZROK_CTRL_PORT=18080
 

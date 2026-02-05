@@ -1,7 +1,10 @@
 { config, pkgs, lib, ... }:
 
+with lib;
+
 let
-  zrok_dns_zone = "skylab.quest";
+  cfg = config.services.zrok;
+  zrok_dns_zone = cfg.dnsZone;
   ziti_ctrl_port = 1280;
   zrok_ctrl_port = 18080;
 
@@ -10,7 +13,17 @@ let
   zrok_uid = 2171; # Many OpenZiti images share this UID
 in
 {
-  # zrok Infrastructure & Homepage
+  options.services.zrok = {
+    enable = mkEnableOption "zrok self-hosted infrastructure";
+    dnsZone = mkOption {
+      type = types.str;
+      default = config.skylab.domain;
+      description = "The DNS zone for zrok (e.g., example.com)";
+    };
+  };
+
+  config = mkIf cfg.enable {
+    # zrok Infrastructure & Homepage
   # This module implements a self-hosted zrok instance using OCI containers.
   # Permissions are handled via UIDs to allow containers to run as non-root.
 
@@ -175,7 +188,9 @@ systemd.services."podman-zrok-controller" = {
   after = [ "podman-ziti-controller.service" ];
 };
 
-systemd.services."podman-zrok-frontend" = {
-  after = [ "podman-zrok-controller.service" ];
-};
+  systemd.services."podman-zrok-frontend" = {
+    after = [ "podman-zrok-controller.service" ];
+  };
+  };
 }
+

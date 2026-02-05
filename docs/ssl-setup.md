@@ -2,6 +2,45 @@
 
 To ensure secure connections within the local network and remove browser warnings, we use a **Local Certificate Authority (CA)**.
 
+## SSL for Public Domain
+
+For the public domain, we use **ACME (Let's Encrypt)** with the **DNS-01 challenge** via Cloudflare. This allows us to obtain certificates without opening port 80/443 on the router.
+
+### 1. Cloudflare Configuration
+
+1.  **Transfer DNS**: Point your domain nameservers (on Namecheap) to Cloudflare.
+2.  **API Token**: Create a token at `My Profile > API Tokens > Create Token`.
+    *   Template: `Edit zone DNS`
+    *   Permissions: `Zone - DNS - Edit`
+    *   Zone Resources: `Include - Specific zone - example.com`
+
+### 2. Secrets Management
+
+Store the token in your encrypted secrets file (e.g., `secrets/secrets.yaml`):
+
+```yaml
+acme:
+  cloudflare_token: |
+    CLOUDFLARE_DNS_API_TOKEN=your_token_here
+```
+
+### 3. NixOS Implementation
+
+The configuration is handled in `modules/system/acme.nix`. It uses the token to prove ownership of the domain to Let's Encrypt.
+
+### 4. Verification
+
+After deploying the configuration, check the status of the certificate generation:
+
+```bash
+systemctl status acme-example.com.service
+journalctl -u acme-example.com.service -f
+```
+
+Once successful, Nginx will automatically pick up the certificate.
+
+---
+
 ## The Challenge: SSL on `.local` Domains
 
 Standard Certificate Authorities (like Let's Encrypt) require you to prove ownership of a domain via a public DNS record. Since `.local` domains are reserved for local networks and are not reachable from the internet, Let's Encrypt cannot issue certificates for them.

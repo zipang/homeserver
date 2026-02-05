@@ -16,6 +16,10 @@
       #   format = "dotenv";
       #   owner = "authelia-main";
       # };
+      "acme/cloudflare_token" = {
+        owner = "acme";
+        group = "acme";
+      };
     };
   };
 }

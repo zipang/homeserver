@@ -12,6 +12,8 @@
     ../../modules/system/ssh.nix
     ../../modules/system/storage.nix
     ../../modules/system/sops.nix
+    ../../modules/system/acme.nix
+    ../../modules/system/metadata.nix
 
     # Programs
     ../../modules/programs/neovim.nix
@@ -33,6 +35,9 @@
     # ../../modules/services/copyparty.nix
 
   ];
+
+  skylab.domain = "example.com"; # FIXME: Replace with your real domain
+  skylab.adminEmail = "admin@example.com"; # FIXME: Replace with your email
 
   networking.hostName = "SKYLAB";
   networking.hostId = "8425e349";

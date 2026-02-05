@@ -116,7 +116,7 @@ After the infrastructure is deployed and containers are running, follow these st
     *This creates a hidden `.zrok` folder in your home directory containing your environment identity.*
 
 ### Public Sharing (with OAuth)
-Public sharing makes a service accessible via the internet on your domain (e.g., `skylab.quest`). In our self-hosted setup, these are automatically protected by Google OAuth.
+Public sharing makes a service accessible via the internet on your domain (e.g., `example.com`). In our self-hosted setup, these are automatically protected by Google OAuth.
 
 #### Method 1: Reserved Share (Recommended for permanent services)
 This ensures the subdomain remains the same across restarts.
@@ -153,7 +153,7 @@ Private sharing does **not** expose the service to the internet. Instead, it cre
     This will start a local proxy (usually on `localhost:9191`) that tunnels directly to your server.
 
 ### Google OAuth Configuration
-1. Set the **Authorized Redirect URI** to `https://oauth.skylab.quest/google/callback`.
+1. Set the **Authorized Redirect URI** to `https://oauth.example.com/google/callback`.
 2. Ensure the scope `openid email profile` is requested.
 
 ### Nginx Reverse Proxy Integration (Optional)
@@ -163,7 +163,7 @@ Add these virtual hosts to your Nginx configuration:
 
 ```nix
 # Wildcard for all zrok public shares
-services.nginx.virtualHosts."*.skylab.quest" = {
+services.nginx.virtualHosts."*.example.com" = {
   forceSSL = true;
   sslCertificate = "/var/lib/secrets/certs/skylab.crt";
   sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
@@ -178,7 +178,7 @@ services.nginx.virtualHosts."*.skylab.quest" = {
 };
 
 # OAuth handler
-services.nginx.virtualHosts."oauth.skylab.quest" = {
+services.nginx.virtualHosts."oauth.example.com" = {
   forceSSL = true;
   sslCertificate = "/var/lib/secrets/certs/skylab.crt";
   sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
@@ -310,7 +310,7 @@ When using Podman instead of Docker, consider these key differences:
 - `ZITI_PWD`: Password for Ziti admin user (24-char random string)
 - `ZROK_CTRL_PORT`: Controller API port (default: 18080)
 - `ZITI_CTRL_ADVERTISED_PORT`: Ziti controller port (default: 1280)
-- `ZROK_DNS_ZONE`: DNS zone for wildcard records (e.g., `skylab.quest`)
+- `ZROK_DNS_ZONE`: DNS zone for wildcard records (e.g., `example.com`)
 
 #### Optional Variables (for zrok-frontend):
 

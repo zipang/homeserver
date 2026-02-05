@@ -15,8 +15,9 @@
     clientMaxBodySize = "10G";
 
     # Virtual Hosts will be added as we implement services
-    virtualHosts."skylab.quest" = {
-      listen = [{ addr = "127.0.0.1"; port = 8085; }];
+    virtualHosts."${config.skylab.domain}" = {
+      forceSSL = true;
+      enableACME = true;
       # Path to the static content, baked into the Nix store
       root = ../../www;
     };

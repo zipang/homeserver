@@ -1,24 +1,36 @@
-# WORK IN PROGRESS: zrok Deployment & Self-Healing Fixes
+# WORK IN PROGRESS
 
-We encountered significant issues with systemd deadlocks and authentication failures during the initial `zrok` deployment. The current goal is to implement a **Decoupled, Self-Healing** architecture.
+## 1. Public Domain & SSL (Cloudflare Migration)
+We are moving DNS resolution to Cloudflare to enable the ACME DNS-01 challenge (for self-renewing SSL certificates) and to support wildcard subdomains for `zrok`.
 
-## Current Issues & Failures
-1.  **Systemd Deadlock**: `zrok-init` and `zrok-network` were blocking `nixos-rebuild` when they called `podman` while the podman daemon was being managed by the same rebuild process.
-2.  **Authentication Race Condition**: `ziti-controller` was not consistently using the password provided in secrets during quickstart initialization.
-3.  **Dependency Loops**: Rigid `requires` and `after` chains caused the entire system manager to hang when a single component failed.
+### Tasks:
+- [ ] **Manual: Cloudflare Setup**
+    1. **Add Site**: Log in to Cloudflare, click "Add a Site" on the dashboard, and enter your domain name.
+    2. **Select Plan**: Choose the "Free" plan at the bottom and click "Continue".
+    3. **Review DNS**: Cloudflare will scan existing records. Verify them and click "Continue".
+    4. **Change Nameservers**: 
+        - Log in to Namecheap.
+        - Go to your Domain List > Manage > Nameservers.
+        - Change from "Namecheap BasicDNS" to "Custom DNS".
+        - Enter the two nameservers provided by Cloudflare (e.g., `ashley.ns.cloudflare.com`).
+    5. **Wait for Propagation**: It can take from 10 minutes to 24 hours for the change to be active.
+    6. **Create API Token**: 
+        - Go to `My Profile > API Tokens > Create Token`.
+        - Use "Edit zone DNS" template.
+        - Under "Zone Resources", select `Specific zone` and choose your domain.
+        - Copy the token immediately (it's only shown once).
+- [ ] **Secrets**: Store the Cloudflare API Token in `secrets/secrets.yaml` (managed via sops).
+    - Key: `acme/cloudflare_token`
+    - Format: `CLOUDFLARE_DNS_API_TOKEN=your_token_here`
+- [x] **NixOS**: Implement `modules/system/acme.nix` with the DNS-01 challenge provider.
+- [x] **Nginx**: Update `modules/services/nginx.nix` to use the ACME certificate.
 
-## The New Strategy: Decoupled Startup
-We are moving away from rigid systemd dependencies to a "convergent" model where each component tries to reach its target state independently.
+## 2. zrok Deployment & Self-Healing Fixes (Paused)
+We encountered systemd deadlocks and auth failures.
+- [ ] Refactor `modules/services/zrok.nix` to use a decoupled, self-healing startup.
+- [ ] Verify `zrok` wildcard routing once Cloudflare DNS is active.
 
-- [ ] **Remove Hard Dependencies**: Replace `requires` with `wants` and remove `before` triggers that block the system switch.
-- [ ] **Deterministic Password Sync**: The `zrok-bootstrap` service will forcefully sync the Ziti admin password instead of relying on the initial setup.
-- [ ] **Lightweight Init**: Ensure `zrok-init` only performs file operations and never calls `podman`.
-- [ ] **Background Retries**: All services will use `Restart=on-failure` with backoffs, allowing them to eventually connect without blocking other services.
-
-## Status: Temporarily Disabled
-The `zrok.nix` module is currently commented out in `hosts/SKYLAB/configuration.nix` to allow for safe server maintenance and reboots.
-
-## Pending Tasks
-1.  Refactor `modules/services/zrok.nix` to implement the decoupled strategy.
-2.  Test the `reset-zrok.sh` script with the new architecture.
-3.  Re-enable the module in `configuration.nix`.
+## Current State
+- Domain points to `<PUBLIC_IP>`.
+- Port 80/443 are closed (Router/Firewall).
+- ACME DNS-01 is the chosen path for SSL.

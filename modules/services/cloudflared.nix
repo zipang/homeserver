@@ -13,7 +13,7 @@
         # Ingress rules: map public domains to local Nginx
         ingress = {
           # We point everything to Nginx, which then routes to the specific service
-          "immich.example.com" = "http://localhost:80"; 
+          "immich.${config.skylab.domain}" = "http://localhost:80"; 
           # Default rule: if no match, return 404
           "*" = "http_status:404";
         };
