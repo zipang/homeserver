@@ -156,6 +156,25 @@ services.nginx.virtualHosts."oauth.skylab.quest" = {
 
 ## Headless Operations & Troubleshooting
 
+The zrok containers are managed by systemd services and should be controlled via `systemctl` commands, not manual Podman commands.
+
+### Service Management
+```bash
+# Start/Stop/Restart services
+systemctl start podman-ziti-controller.service
+systemctl stop podman-ziti-controller.service
+systemctl restart podman-ziti-controller.service
+
+# Check service status
+systemctl status podman-ziti-controller.service
+systemctl status podman-zrok-controller.service
+systemctl status podman-zrok-frontend.service
+
+# Enable/disable services on boot
+systemctl enable podman-ziti-controller.service
+systemctl disable podman-ziti-controller.service
+```
+
 ### Monitoring Logs
 ```bash
 # Monitor OpenZiti Controller
@@ -264,12 +283,14 @@ When using Podman instead of Docker, consider these key differences:
 - `ZROK_OAUTH_GOOGLE_CLIENT_ID`: Google OAuth client ID
 - `ZROK_OAUTH_GOOGLE_CLIENT_SECRET`: Google OAuth client secret
 
-### Manual Container Testing (Podman)
+### Manual Container Testing (Podman - Debugging Only)
 
-For debugging, you can run containers manually with equivalent Podman commands:
+> **Important**: Use these commands only for debugging purposes. For normal operations, manage containers via systemd services as shown above in the Service Management section.
+
+For troubleshooting and debugging, you can temporarily run containers manually with these Podman commands (this bypasses systemd service management):
 
 ```bash
-# Create network
+# Create network (if not exists)
 podman network create zrok-net
 
 # Run ziti-controller manually

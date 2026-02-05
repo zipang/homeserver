@@ -172,13 +172,8 @@ EOF
     '';
   };
 
-  # Install zrok CLI on the host for management
-  environment.systemPackages = [ pkgs.zrok ];
-
-  # Disable automatic container startup for manual debugging
-  systemd.services."podman-ziti-controller".enable = false;
-  systemd.services."podman-zrok-controller".enable = false;
-  systemd.services."podman-zrok-frontend".enable = false;
+# Install zrok CLI on the host for management
+environment.systemPackages = [ pkgs.zrok ];
 
   # Slow down restart loop to let Ziti initialize
   systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
