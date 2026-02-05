@@ -168,6 +168,135 @@ journalctl -u podman-zrok-controller.service -f
 journalctl -u podman-zrok-frontend.service -f
 ```
 
+## Docker/Podman Configuration Reference
+
+### Official zrok Docker Images Configuration
+
+The official zrok Docker setup uses a specific architecture with OCI containers. Understanding this helps when deploying with Podman.
+
+#### Container Architecture
+
+Based on the official [zrok Docker Compose](https://github.com/openziti/zrok/blob/main/docker/compose/zrok-instance/compose.yml), the setup consists of:
+
+1. **ziti-quickstart**: OpenZiti controller + router in quickstart mode
+   - Image: `docker.io/openziti/ziti-cli:latest`
+   - UID: `${ZIGGY_UID:-1000}` or `${ZIGGY_UID:-2171}`
+   - Command: `ziti edge quickstart --home /home/ziggy/quickstart`
+   - Ports: `${ZITI_CTRL_ADVERTISED_PORT:-80}`, `${ZITI_ROUTER_PORT:-3022}`
+   - Healthcheck: `ziti agent stats` every 3s
+
+2. **ziti-quickstart-init**: Permission fix for volumes
+   - Image: `busybox`
+   - Command: `chown -Rc ${ZIGGY_UID:-1000} /home/ziggy`
+
+3. **zrok-permissions**: Permission fix for zrok volumes
+   - Image: `busybox`
+   - Command: `chown -Rc ${ZIGGY_UID:-2171} /var/lib/zrok-*`
+
+4. **zrok-controller**: zrok controller service
+   - Build: Uses `zrok-controller.Dockerfile` with envsubst
+   - UID: `${ZIGGY_UID:-2171}`
+   - Command: `zrok controller /etc/zrok-controller/config.yml --verbose`
+   - Config: Generated from `zrok-controller-config.yml.envsubst` template
+   - Environment variables: `ZROK_ADMIN_TOKEN`, `ZITI_PWD`, `ZROK_CTRL_PORT`, etc.
+
+5. **zrok-frontend**: zrok frontend public access
+   - Build: Uses `zrok-frontend.Dockerfile` with envsubst
+   - UID: `${ZIGGY_UID:-2171}`
+   - Command: `zrok access public /etc/zrok-frontend/config.yml --verbose`
+   - Config: Generated from `zrok-frontend-config.yml.envsubst` template
+
+#### Official Configuration Template (zrok-controller)
+
+```yaml
+v: 4
+admin:
+  secrets:
+    - ${ZROK_ADMIN_TOKEN}
+endpoint:
+  host: 0.0.0.0
+  port: ${ZROK_CTRL_PORT}
+invites:
+  invites_open: true
+  token_strategy: store
+store:
+  path: /var/lib/zrok-controller/sqlite3.db
+  type: sqlite3
+ziti:
+  api_endpoint: https://ziti.${ZROK_DNS_ZONE}:${ZITI_CTRL_ADVERTISED_PORT}/edge/management/v1
+  username: admin
+  password: ${ZITI_PWD}
+```
+
+### Podman Adaptation Notes
+
+When using Podman instead of Docker, consider these key differences:
+
+1. **No Build-time Config Generation**: Podman doesn't support Docker Compose build-time envsubst, so we use `zrok-init` systemd service to generate configs at runtime.
+
+2. **User Namespace Mapping**: Podman's `--userns` behavior differs from Docker. Ensure UID/GID consistency across containers and host directories.
+
+3. **Network Aliases**: Podman supports network aliases but syntax differs. Use the same network name across all containers.
+
+4. **Health Checks**: Podman's health check monitoring differs from Docker. Monitor logs and service status manually.
+
+5. **Volume Permissions**: Podman maintains strict permissions. Use tmpfiles rules and systemd services to set correct ownership before container start.
+
+### Container UID Reference
+
+- **zrok UID**: 2171 (used by official zrok images)
+- **ziti UID**: 2171 (shared by OpenZiti images)
+- **Volume ownership**: All volumes (`/var/lib/ziti`, `/var/lib/zrok-*`, `/var/lib/secrets/zrok`) must be owned by UID 2171 for containers to read/write
+
+### Environment Variables Reference
+
+#### Required Variables (zrok-init expects these):
+
+- `ZROK_ADMIN_TOKEN`: Admin token for zrok controller (32-char random string)
+- `ZITI_PWD`: Password for Ziti admin user (24-char random string)
+- `ZROK_CTRL_PORT`: Controller API port (default: 18080)
+- `ZITI_CTRL_ADVERTISED_PORT`: Ziti controller port (default: 1280)
+- `ZROK_DNS_ZONE`: DNS zone for wildcard records (e.g., `skylab.quest`)
+
+#### Optional Variables (for zrok-frontend):
+
+- `ZROK_OAUTH_HASH_KEY`: 32-char string for OAuth cookie signing/encryption
+- `ZROK_OAUTH_GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `ZROK_OAUTH_GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+
+### Manual Container Testing (Podman)
+
+For debugging, you can run containers manually with equivalent Podman commands:
+
+```bash
+# Create network
+podman network create zrok-net
+
+# Run ziti-controller manually
+podman run --name ziti-controller-debug \
+  --network=zrok-net \
+  --env-file /var/lib/secrets/zrok/controller.env \
+  -v /var/lib/ziti:/persistent \
+  -p 1280:1280 -p 10080:10080 -p 3022:3022 \
+  openziti/ziti-cli:latest edge quickstart controller --home /persistent
+
+# Run zrok-controller manually
+podman run --name zrok-controller-debug \
+  --network=zrok-net \
+  --env-file /var/lib/secrets/zrok/controller.env \
+  -v /var/lib/zrok-controller:/var/lib/zrok-controller \
+  -v /var/lib/ziti:/persistent \
+  openziti/zrok:latest controller /var/lib/zrok-controller/config.yml
+
+# Run zrok-frontend manually
+podman run --name zrok-frontend-debug \
+  --network=zrok-net \
+  --env-file /var/lib/secrets/zrok/frontend.env \
+  -v /var/lib/zrok-frontend:/var/lib/zrok-frontend \
+  -p 10081:8080 -p 10082:8081 \
+  openziti/zrok:latest access public /var/lib/zrok-frontend/config.yml
+```
+
 ### Checking Container Status
 ```bash
 podman ps | grep -E "ziti|zrok"

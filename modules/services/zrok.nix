@@ -130,7 +130,11 @@ oauth:
       client_secret: "''${ZROK_OAUTH_GOOGLE_CLIENT_SECRET:-placeholder}"
 EOF
       
-      # 4. Set correct ownership for the new config files
+      # 4. Fix secret file permissions and set ownership for config files
+      if [ -d /var/lib/secrets/zrok ]; then
+        chown -R ${toString zrok_uid}:${toString zrok_uid} /var/lib/secrets/zrok
+        chmod 600 /var/lib/secrets/zrok/*.env
+      fi
       chown ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
       chmod 600 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
     '';
@@ -138,10 +142,10 @@ EOF
 
   # Storage and Firewall
   systemd.tmpfiles.rules = [
-    "d /var/lib/secrets/zrok 0700 root root -"
+    "d /var/lib/secrets/zrok 0755 ${toString zrok_uid} ${toString zrok_uid} -"
     "d /var/lib/ziti 0755 ${toString ziti_uid} ${toString ziti_uid} -"
     "d /var/lib/zrok-controller 0755 ${toString zrok_uid} ${toString zrok_uid} -"
-    "d /var/lib/zrok-frontend 0755 ${toString zrok_uid} ${toString zrok_uid} -"
+    "d /var/lib/zrok-frontend 0755 ${toString ziti_uid} ${toString zrok_uid} -"
   ];
 
 
@@ -171,6 +175,11 @@ EOF
   # Install zrok CLI on the host for management
   environment.systemPackages = [ pkgs.zrok ];
 
+  # Disable automatic container startup for manual debugging
+  systemd.services."podman-ziti-controller".enable = false;
+  systemd.services."podman-zrok-controller".enable = false;
+  systemd.services."podman-zrok-frontend".enable = false;
+
   # Slow down restart loop to let Ziti initialize
   systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
   systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
@@ -199,7 +208,7 @@ EOF
     after = [ "podman-zrok-controller.service" ];
     wants = [ "podman-zrok-controller.service" ];
     wantedBy = [ "multi-user.target" ];
-    path = [ pkgs.podman pkgs.gnugrep pkgs.coreutils ];
+path = [ pkgs.podman pkgs.gnugrep pkgs.coreutils ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
