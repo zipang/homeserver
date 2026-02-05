@@ -31,7 +31,7 @@ in
       };
       volumes = [ "/var/lib/ziti:/persistent" ];
       cmd = [ "edge" "quickstart" "controller" "--home" "/persistent" ];
-      ports = [ 
+      ports = [
         "${toString ziti_ctrl_port}:${toString ziti_ctrl_port}"
         "10080:10080" # Edge API
         "3022:3022"  # Router
@@ -46,7 +46,7 @@ in
       environmentFiles = [ "/var/lib/secrets/zrok/controller.env" ];
       volumes = [
         "/var/lib/zrok-controller:/var/lib/zrok-controller"
-        "/var/lib/ziti:/persistent" 
+        "/var/lib/ziti:/persistent"
       ];
       cmd = [ "controller" "/var/lib/zrok-controller/config.yml" ];
     };
@@ -107,7 +107,7 @@ EOF
       if [ -f /var/lib/secrets/zrok/frontend.env ]; then
         source /var/lib/secrets/zrok/frontend.env
       fi
-      
+
       cat <<EOF > /var/lib/zrok-frontend/config.yml
 v: 4
 host_match: ${zrok_dns_zone}
@@ -129,7 +129,7 @@ oauth:
       client_id: "''${ZROK_OAUTH_GOOGLE_CLIENT_ID:-placeholder}"
       client_secret: "''${ZROK_OAUTH_GOOGLE_CLIENT_SECRET:-placeholder}"
 EOF
-      
+
       # 4. Fix secret file permissions and set ownership for config files
       if [ -d /var/lib/secrets/zrok ]; then
         chown -R ${toString zrok_uid}:${toString zrok_uid} /var/lib/secrets/zrok
@@ -175,24 +175,30 @@ EOF
 # Install zrok CLI on the host for management
 environment.systemPackages = [ pkgs.zrok ];
 
-  # Slow down restart loop to let Ziti initialize
-  systemd.services."podman-zrok-controller".serviceConfig.RestartSec = "10s";
-  systemd.services."podman-zrok-frontend".serviceConfig.RestartSec = "10s";
+# Disable automatic container startup and restart for manual debugging
+systemd.services."podman-ziti-controller".enable = false;
+systemd.services."podman-zrok-controller".enable = false;
+systemd.services."podman-zrok-frontend".enable = false;
 
-  # Ensure the container services start after our helper services
-  # We use 'wants' and 'after' instead of 'requires' to prevent system hangs
-  systemd.services."podman-ziti-controller" = {
-    after = [ "zrok-init.service" "zrok-network.service" ];
-    wants = [ "zrok-init.service" "zrok-network.service" ];
-  };
+# Prevent restart loops until configuration is fixed
+systemd.services."podman-ziti-controller".serviceConfig.Restart = "no";
+systemd.services."podman-zrok-controller".serviceConfig.Restart = "no";
+systemd.services."podman-zrok-frontend".serviceConfig.Restart = "no";
 
-  systemd.services."podman-zrok-controller" = {
-    after = [ "zrok-init.service" "zrok-network.service" "podman-ziti-controller.service" ];
-    wants = [ "zrok-init.service" "zrok-network.service" ];
-  };
+# Simplified service dependencies
+# 'after': ordering - wait for services to complete startup
+# 'wants': soft dependency - try to start these services but don't fail if they don't
+# Using 'wants' instead of 'requires' prevents system hangs if helper services fail
+systemd.services."podman-ziti-controller" = {
+  after = [ "zrok-init.service" "zrok-network.service" ];
+  wants = [ "zrok-init.service" "zrok-network.service" ];
+};
 
-  systemd.services."podman-zrok-frontend" = {
-    after = [ "zrok-init.service" "zrok-network.service" "podman-zrok-controller.service" ];
-    wants = [ "zrok-init.service" "zrok-network.service" ];
-  };
+systemd.services."podman-zrok-controller" = {
+  after = [ "podman-ziti-controller.service" ];
+};
+
+systemd.services."podman-zrok-frontend" = {
+  after = [ "podman-zrok-controller.service" ];
+};
 }
