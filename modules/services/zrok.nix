@@ -66,79 +66,50 @@ in
     };
   };
 
-  # Configuration Generator
-  # Generates YAML configs from environment variables before containers start
-  systemd.services.zrok-init = {
-    description = "Initialize zrok and Ziti configuration files";
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      TimeoutStartSec = "30s";
-    };
-    path = [ pkgs.coreutils ];
-    script = ''
-      set -ex
-      # 1. Load Secrets for Config Generation
-      if [ -f /var/lib/secrets/zrok/controller.env ]; then
-        source /var/lib/secrets/zrok/controller.env
-      else
-        echo "Error: /var/lib/secrets/zrok/controller.env not found."
-        exit 1
-      fi
-
-      # 2. Generate zrok Controller Config
-      cat <<EOF > /var/lib/zrok-controller/config.yml
-v: 4
-admin:
-  secrets: ["$ZROK_ADMIN_TOKEN"]
-endpoint:
-  host: 0.0.0.0
-  port: ${toString zrok_ctrl_port}
-store:
-  path: /var/lib/zrok-controller/sqlite3.db
-  type: sqlite3
-ziti:
-  api_endpoint: https://ziti.${zrok_dns_zone}:${toString ziti_ctrl_port}/edge/management/v1
-  username: admin
-  password: "$ZITI_PWD"
-EOF
-
-      # 3. Generate zrok Frontend Config
-      if [ -f /var/lib/secrets/zrok/frontend.env ]; then
-        source /var/lib/secrets/zrok/frontend.env
-      fi
-
-      cat <<EOF > /var/lib/zrok-frontend/config.yml
-v: 4
-host_match: ${zrok_dns_zone}
-address: 0.0.0.0:8080
-ziti_identity: "/var/lib/zrok-frontend/identity.json"
-ziti:
-  api_endpoint: https://ziti.${zrok_dns_zone}:${toString ziti_ctrl_port}/edge/management/v1
-  username: admin
-  password: "$ZITI_PWD"
-oauth:
-  bind_address: 0.0.0.0:8081
-  endpoint_url: https://oauth.${zrok_dns_zone}
-  cookie_domain: ${zrok_dns_zone}
-  signing_key: "''${ZROK_OAUTH_HASH_KEY:-placeholder_32_chars_long_key_0123}"
-  encryption_key: "''${ZROK_OAUTH_HASH_KEY:-placeholder_32_chars_long_key_0123}"
-  providers:
-    - name: google
-      type: google
-      client_id: "''${ZROK_OAUTH_GOOGLE_CLIENT_ID:-placeholder}"
-      client_secret: "''${ZROK_OAUTH_GOOGLE_CLIENT_SECRET:-placeholder}"
-EOF
-
-      # 4. Fix secret file permissions and set ownership for config files
-      if [ -d /var/lib/secrets/zrok ]; then
-        chown -R ${toString zrok_uid}:${toString zrok_uid} /var/lib/secrets/zrok
-        chmod 600 /var/lib/secrets/zrok/*.env
-      fi
-      chown ${toString zrok_uid}:${toString zrok_uid} /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
-      chmod 600 /var/lib/zrok-controller/config.yml /var/lib/zrok-frontend/config.yml
-    '';
+# Setup Validator
+# Checks if zrok setup has been run and prevents container startup if not
+systemd.services.zrok-init = {
+  description = "Validate zrok setup before starting containers";
+  serviceConfig = {
+    Type = "oneshot";
+    RemainAfterExit = true;
   };
+  script = ''
+    echo "Checking zrok setup..."
+
+    # Check all required files exist
+    required_files=(
+      "/var/lib/secrets/zrok/controller.env"
+      "/var/lib/secrets/zrok/frontend.env"
+      "/var/lib/zrok-controller/config.yml"
+      "/var/lib/zrok-frontend/config.yml"
+    )
+
+    missing_files=()
+    for file in "''${required_files[@]}"; do
+      if [ ! -f "$file" ]; then
+        missing_files+=("$file")
+      fi
+    done
+
+    if [ ''${#missing_files[@]} -gt 0 ]; then
+      echo "ERROR: Required files are missing!"
+      echo ""
+      echo "The following files need to be created:"
+      for file in "''${missing_files[@]}"; do
+        echo "  - $file"
+      done
+      echo ""
+      echo "Please run the setup script to generate all required files:"
+      echo "  sudo /home/master/homeserver/scripts/generate-zrok-setup.sh"
+      echo ""
+      echo "Then start the zrok services again."
+      exit 1
+    fi
+
+    echo "All required files found. zrok setup is valid."
+  '';
+};
 
   # Storage and Firewall
   systemd.tmpfiles.rules = [

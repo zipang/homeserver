@@ -23,6 +23,17 @@
     extraGroups = [ "wheel" "docker" "networkmanager" ];
   };
 
+  # zrok system user for container management
+  users.users.zrok = {
+    uid = 2171;
+    group = "zrok";
+    isSystemUser = true;
+  };
+
+  users.groups.zrok = {
+    gid = 2171;
+  };
+
   # Add scripts/ directory to the path
   environment.sessionVariables = {
     PATH = [ "$PATH:/home/master/homeserver/scripts" ];

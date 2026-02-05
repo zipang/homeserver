@@ -8,6 +8,27 @@ In SKYLAB, `zrok` replaces both Cloudflare Tunnels and Authelia for public acces
 - **NixOS Module**: `modules/services/zrok.nix`
 - **Official Docs**: [zrok.io](https://docs.zrok.io/)
 
+## Initial Setup
+
+Before starting any zrok services, you must run the setup script to generate all required secrets and configuration files:
+
+```bash
+# Generate all secrets and configuration files
+sudo /home/master/homeserver/scripts/generate-zrok-setup.sh
+```
+
+This script will:
+1. Create all required directories with correct ownership
+2. Generate secure random secrets (admin tokens, passwords)
+3. Create environment files (controller.env, frontend.env)
+4. Create configuration files (config.yml for controller and frontend)
+5. Set proper permissions and ownership for all files
+6. Display a summary of created files
+
+**Important**: After running the setup script, edit `/var/lib/secrets/zrok/frontend.env` to add your Google OAuth credentials:
+- `ZROK_OAUTH_GOOGLE_CLIENT_ID`
+- `ZROK_OAUTH_GOOGLE_CLIENT_SECRET`
+
 ## Configuration Reference
 - [zrok Self-Hosting Guide](https://docs.zrok.io/docs/guides/self-hosting/)
 - [zrok OAuth Authentication](https://docs.zrok.io/docs/concepts/sharing/public/#oauth-authentication)
@@ -39,16 +60,14 @@ To host your own `zrok` instance, you must configure your DNS records to point t
 ## Full Configuration Template
 The `zrok` configuration is managed via OCI containers. Below is the conceptual structure of the environment variables used in `sops-nix`.
 
-### Secrets Management (Manual)
+### Secrets Management
 `zrok` environment files are managed manually inside `/var/lib/secrets/zrok/` to keep them outside of the Git repository.
 
-Use the provided script to initialize them:
-```bash
-sudo ./scripts/generate-zrok-secrets.sh
-```
-
+The setup script creates and manages these files:
 - **`controller.env`**: Contains `ZROK_ADMIN_TOKEN` and `ZITI_PWD`.
 - **`frontend.env`**: Contains Google OAuth credentials and the `ZROK_OAUTH_HASH_KEY`.
+
+See the Initial Setup section above for running the setup script.
 
 ### Administrative Commands (The `podman exec` logic)
 Administrative commands (like creating accounts) must be run inside the `zrok-controller` container because it has direct access to the `ZROK_ADMIN_TOKEN` and the internal database.
