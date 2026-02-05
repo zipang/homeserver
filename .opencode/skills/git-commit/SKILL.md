@@ -1,10 +1,10 @@
 ---
 name: git-commit
 description: Create well-formatted commits with conventional commit messages and emoji
-permission:
-  bash:
-    "git add *": allow
-    "git commit *": allow
+license: MIT
+compatibility: opencodemetadata:
+  audience: all
+  workflow: git
 ---
 
 # Commit Command
@@ -139,8 +139,8 @@ Use these as examples when generating commit messages:
 - 🦺 feat: add input validation for user registration form
 - 💚 fix: resolve failing CI pipeline tests
 - 📈 feat: implement analytics tracking for user engagement
-- 🔒️ fix: strengthen authentication password requirements
-- ♿️ feat: improve form accessibility for screen readers
+- 🔒️ `fix`: strengthen authentication password requirements
+- ♿️ `feat`: improve form accessibility for screen readers
 
 Example commit sequence:
 - ✨ feat: add user authentication system
