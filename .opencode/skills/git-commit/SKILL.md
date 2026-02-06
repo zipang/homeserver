@@ -44,7 +44,8 @@ When this skill is used, execute the following workflow:
 
 When generating commit messages, follow these rules:
 
-- **Atomic commits**: Each commit should contain related changes that serve a single purpose
+- **Atomic commits**: Each commit should contain related changes that serve a single purpose. NEVER include unrelated changes (e.g., mixing documentation with infrastructure config) in a single commit.
+- **Batching**: If multiple unrelated files are modified, stage and commit them in separate batches based on their shared purpose.
 - **Imperative mood**: Write as commands (e.g., "add feature" not "added feature")
 - **Concise first line**: Keep under 72 characters
 - **Conventional format**: Use `<emoji> <type>: <description>` where type is one of:
