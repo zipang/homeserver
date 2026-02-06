@@ -69,21 +69,21 @@ Before deploying, ensure the following are handled manually on the SKYLAB server
 
 Specific services have a dedicated documentation to explain their configuration in detail : 
 
-* [NFS Shares](./docs/nfs-shares.md)
-* [Samba Shares](./docs/samba-shares.md)
-* [Syncthing](./docs/syncthing.md)
-* [Nginx Reverse Proxy](./docs/nginx.md)
+* [Security & SSL Setup](./docs/security.md)
 * [Fail2Ban Security](./docs/fail2ban.md)
 * [Secrets Management](./docs/secrets.md)
+* [Nginx Reverse Proxy](./docs/nginx.md)
+* [NFS Shares](./docs/nfs-shares.md)
+* [ZFS Storage](./docs/zfs-storage.md)
+* [Samba Shares](./docs/samba-shares.md)
 * [Tmux](./docs/tmux.md)
-* [Immich](./docs/immich.md)
-* [Authelia SSO](./docs/authelia.md)
-* [Nextcloud](./docs/nextcloud.md)
 * [PostgreSQL (Global)](./docs/postgresql.md)
 * [Redis (Global)](./docs/redis.md)
+* [Authelia SSO](./docs/authelia.md)
+* [Immich](./docs/immich.md)
+* [Nextcloud](./docs/nextcloud.md)
+* [Syncthing](./docs/syncthing.md)
 * [zrok (SSO & Tunnel)](./docs/zrok.md)
-* [ZFS Storage](./docs/zfs-storage.md)
-* [SSL/TLS Setup](./docs/ssl-setup.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)
 
 ## IMPORTANT: Note for LLM Agents
