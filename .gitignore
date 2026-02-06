@@ -46,5 +46,8 @@ tmp/
 .gitattributes
 .gitmodules
 
+# NixOS Secrets
+secrets.nix
+
 # Keep this file tracked
 !.gitignore

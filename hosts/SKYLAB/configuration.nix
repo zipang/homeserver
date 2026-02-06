@@ -1,5 +1,11 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
+let
+  secretsFile = ./secrets.nix;
+  secrets = if builtins.pathExists secretsFile 
+    then import secretsFile 
+    else builtins.throw "Mandatory file 'secrets.nix' not found in ${toString ./.}! Please create it from secrets.nix.example to provide your sensitive server details.";
+in
 {
   imports = [
     # Include the results of the hardware scan.
@@ -38,10 +44,10 @@
 
   server = {
     hostName = "SKYLAB";
-    publicDomain = "example.com"; # FIXME: Replace with your real domain
-    privateDomain = "skylab.local";
-    adminEmail = "admin@example.com"; # FIXME: Replace with your email
-    mainUser = "master";
+    publicDomain = secrets.publicDomain;
+    privateDomain = secrets.privateDomain;
+    adminEmail = secrets.adminEmail;
+    mainUser = secrets.mainUser;
     timezone = "Europe/Paris";
     locale = "en_US.UTF-8";
   };
