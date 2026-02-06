@@ -17,7 +17,7 @@
     # Virtual Hosts will be added as we implement services
     virtualHosts."${config.server.publicDomain}" = {
       forceSSL = true;
-      enableACME = true;
+      useACMEHost = config.server.publicDomain;
       # Path to the static content, baked into the Nix store
       root = ../../www;
     };
