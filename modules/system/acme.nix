@@ -2,8 +2,17 @@
 
 let
   domain = config.server.publicDomain;
+  acmeSecretFile = "/var/lib/secrets/acme/cloudflare_token";
 in
 {
+  # Validation: Ensure the secret file exists on the target system
+  assertions = [
+    {
+      assertion = builtins.pathExists acmeSecretFile;
+      message = "Mandatory ACME secret file '${acmeSecretFile}' not found! Please run './scripts/generate-acme-secrets' on the server to initialize it.";
+    }
+  ];
+
   security.acme = {
     acceptTerms = true;
     defaults.email = config.server.adminEmail;
@@ -15,8 +24,8 @@ in
       extraDomainNames = [ "*.${domain}" ];
       dnsProvider = "cloudflare";
 
-      # The token will be provided via sops-nix in /run/secrets/cloudflare_token
-      credentialsFile = config.sops.secrets."acme/cloudflare_token".path;
+      # The token is manually managed on the server
+      credentialsFile = acmeSecretFile;
       group = "nginx";
     };
   };
