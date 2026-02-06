@@ -58,7 +58,7 @@
   };
 
   # Configure Nginx for Immich
-  services.nginx.virtualHosts."immich.skylab.local" = {
+  services.nginx.virtualHosts."immich.${config.server.privateDomain}" = {
     forceSSL = true;
     sslCertificate = "/var/lib/secrets/certs/skylab.crt";
     sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
@@ -75,7 +75,7 @@
         # Authelia Protection
         auth_request /authelia;
         auth_request_set $target_url $scheme://$http_host$request_uri;
-        error_page 401 = &https://auth.skylab.local/?rd=$target_url;
+        error_page 401 = &https://auth.${config.server.privateDomain}/?rd=$target_url;
       '';
     };
 
@@ -83,7 +83,7 @@
       proxyPass = "http://127.0.0.1:9091/api/verify";
       extraConfig = ''
         internal;
-        proxy_set_header Host auth.skylab.local;
+        proxy_set_header Host auth.${config.server.privateDomain};
         proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
         proxy_set_header X-Forwarded-Method $request_method;
         proxy_set_header X-Forwarded-Proto $scheme;

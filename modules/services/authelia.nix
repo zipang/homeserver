@@ -53,8 +53,8 @@
           remember_me = "1M";
           cookies = [
             {
-              domain = "skylab.local";
-              authelia_url = "https://auth.skylab.local";
+              domain = config.server.privateDomain;
+              authelia_url = "https://auth.${config.server.privateDomain}";
             }
           ];
 
@@ -78,17 +78,17 @@
         default_policy = "deny";
         rules = [
           {
-            domain = [ "*.skylab.local" ];
+            domain = [ "*.${config.server.privateDomain}" ];
             networks = [ "192.168.1.0/24" ];
             policy = "bypass";
           }
           {
-            domain = [ "nextcloud.skylab.local" ];
+            domain = [ "nextcloud.${config.server.privateDomain}" ];
             subject = [ "group:admins" ];
             policy = "one_factor";
           }
           {
-            domain = [ "*.skylab.local" ];
+            domain = [ "*.${config.server.privateDomain}" ];
             subject = [ "group:admins" ];
             policy = "one_factor";
           }

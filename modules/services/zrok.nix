@@ -17,7 +17,7 @@ in
     enable = mkEnableOption "zrok self-hosted infrastructure";
     dnsZone = mkOption {
       type = types.str;
-      default = config.skylab.domain;
+      default = config.server.publicDomain;
       description = "The DNS zone for zrok (e.g., example.com)";
     };
   };
@@ -193,4 +193,3 @@ systemd.services."podman-zrok-controller" = {
   };
   };
 }
-

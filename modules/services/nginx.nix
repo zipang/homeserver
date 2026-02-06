@@ -3,7 +3,7 @@
 {
   services.nginx = {
     enable = true;
-    
+
     # Optimizations for a home server
     recommendedProxySettings = true;
     recommendedTlsSettings = true;
@@ -15,14 +15,14 @@
     clientMaxBodySize = "10G";
 
     # Virtual Hosts will be added as we implement services
-    virtualHosts."${config.skylab.domain}" = {
+    virtualHosts."${config.server.publicDomain}" = {
       forceSSL = true;
       enableACME = true;
       # Path to the static content, baked into the Nix store
       root = ../../www;
     };
 
-    virtualHosts."auth.skylab.local" = {
+    virtualHosts."auth.${config.server.privateDomain}" = {
       forceSSL = true;
       sslCertificate = "/var/lib/secrets/certs/skylab.crt";
       sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
@@ -32,19 +32,19 @@
       };
     };
 
-    virtualHosts."syncthing.skylab.local" = {
+    virtualHosts."syncthing.${config.server.privateDomain}" = {
       forceSSL = true;
       sslCertificate = "/var/lib/secrets/certs/skylab.crt";
       sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
-      
+
       locations."/" = {
         proxyPass = "http://127.0.0.1:8384";
         proxyWebsockets = true;
         extraConfig = ''
           auth_request /authelia;
           auth_request_set $target_url $scheme://$http_host$request_uri;
-          error_page 401 = &https://auth.skylab.local/?rd=$target_url;
-          
+          error_page 401 = &https://auth.${config.server.privateDomain}/?rd=$target_url;
+
           # Pass user information to the backend
           auth_request_set $user $upstream_http_remote_user;
           auth_request_set $groups $upstream_http_remote_groups;
@@ -61,7 +61,7 @@
         proxyPass = "http://127.0.0.1:9091/api/verify";
         extraConfig = ''
           internal;
-          proxy_set_header Host auth.skylab.local;
+          proxy_set_header Host auth.${config.server.privateDomain};
           proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
           proxy_set_header X-Forwarded-Method $request_method;
           proxy_set_header X-Forwarded-Proto $scheme;

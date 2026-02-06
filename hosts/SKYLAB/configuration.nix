@@ -6,6 +6,7 @@
     ./hardware-configuration.nix
 
     # Modular system configurations
+    ../../modules/system/options.nix
     ../../modules/system/boot.nix
     ../../modules/system/core.nix
     ../../modules/system/users.nix
@@ -13,7 +14,6 @@
     ../../modules/system/storage.nix
     ../../modules/system/sops.nix
     ../../modules/system/acme.nix
-    ../../modules/system/metadata.nix
 
     # Programs
     ../../modules/programs/neovim.nix
@@ -36,10 +36,17 @@
 
   ];
 
-  skylab.domain = "example.com"; # FIXME: Replace with your real domain
-  skylab.adminEmail = "admin@example.com"; # FIXME: Replace with your email
+  server = {
+    hostName = "SKYLAB";
+    publicDomain = "example.com"; # FIXME: Replace with your real domain
+    privateDomain = "skylab.local";
+    adminEmail = "admin@example.com"; # FIXME: Replace with your email
+    mainUser = "master";
+    timezone = "Europe/Paris";
+    locale = "en_US.UTF-8";
+  };
 
-  networking.hostName = "SKYLAB";
+  networking.hostName = config.server.hostName;
   networking.hostId = "8425e349";
 
   # ZFS Services

@@ -12,8 +12,8 @@
     options = "--delete-older-than 30d";
   };
 
-  time.timeZone = "Europe/Paris";
-  i18n.defaultLocale = "en_US.UTF-8";
+  time.timeZone = config.server.timezone;
+  i18n.defaultLocale = config.server.locale;
   console.keyMap = "fr";
 
   # Basic networking

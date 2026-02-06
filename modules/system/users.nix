@@ -14,11 +14,11 @@
       user.name = "zipang";
       user.email = "christophe.desguez@gmail.com";
       init.defaultBranch = "master";
-      safe.directory = "/home/master/homeserver";
+      safe.directory = "/home/${config.server.mainUser}/homeserver";
     };
   };
 
-  users.users.master = {
+  users.users."${config.server.mainUser}" = {
     isNormalUser = true;
     extraGroups = [ "wheel" "docker" "networkmanager" ];
   };
@@ -36,7 +36,7 @@
 
   # Add scripts/ directory to the path
   environment.sessionVariables = {
-    PATH = [ "$PATH:/home/master/homeserver/scripts" ];
+    PATH = [ "$PATH:/home/${config.server.mainUser}/homeserver/scripts" ];
   };
 
   environment.shellAliases = {

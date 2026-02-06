@@ -1,13 +1,13 @@
 { config, pkgs, ... }:
 
 let
-  domain = config.skylab.domain;
+  domain = config.server.publicDomain;
 in
 {
   security.acme = {
     acceptTerms = true;
-    defaults.email = config.skylab.adminEmail;
-    
+    defaults.email = config.server.adminEmail;
+
     # We use Cloudflare DNS-01 challenge for the public domain
     # This allows us to get certificates without opening port 80/443
     certs."${domain}" = {

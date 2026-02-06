@@ -3,7 +3,7 @@
 {
   services.nextcloud = {
     enable = true;
-    hostName = "nextcloud.skylab.local";
+    hostName = "nextcloud.${config.server.privateDomain}";
     
     # Package to use for the Nextcloud instance.
     # We target Nextcloud 32 (latest stable).
