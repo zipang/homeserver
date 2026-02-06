@@ -169,3 +169,15 @@ Many services (Nextcloud, Authelia, zrok) require unique secrets, database passw
 These scripts typically generate files inside the `/var/lib/secrets/` directory.
 
 For instance to enable **SSH Access** from selected hosts : check the import of the line `../../system/ssh.nix` and follow the instructions to place your authorized public keys in `/var/lib/secrets/ssh/authorized_keys`.
+
+### 3. Post-Installation Checklist
+- **Router Configuration**: Ensure ports 80, 443, and 22 (or a custom SSH port) are forwarded to your server's internal IP in your router settings. See [docs/security.md](./security.md) for details.
+- **SSH Keys**: Place authorized public keys in `/var/lib/secrets/ssh/authorized_keys` as mentioned in the README.
+- **Passwords**: Set passwords for any additional users defined in your configuration:
+  ```bash
+  sudo passwd username
+  ```
+- **Service Logs**: Check if services started correctly:
+  ```bash
+  journalctl -u <service-name> -f
+  ```
