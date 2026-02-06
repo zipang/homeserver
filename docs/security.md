@@ -7,7 +7,7 @@ This document describes the multi-layered security approach used to protect the 
 1.  **System Firewall**: Only essential ports are open (SSH, HTTP, HTTPS, Syncing).
 2.  **Cloudflare Proxying**: All public web traffic is proxied through Cloudflare to hide the server's real IP.
 3.  **Origin Cloaking (Nginx)**: Nginx is configured to only accept public web traffic from Cloudflare's official IP ranges. Direct hits to the public IP are rejected.
-4.  **Fail2Ban**: Automatically bans IPs that exhibit malicious behavior (brute-forcing SSH, scanning for vulnerabilities, or bypassing Cloudflare).
+4.  **Fail2Ban**: Automatically bans IPs that exhibit malicious behavior (brute-forcing SSH or scanning for vulnerabilities).
 5.  **SSL/TLS**: All connections are encrypted using Let's Encrypt (public) or a private CA (internal).
 
 ---
@@ -71,7 +71,6 @@ To prevent attackers from bypassing Cloudflare and hitting your server directly,
 ### How it works
 - **Real IP Support**: Nginx is configured to trust Cloudflare's IP ranges. It extracts the visitor's real IP from the `CF-Connecting-IP` header so that logs reflect the actual visitor.
 - **Access Control**: The public VirtualHost only allows traffic from Cloudflare IPs and your local LAN. All other direct traffic receives a `403 Forbidden`.
-- **Automatic Banning**: Fail2Ban monitors Nginx logs for these `403` errors. If an IP tries to hit your public domain directly (bypassing the proxy), it is permanently banned at the system firewall level.
 
 ### Configuration
 Managed in `modules/services/nginx.nix` and `modules/services/cloudflare-ips.nix`.
