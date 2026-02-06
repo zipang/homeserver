@@ -16,17 +16,19 @@ For the public domain, we use **ACME (Let's Encrypt)** with the **DNS-01 challen
 
 ### 2. Secrets Management
 
-Store the token in your encrypted secrets file (e.g., `secrets/secrets.yaml`):
+To keep the Cloudflare API token secure and out of the Git history, we manage it manually on the server.
 
-```yaml
-acme:
-  cloudflare_token: |
-    CLOUDFLARE_DNS_API_TOKEN=your_token_here
-```
+1.  **Initialize the secret**:
+    Run the generation script on your server:
+    ```bash
+    sudo ./scripts/generate-acme-secrets
+    ```
+2.  **Follow the prompt**:
+    The script will ask for your Cloudflare API token and save it to `/var/lib/secrets/acme/cloudflare_token` with the correct permissions for the ACME service.
 
 ### 3. NixOS Implementation
 
-The configuration is handled in `modules/system/acme.nix`. It uses the token to prove ownership of the domain to Let's Encrypt.
+The configuration is handled in `modules/system/acme.nix`. It includes a safety assertion that prevents the system from rebuilding if the secret file is missing, ensuring you don't end up with a broken certificate service.
 
 ### 4. Verification
 
