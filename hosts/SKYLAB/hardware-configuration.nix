@@ -24,6 +24,10 @@
       options = [ "fmask=0077" "dmask=0077" ];
     };
 
+  # ZFS Extra Drives
+  boot.zfs.extraPools = [ "BUZZ" "WOODY" ];
+  services.zfs.autoScrub.enable = true;
+
   swapDevices = [ ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking

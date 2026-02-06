@@ -2,8 +2,8 @@
 
 let
   secretsFile = ./secrets.nix;
-  secrets = if builtins.pathExists secretsFile 
-    then import secretsFile 
+  secrets = if builtins.pathExists secretsFile
+    then import secretsFile
     else builtins.throw "Mandatory file 'secrets.nix' not found in ${toString ./.}! Please create it from secrets.nix.example to provide your sensitive server details.";
 in
 {
@@ -55,15 +55,13 @@ in
   networking.hostName = config.server.hostName;
   networking.hostId = "8425e349";
 
-  # ZFS Services
-  boot.zfs.extraPools = [ "BUZZ" "WOODY" ];
-  services.zfs.autoScrub.enable = true;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  # This value determines the NixOS release from which the default settings for stateful data,
+  # like file locations and database versions on your system were taken.
+  # Most users should never change this value after the initial install,
+  # for any reason, even if you’ve upgraded your system to a new NixOS release.
+  # This value does not affect the Nixpkgs version your packages and OS are pulled from,
+  # so changing it will not upgrade your system.
+  # This value being lower than the current NixOS release does not mean your system
+  # is out of date, out of support, or vulnerable.
   system.stateVersion = "24.05"; # Did you read the comment?
 }
