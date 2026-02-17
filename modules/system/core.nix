@@ -22,7 +22,8 @@
   # Swap configuration from reference
   swapDevices = [{ device = "/dev/disk/by-label/SWAP"; }];
 
-  # Essential packages for the system
+  # Essential packages for the systemeekbench
+  nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     git  # Note: git must be put first because Flakes
     _7zz
