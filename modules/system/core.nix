@@ -27,6 +27,7 @@
     git  # Note: git must be put first because Flakes
     _7zz
     age
+    broot
     btop
     bun
     curl
@@ -35,6 +36,7 @@
     fastfetch
     fd
     fatrace
+    geekbench
     inetutils
     iotop
     lsof
@@ -52,7 +54,7 @@
     unzip
     wget
   ];
-  
+
   # Ensure persistent directories for manual secrets (like SSL certs)
   systemd.tmpfiles.rules = [
     "d /var/lib/secrets 0755 root root -"
