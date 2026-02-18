@@ -21,7 +21,6 @@
 
   # Bluetooth support
   hardware.bluetooth.enable = true;
-  services.bluetooth.enable = true;
 
   # Swap configuration from reference
   swapDevices = [{ device = "/dev/disk/by-label/SWAP"; }];
