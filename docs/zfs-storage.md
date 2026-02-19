@@ -99,6 +99,27 @@ fileSystems."/share/Storage/WOODY/photos" = {
 ```
 
 ## Troubleshooting
-*   **Import failure**: If the pool won't import due to a hostId mismatch: `sudo zpool import -f <pool-name>`.
-*   **Status**: `zpool status -v`
-*   **List Datasets**: `zfs list`
+
+Get the status of your pool and list their content
+```bash
+# Status
+zpool status -v
+# List Datasets
+zfs list
+```
+
+When a pool was imported on another system, you often need to _force import_ it:
+```bash
+# List pools available for import
+sudo zpool import
+# Import the pool (replace poolname)
+sudo zpool import <poolname>
+# Or force import if it says already active
+sudo zpool import -f <poolname>
+```
+ If for some reason the pool was mounted on a different location you have to restore the desired montpoint.
+ For instance : 
+ ```bash
+ # Restore legacy mountpoint (handled by fstab)
+ sudo zfs set mountpoint=legacy BUZZ
+ ```
