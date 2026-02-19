@@ -33,33 +33,43 @@ if [[ ! -d "$TARGET_DIR" ]]; then
     exit 1
 fi
 
-find_cmd=("find" "$TARGET_DIR")
+clean_files() {
+    find "$TARGET_DIR" -type f \( \
+        -name ".DS_Store" -o \
+        -name "._*" -o \
+        -name ".VolumeIcon.icns" -o \
+        -name "Thumbs.db" -o \
+        -name "Thumbs.db:encryptable" -o \
+        -name "Desktop.ini" -o \
+        -name "desktop.ini" -o \
+        -name ".Icon" -o \
+        -name ".LSOverride" \
+    \) "$@" 2>/dev/null || true
+}
 
-patterns=(
-    -name ".DS_Store"
-    -o -name "._*"
-    -o -name ".Spotlight-V100"
-    -o -name ".Trashes"
-    -o -name ".fseventsd"
-    -o -name ".VolumeIcon.icns"
-    -o -name "Thumbs.db"
-    -o -name "Thumbs.db:encryptable"
-    -o -name "Desktop.ini"
-    -o -name "desktop.ini"
-    -o -name "\$RECYCLE.BIN"
-    -o -name "System Volume Information"
-    -o -name ".Icon"
-    -o -name ".LSOverride"
-)
+clean_dirs() {
+    find "$TARGET_DIR" -type d \( \
+        -name ".Spotlight-V100" -o \
+        -name ".Trashes" -o \
+        -name ".fseventsd" -o \
+        -name '$RECYCLE.BIN' -o \
+        -name "System Volume Information" \
+    \) "$@" 2>/dev/null || true
+}
 
 if $DRY_RUN; then
     echo "=== DRY RUN - Nothing will be deleted ==="
     echo ""
-    "${find_cmd[@]}" "${patterns[@]}" -print 2>/dev/null || true
+    echo "Files:"
+    clean_files -print
+    echo ""
+    echo "Directories:"
+    clean_dirs -print
     echo ""
     echo "=== End of dry run ==="
 else
     echo "Cleaning trash files in '$TARGET_DIR'..."
-    deleted_count=$("${find_cmd[@]}" "${patterns[@]}" -print -delete 2>/dev/null | wc -l)
-    echo "Done. Deleted $deleted_count items."
+    file_count=$(clean_files -print -delete | wc -l)
+    dir_count=$(clean_dirs -exec rm -rf {} + -prune 2>/dev/null | wc -l)
+    echo "Done. Deleted $file_count files and $dir_count directories."
 fi
