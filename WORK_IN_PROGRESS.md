@@ -25,11 +25,6 @@ We are moving DNS resolution to Cloudflare to enable the ACME DNS-01 challenge (
 - [x] **NixOS**: Implement `modules/system/acme.nix` with the DNS-01 challenge provider.
 - [x] **Nginx**: Update `modules/services/nginx.nix` to use the ACME certificate.
 
-## 2. zrok Deployment & Self-Healing Fixes (Paused)
-We encountered systemd deadlocks and auth failures.
-- [ ] Refactor `modules/services/zrok.nix` to use a decoupled, self-healing startup.
-- [ ] Verify `zrok` wildcard routing once Cloudflare DNS is active.
-
 ## Current State
 - Domain points to `<PUBLIC_IP>`.
 - Port 80/443 are closed (Router/Firewall).

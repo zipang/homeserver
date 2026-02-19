@@ -160,11 +160,10 @@ All available services are located in `modules/services/`. To enable a service f
 5. Run `sudo ./scripts/update-nix` to apply changes.
 
 ### 2. Generating Runtime Secrets
-Many services (Nextcloud, Authelia, zrok) require unique secrets, database passwords, or tokens that should not be stored in Git. We provide helper scripts in the `scripts/` directory to generate these safely on the host.
+Many services (Nextcloud, Authelia, ...) require unique secrets, database passwords, or tokens that should not be stored in Git. We provide helper scripts in the `scripts/` directory to generate these safely on the host.
 
 *   **Nextcloud**: `./scripts/generate-nextcloud-secrets.sh`
 *   **Authelia**: `./scripts/generate-authelia-secrets.sh`
-*   **zrok**: `./scripts/generate-zrok-setup.sh`
 
 These scripts typically generate files inside the `/var/lib/secrets/` directory.
 

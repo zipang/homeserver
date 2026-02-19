@@ -83,7 +83,6 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Immich](./docs/immich.md)
 * [Nextcloud](./docs/nextcloud.md)
 * [Syncthing](./docs/syncthing.md)
-* [zrok (SSO & Tunnel)](./docs/zrok.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)
 
 ## IMPORTANT: Note for LLM Agents
