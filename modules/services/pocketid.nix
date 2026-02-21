@@ -5,20 +5,19 @@
     # Whether to enable the Pocket ID OIDC provider service.
     enable = true;
 
-    # The host to listen on (127.0.0.1 for local access only, behind Nginx).
-    host = "127.0.0.1";
+    # Configuration via environment variables (loaded from secrets file)
+    settings = {
+      # The host to listen on (127.0.0.1 for local access only, behind Nginx)
+      HOST = "127.0.0.1";
 
-    # The port to listen on.
-    port = 1411;
+      # The port to listen on
+      PORT = "1411";
 
-    # Database configuration - using shared PostgreSQL instance
-    database = {
-      # Use PostgreSQL instead of SQLite
-      type = "postgres";
-      
-      # Connection string - will be loaded from environment variable in systemd service
-      # Format: postgresql://user:password@host:port/database
-      # We use environment file to inject this securely
+      # Tell Pocketid it's behind a reverse proxy
+      TRUST_PROXY = "true";
+
+      # Database and encryption key will be loaded from /var/lib/secrets/pocketid.env
+      # via environmentFiles in systemd service below
     };
   };
 
@@ -32,8 +31,10 @@
     wants = [ "postgresql.service" ];
   };
 
-  # Ensure the pocket-id user can read the secrets file
-  users.users.pocket-id.extraGroups = [ ];
+  # Allow the pocket-id user to access PostgreSQL socket
+  users.users.pocket-id = {
+    extraGroups = [ "postgres" ];
+  };
 
   # Configure Nginx reverse proxy for Pocketid
   services.nginx.virtualHosts."pocketid.${config.server.privateDomain}" = {
@@ -63,23 +64,7 @@
     };
   };
 
-  # Ensure the secrets directory and file exist with proper permissions
-  # Note: The actual pocketid.env file must be created manually with:
-  #   sudo touch /var/lib/secrets/pocketid.env
-  #   sudo chmod 600 /var/lib/secrets/pocketid.env
-  #   sudo chown pocket-id:pocket-id /var/lib/secrets/pocketid.env
-  #   
-  # And populated with environment variables:
-  #   APP_URL=https://pocketid.skylab.local
-  #   ENCRYPTION_KEY=<base64-encoded-32-byte-key>
-  #   TRUST_PROXY=true
-  #   PORT=1411
-  #   HOST=127.0.0.1
-  #   DB_CONNECTION_STRING=postgresql://pocketid:PASSWORD@localhost/pocketid
-  #   ALLOW_USER_SIGNUPS=disabled
-  #   LOG_LEVEL=info
-
-  # Ensure the /var/lib/secrets directory exists
+  # Ensure the /var/lib/secrets directory exists for the secrets file
   system.activationScripts.pocketidSecretsDir = ''
     mkdir -p /var/lib/secrets
     chmod 700 /var/lib/secrets
