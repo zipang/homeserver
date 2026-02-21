@@ -79,6 +79,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Tmux](./docs/tmux.md)
 * [PostgreSQL (Global)](./docs/postgresql.md)
 * [Redis (Global)](./docs/redis.md)
+* [Pocketid OIDC Provider](./docs/pocketid.md) - Use `scripts/generate-pocketid-secrets` to initialize
 * [Authelia SSO](./docs/authelia.md)
 * [Immich](./docs/immich.md)
 * [Nextcloud](./docs/nextcloud.md)
