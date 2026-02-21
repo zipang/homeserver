@@ -5,6 +5,9 @@
     # Whether to enable the Pocket ID OIDC provider service.
     enable = true;
 
+    # Load environment variables from secrets file
+    environmentFile = "/var/lib/secrets/pocketid.env";
+
     # Configuration via environment variables (loaded from secrets file)
     settings = {
       # The host to listen on (127.0.0.1 for local access only, behind Nginx)
@@ -17,15 +20,11 @@
       TRUST_PROXY = "true";
 
       # Database and encryption key will be loaded from /var/lib/secrets/pocketid.env
-      # via environmentFile in systemd service below
     };
   };
 
-  # Configure systemd service to load environment variables from secrets file
+  # Additional systemd service configuration
   systemd.services.pocket-id = {
-    # Load environment from the secrets file
-    environmentFile = "/var/lib/secrets/pocketid.env";
-
     # Ensure PostgreSQL starts before Pocketid
     after = [ "postgresql.service" ];
     wants = [ "postgresql.service" ];
