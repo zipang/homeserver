@@ -17,14 +17,14 @@
       TRUST_PROXY = "true";
 
       # Database and encryption key will be loaded from /var/lib/secrets/pocketid.env
-      # via environmentFiles in systemd service below
+      # via environmentFile in systemd service below
     };
   };
 
   # Configure systemd service to load environment variables from secrets file
   systemd.services.pocket-id = {
     # Load environment from the secrets file
-    environmentFiles = [ "/var/lib/secrets/pocketid.env" ];
+    environmentFile = "/var/lib/secrets/pocketid.env";
 
     # Ensure PostgreSQL starts before Pocketid
     after = [ "postgresql.service" ];
