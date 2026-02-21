@@ -1,20 +1,21 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   services.pocket-id = {
     # Whether to enable the Pocket ID OIDC provider service.
     enable = true;
 
-    # Load environment variables from secrets file
-    environmentFile = "/var/lib/secrets/pocketid.env";
+    # We don't use the module's environmentFile option because it loads before settings.
+    # Instead, we inject ours via systemd service config to ensure it overrides defaults.
   };
 
   # Additional systemd service configuration
   systemd.services.pocket-id = {
     serviceConfig = {
-      # Allow reading secrets from /var/lib/secrets
-      # The NixOS module applies strict systemd hardening (ProtectSystem=strict)
-      # which makes the filesystem read-only except for explicitly allowed paths
+      # Load our environment file LAST to ensure it overrides module defaults (like SQLite fallback)
+      EnvironmentFile = lib.mkAfter [ "/var/lib/secrets/pocketid.env" ];
+
+      # Allow reading secrets from /var/lib/secrets (since ProtectSystem=strict is active)
       ReadWritePaths = [ "/var/lib/secrets" ];
     };
 
