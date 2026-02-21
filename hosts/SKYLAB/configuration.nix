@@ -24,6 +24,7 @@ in
     # Programs
     ../../modules/programs/neovim.nix
     ../../modules/programs/tmux.nix
+    ../../modules/programs/devbox.nix
 
     # Services
     ../../modules/services/nginx.nix

@@ -75,7 +75,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Nginx Reverse Proxy](./docs/nginx.md)
 * [NFS Shares](./docs/nfs-shares.md)
 * [ZFS Storage](./docs/zfs-storage.md)
-* [Samba Shares](./docs/samba-shares.md)
+* [Devbox](./docs/devbox.md)
 * [Tmux](./docs/tmux.md)
 * [PostgreSQL (Global)](./docs/postgresql.md)
 * [Redis (Global)](./docs/redis.md)

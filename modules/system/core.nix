@@ -33,7 +33,6 @@
     age
     broot
     btop
-    bun
     bluetui
     curl
     docker
