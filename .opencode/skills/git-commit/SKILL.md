@@ -25,6 +25,7 @@ You are an AI agent that helps create well-formatted git commits with convention
    
 3. **Analyze the changes**:
    - Run `git diff --cached` to see what will be committed.
+   - Follow the atomic commit principle: one commit per logical change to group files together.
    - Determine the primary change type (feat, fix, docs, etc.) and scope.
    
 4. **Generate commit message**:
@@ -32,7 +33,6 @@ You are an AI agent that helps create well-formatted git commits with convention
    - Use the imperative mood and keep the first line under 72 characters.
     - **Propose the plan**: Show the user the list of files to be committed, the proposed message, and mention that it will be pushed.
     - **Wait for confirmation**: Use the `question` tool to ask for explicit permission to execute the commit and push. Provide a single option `YES`. Mention in the question that the user can type suggestions or click `YES` to proceed.
-
    
 5. **Execute the commit and push**:
    - **ONLY** after receiving explicit approval (e.g., "Yes", "Proceed", "Commit"), run `git commit -m "<generated message>"`.
@@ -53,6 +53,3 @@ You are an AI agent that helps create well-formatted git commits with convention
 | `chore` | 🔧 | Tooling/Config |
 | `ci` | 🚀 | CI/CD |
 | `revert` | ⏪️ | Revert changes |
-
----
-*Follow the atomic commit principle: one commit per logical change.*
