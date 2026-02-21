@@ -23,7 +23,7 @@ in
 
     # Programs
     ../../modules/programs/neovim.nix
-    ../../modules/programs/tmux.nix
+    # ../../modules/programs/tmux.nix
 
     # Services
     ../../modules/services/nginx.nix

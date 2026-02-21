@@ -96,4 +96,15 @@
   # 21027: Local discovery
   networking.firewall.allowedTCPPorts = [ 22000 ];
   networking.firewall.allowedUDPPorts = [ 22000 21027 ];
+
+  services.nginx.virtualHosts."syncthing.${config.server.privateDomain}" = {
+    forceSSL = true;
+    sslCertificate = "/var/lib/secrets/certs/skylab.crt";
+    sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
+
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8384";
+      proxyWebsockets = true;
+    };
+  };
 }

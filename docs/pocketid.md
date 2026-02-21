@@ -34,51 +34,37 @@ The basic Pocketid configuration in `modules/services/pocketid.nix`:
   services.pocket-id = {
     # Whether to enable the Pocket ID OIDC provider service.
     enable = true;
-
-    # The host to listen on (127.0.0.1 for local access only, behind Nginx).
-    host = "127.0.0.1";
-
-    # The port to listen on.
-    port = 1411;
-
-    # Database configuration - using shared PostgreSQL instance
-    database = {
-      type = "postgres";
-      # Connection string is loaded from /var/lib/secrets/pocketid.env
-      # Format: postgresql://user:password@host:port/database
+  
+    # Explicitly set user and group to avoid hyphen issues in PostgreSQL
+    user = "pocketid";
+    group = "pocketid";
+  
+    # Use a data directory without hyphens to avoid permission confusion
+    # NixOS will create this directory with the right permissions
+    dataDir = "/var/lib/pocketid";
+  
+    # Sensitive data (ENCRYPTION_KEY) is loaded from this file.
+    # It must contain: ENCRYPTION_KEY=...
+    environmentFile = "/var/lib/secrets/pocketid.env";
+  
+    # Public configuration is set in settings
+    # For version 1.15.0, these are the correct variables.
+    settings = {
+      APP_URL = "https://pocketid.${config.server.privateDomain}";
+      TRUST_PROXY = true;
+  
+      # Database configuration for v1.15.0+ and v2.x
+      DB_PROVIDER = "postgres";
+      DB_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
+  
+      # Compatibility for older v1.x (though 1.15.0 should use the above)
+      POSTGRES_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
+  
+      # Where to store JWKs (database is recommended for stateless/easier backups)
+      KEYS_STORAGE = "database";
     };
   };
 
-  # Load environment variables from secrets file
-  systemd.services.pocket-id = {
-    environmentFiles = [ "/var/lib/secrets/pocketid.env" ];
-    after = [ "postgresql.service" ];
-    wants = [ "postgresql.service" ];
-  };
-
-  # Nginx reverse proxy with proper buffer settings for SvelteKit
-  services.nginx.virtualHosts."pocketid.${config.server.privateDomain}" = {
-    forceSSL = true;
-    sslCertificate = "/var/lib/secrets/certs/skylab.crt";
-    sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
-
-    extraConfig = ''
-      proxy_busy_buffers_size 512k;
-      proxy_buffers 4 512k;
-      proxy_buffer_size 256k;
-    '';
-
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:1411";
-      proxyWebsockets = true;
-      extraConfig = ''
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-      '';
-    };
-  };
 }
 ```
 
@@ -187,48 +173,48 @@ For users managing their own passkeys:
 
 ```bash
 # Check if pocket-id service is running
-sudo systemctl status pocket-id.service
+sudo systemctl status pocket-id
 
 # Restart the service
-sudo systemctl restart pocket-id.service
+sudo systemctl restart pocket-id
 
 # Stop the service
-sudo systemctl stop pocket-id.service
+sudo systemctl stop pocket-id
 
 # Start the service
-sudo systemctl start pocket-id.service
+sudo systemctl start pocket-id
 ```
 
 ### Viewing Logs
 
 ```bash
 # View recent logs (last 50 lines)
-sudo journalctl -u pocket-id.service -n 50
+sudo journalctl -u pocket-id -n 50
 
 # Follow logs in real-time
-sudo journalctl -u pocket-id.service -f
+sudo journalctl -u pocket-id -f
 
 # View logs with timestamps and detailed output
-sudo journalctl -u pocket-id.service --no-pager -o short-precise
+sudo journalctl -u pocket-id --no-pager -o short-precise
 
 # Filter logs for errors only
-sudo journalctl -u pocket-id.service -p err
+sudo journalctl -u pocket-id -p err
 
 # View logs for the last hour
-sudo journalctl -u pocket-id.service --since "1 hour ago"
+sudo journalctl -u pocket-id --since "1 hour ago"
 ```
 
 ### Database Connection Testing
 
 ```bash
 # Test database connectivity as the pocket-id user
-sudo -u pocket-id psql postgresql://pocketid:PASSWORD@localhost/pocketid -c "SELECT version();"
+sudo -u pocket-id psql postgresql://pocket-id?host=/run/postgresql -c "SELECT version();"
 
 # List all tables in the pocketid database
-sudo -u pocket-id psql postgresql://pocketid:PASSWORD@localhost/pocketid -c "\dt"
+sudo -u pocket-id psql postgresql://pocket-id?host=/run/postgresql -c "\dt"
 
 # Check database size
-sudo -u pocket-id psql postgresql://pocketid:PASSWORD@localhost/pocketid -c "SELECT pg_size_pretty(pg_database_size('pocketid'));"
+sudo -u pocket-id psql postgresql://pocket-id?host=/run/postgresql -c "SELECT pg_size_pretty(pg_database_size('pocketid'));"
 ```
 
 ### Verifying Secrets File
@@ -252,7 +238,7 @@ sudo cat /var/lib/secrets/pocketid.env
 sudo nginx -t
 
 # View Nginx error logs
-sudo journalctl -u nginx.service -f
+sudo journalctl -u nginx -f
 
 # Test connectivity to Pocketid backend
 curl -v http://127.0.0.1:1411/health
@@ -267,7 +253,7 @@ curl -k https://pocketid.skylab.local
 
 ```bash
 # Check detailed error messages
-sudo journalctl -u pocket-id.service --no-pager
+sudo journalctl -u pocket-id --no-pager
 
 # Verify environment file is readable
 ls -la /var/lib/secrets/pocketid.env
@@ -303,7 +289,7 @@ sudo nginx -T | grep -A 20 pocketid
 
 ```bash
 # Verify PostgreSQL is running
-sudo systemctl status postgresql.service
+sudo systemctl status postgresql
 
 # Check if pocketid database and user exist
 sudo -u postgres psql -l | grep pocketid
@@ -333,20 +319,20 @@ grep ENCRYPTION_KEY /var/lib/secrets/pocketid.env | od -c | tail
 
 If needed, rotate the encryption key:
 ```bash
-sudo systemctl stop pocket-id.service
+sudo systemctl stop pocket-id
 # Generate new key
 NEW_KEY=$(openssl rand -base64 32)
 # Update the file
 sudo nano /var/lib/secrets/pocketid.env
 # Run encryption key rotation command (if supported by your Pocketid version)
-sudo systemctl start pocket-id.service
+sudo systemctl start pocket-id
 ```
 
 ### Performance Monitoring
 
 ```bash
 # Monitor service memory and CPU usage
-sudo systemctl status pocket-id.service
+sudo systemctl status pocket-id
 ps aux | grep pocket-id
 
 # Check database query performance
@@ -356,7 +342,7 @@ SELECT COUNT(*) FROM users;
 EOF
 
 # Monitor Nginx request rates for Pocketid
-sudo journalctl -u nginx.service -f | grep pocketid
+sudo journalctl -u nginx -f | grep pocketid
 ```
 
 ### Backup and Recovery

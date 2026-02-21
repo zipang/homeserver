@@ -22,14 +22,14 @@
     settings = {
       APP_URL = "https://pocketid.${config.server.privateDomain}";
       TRUST_PROXY = true;
-      
+
       # Database configuration for v1.15.0+ and v2.x
       DB_PROVIDER = "postgres";
       DB_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
-      
+
       # Compatibility for older v1.x (though 1.15.0 should use the above)
       POSTGRES_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
-      
+
       # Where to store JWKs (database is recommended for stateless/easier backups)
       KEYS_STORAGE = "database";
     };
@@ -64,25 +64,9 @@
     sslCertificate = "/var/lib/secrets/certs/skylab.crt";
     sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
 
-    # SvelteKit (used by Pocketid) generates large headers
-    # These buffer settings are required to avoid "431 Request Header Fields Too Large" errors
-    extraConfig = ''
-      proxy_busy_buffers_size 512k;
-      proxy_buffers 4 512k;
-      proxy_buffer_size 256k;
-    '';
-
     locations."/" = {
       proxyPass = "http://127.0.0.1:1411";
       proxyWebsockets = true;
-
-      # Pass the X-Forwarded-For header so Pocketid knows the real client IP
-      extraConfig = ''
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-      '';
     };
   };
 
