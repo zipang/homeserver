@@ -159,11 +159,24 @@ We are integrating Pocketid as a centralized OIDC provider to enable passwordles
 1. **Fix 1**: Used non-existent `services.pocket-id.database` option
    - Corrected to use `services.pocket-id.settings` for environment variables
    
-2. **Fix 2**: Used `environmentFiles` (plural) instead of `environmentFile` (singular)
-   - Corrected systemd service option to proper name
+2. **Fix 2**: Initial attempt used `systemd.services.pocket-id.environmentFiles` (incorrect)
+   - Corrected to use `services.pocket-id.environmentFile` (service-level option)
    - Secrets now properly loaded from `/var/lib/secrets/pocketid.env`
    
 3. **User Permissions**: Pocket-id user added to postgres group for Unix socket access
+
+**Module Architecture:**
+```nix
+services.pocket-id = {
+  enable = true;
+  environmentFile = "/var/lib/secrets/pocketid.env";  # Secrets file
+  settings = {
+    HOST = "127.0.0.1";
+    PORT = "1411";
+    TRUST_PROXY = "true";
+  };
+};
+```
 
 ### Ready for Deployment
 The Pocketid implementation is complete and ready to be deployed to SKYLAB. Run the following on the server:
