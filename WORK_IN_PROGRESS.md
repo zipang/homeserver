@@ -163,17 +163,21 @@ We are integrating Pocketid as a centralized OIDC provider to enable passwordles
    - Corrected to use `services.pocket-id.environmentFile` (service-level option)
    - Secrets now properly loaded from `/var/lib/secrets/pocketid.env`
    
-3. **User Permissions**: Pocket-id user added to postgres group for Unix socket access
+3. **Fix 3**: Settings used string types instead of proper NixOS types
+   - `PORT = 1411` (integer, not string)
+   - `TRUST_PROXY = true` (boolean, not string)
+   
+4. **User Permissions**: Pocket-id user added to postgres group for Unix socket access
 
-**Module Architecture:**
+**Final Module Architecture:**
 ```nix
 services.pocket-id = {
   enable = true;
   environmentFile = "/var/lib/secrets/pocketid.env";  # Secrets file
   settings = {
     HOST = "127.0.0.1";
-    PORT = "1411";
-    TRUST_PROXY = "true";
+    PORT = 1411;                                       # Integer, not string
+    TRUST_PROXY = true;                               # Boolean, not string
   };
 };
 ```
