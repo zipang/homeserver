@@ -14,10 +14,10 @@
       HOST = "127.0.0.1";
 
       # The port to listen on
-      PORT = "1411";
+      PORT = 1411;
 
       # Tell Pocketid it's behind a reverse proxy
-      TRUST_PROXY = "true";
+      TRUST_PROXY = true;
 
       # Database and encryption key will be loaded from /var/lib/secrets/pocketid.env
     };
