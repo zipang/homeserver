@@ -5,16 +5,27 @@
     # Whether to enable the Pocket ID OIDC provider service.
     enable = true;
 
-    # We don't use the module's environmentFile option because it loads before settings.
-    # Instead, we inject ours via systemd service config to ensure it overrides defaults.
+    # Override default user/group to avoid hyphen issues in PostgreSQL
+    user = "pocketid";
+    group = "pocketid";
+
+    # Sensitive data (ENCRYPTION_KEY) is loaded from this file.
+    # It must contain: ENCRYPTION_KEY=...
+    environmentFile = "/var/lib/secrets/pocketid.env";
+
+    # Public configuration is set in settings (this goes into the Nix store)
+    settings = {
+      APP_URL = "https://pocketid.${config.server.privateDomain}";
+      TRUST_PROXY = true;
+      DB_PROVIDER = "postgres";
+      DB_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
+      KEYS_STORAGE = "database";
+    };
   };
 
   # Additional systemd service configuration
   systemd.services.pocket-id = {
     serviceConfig = {
-      # Load our environment file LAST to ensure it overrides module defaults (like SQLite fallback)
-      EnvironmentFile = lib.mkAfter [ "/var/lib/secrets/pocketid.env" ];
-
       # Allow reading secrets from /var/lib/secrets (since ProtectSystem=strict is active)
       ReadWritePaths = [ "/var/lib/secrets" ];
     };
@@ -24,10 +35,14 @@
     wants = [ "postgresql.service" ];
   };
 
-  # Allow the pocket-id user to access PostgreSQL socket
-  users.users.pocket-id = {
+  # Allow the pocketid user to access PostgreSQL socket
+  users.users.pocketid = {
+    isSystemUser = true;
+    group = "pocketid";
     extraGroups = [ "postgres" ];
   };
+
+  users.groups.pocketid = {};
 
   # Configure Nginx reverse proxy for Pocketid
   services.nginx.virtualHosts."pocketid.${config.server.privateDomain}" = {

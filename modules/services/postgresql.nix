@@ -11,10 +11,10 @@
     package = pkgs.postgresql_16;
 
     # Ensure Pocketid database and user are created
-    ensureDatabases = [ "pocket-id" ];
+    ensureDatabases = [ "pocketid" ];
     ensureUsers = [
       {
-        name = "pocket-id";
+        name = "pocketid";
         ensureDBOwnership = true;
       }
     ];
