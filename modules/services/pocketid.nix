@@ -59,6 +59,8 @@
   # Ensure the /var/lib/secrets directory exists for the secrets file
   system.activationScripts.pocketidSecretsDir = ''
     mkdir -p /var/lib/secrets
-    chmod 700 /var/lib/secrets
+    # Set directory permissions to 755 to allow services to read their secret files
+    # Individual secret files should have 600 permissions for security
+    chmod 755 /var/lib/secrets
   '';
 }
