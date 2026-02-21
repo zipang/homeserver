@@ -35,6 +35,7 @@
     btop
     bluetui
     curl
+    devbox
     docker
     docker-compose
     fastfetch
