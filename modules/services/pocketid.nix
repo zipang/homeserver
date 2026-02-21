@@ -5,20 +5,32 @@
     # Whether to enable the Pocket ID OIDC provider service.
     enable = true;
 
-    # Override default user/group to avoid hyphen issues in PostgreSQL
+    # Explicitly set user and group to avoid hyphen issues in PostgreSQL
     user = "pocketid";
     group = "pocketid";
+
+    # Use a data directory without hyphens to avoid permission confusion
+    # NixOS will create this directory with the right permissions
+    dataDir = "/var/lib/pocketid";
 
     # Sensitive data (ENCRYPTION_KEY) is loaded from this file.
     # It must contain: ENCRYPTION_KEY=...
     environmentFile = "/var/lib/secrets/pocketid.env";
 
-    # Public configuration is set in settings (this goes into the Nix store)
+    # Public configuration is set in settings
+    # For version 1.15.0, these are the correct variables.
     settings = {
       APP_URL = "https://pocketid.${config.server.privateDomain}";
       TRUST_PROXY = true;
+      
+      # Database configuration for v1.15.0+ and v2.x
       DB_PROVIDER = "postgres";
       DB_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
+      
+      # Compatibility for older v1.x (though 1.15.0 should use the above)
+      POSTGRES_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
+      
+      # Where to store JWKs (database is recommended for stateless/easier backups)
       KEYS_STORAGE = "database";
     };
   };
@@ -26,7 +38,7 @@
   # Additional systemd service configuration
   systemd.services.pocket-id = {
     serviceConfig = {
-      # Allow reading secrets from /var/lib/secrets (since ProtectSystem=strict is active)
+      # Allow reading secrets from /var/lib/secrets
       ReadWritePaths = [ "/var/lib/secrets" ];
     };
 
@@ -35,11 +47,13 @@
     wants = [ "postgresql.service" ];
   };
 
-  # Allow the pocketid user to access PostgreSQL socket
+  # Explicitly define the pocketid user and group
   users.users.pocketid = {
     isSystemUser = true;
     group = "pocketid";
     extraGroups = [ "postgres" ];
+    home = "/var/lib/pocketid";
+    createHome = true;
   };
 
   users.groups.pocketid = {};
@@ -79,4 +93,12 @@
     # Individual secret files should have 600 permissions for security
     chmod 755 /var/lib/secrets
   '';
+
+  # Ensure the data directory and subdirectories exist with correct permissions
+  systemd.tmpfiles.rules = [
+    "d /var/lib/pocketid 0750 pocketid pocketid -"
+    "d /var/lib/pocketid/data 0750 pocketid pocketid -"
+    "d /var/lib/pocketid/data/uploads 0750 pocketid pocketid -"
+    "d /var/lib/pocketid/data/uploads/application-images 0750 pocketid pocketid -"
+  ];
 }
