@@ -7,24 +7,17 @@
 
     # Load environment variables from secrets file
     environmentFile = "/var/lib/secrets/pocketid.env";
-
-    # Configuration via environment variables (loaded from secrets file)
-    settings = {
-      # The host to listen on (127.0.0.1 for local access only, behind Nginx)
-      HOST = "127.0.0.1";
-
-      # The port to listen on
-      PORT = 1411;
-
-      # Tell Pocketid it's behind a reverse proxy
-      TRUST_PROXY = true;
-
-      # Database and encryption key will be loaded from /var/lib/secrets/pocketid.env
-    };
   };
 
   # Additional systemd service configuration
   systemd.services.pocket-id = {
+    serviceConfig = {
+      # Allow reading secrets from /var/lib/secrets
+      # The NixOS module applies strict systemd hardening (ProtectSystem=strict)
+      # which makes the filesystem read-only except for explicitly allowed paths
+      ReadWritePaths = [ "/var/lib/secrets" ];
+    };
+
     # Ensure PostgreSQL starts before Pocketid
     after = [ "postgresql.service" ];
     wants = [ "postgresql.service" ];
