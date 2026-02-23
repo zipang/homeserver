@@ -85,6 +85,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Nextcloud](./docs/nextcloud.md)
 * [Syncthing](./docs/syncthing.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)
+* [Netbird VPN (Zero Trust Mesh)](./docs/netbird.md)
 
 ## IMPORTANT: Note for LLM Agents
 

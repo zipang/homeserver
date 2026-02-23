@@ -201,3 +201,54 @@ sudo systemctl status pocket-id.service
 # 5. Access the admin interface
 # Navigate to: https://pocketid.skylab.local/setup
 ```
+
+---
+
+## 3. Netbird - Self-hosted Zero Trust Mesh VPN
+
+We are self-hosting the entire Netbird stack (Management, Signal, Relay, and Dashboard) to create a private mesh network. This allows secure, P2P access to services like Immich and Jellyfin without exposing them to the public internet.
+
+### Architecture Decisions
+- **Orchestration**: `virtualisation.oci-containers` (Docker) managed by NixOS.
+- **Identity Provider**: Integrated with **PocketID** via OIDC.
+- **Components**:
+    - `netbird-management`: The core API and coordination service.
+    - `netbird-signal`: Lightweight peer discovery service.
+    - `netbird-dashboard`: Web UI for network management.
+    - `coturn`: STUN/TURN relay for NAT traversal.
+- **Database**: SQLite (built-in to Management for simplicity in homelab).
+- **Networking**: Nginx reverse proxy for Dashboard and Management API.
+
+### Implementation Plan
+
+#### Phase 1: Documentation & Planning
+- [x] **Create `/docs/netbird.md`**
+    - Overview of the P2P mesh and OIDC flow.
+    - Guide for client installation (Mobile/PC).
+    - Instructions for accessing private services (Immich/Jellyfin).
+
+#### Phase 2: Module Development
+- [ ] **Create `/modules/services/netbird-server.nix`**
+    - Define OCI containers for all components.
+    - Configure OIDC environment variables for PocketID.
+    - Setup data persistence in `/var/lib/netbird`.
+    - Configure `coturn` for relay functionality.
+
+- [ ] **Update Nginx Configuration**
+    - Add virtual host for `netbird.${config.server.publicDomain}`.
+    - Configure gRPC proxying for the Management API.
+
+#### Phase 3: PocketID Integration
+- [ ] **Configure OIDC Client in PocketID**
+    - Name: "Netbird"
+    - Redirect URI: `https://netbird.<domain>/auth/callback`
+    - Get Client ID and Secret.
+
+#### Phase 4: Testing & Deployment
+- [ ] Deploy to SKYLAB.
+- [ ] Test `netbird up` from a remote device.
+- [ ] Verify P2P connection (via `netbird status`).
+
+### Current State
+- ✅ Plan defined in `WORK_IN_PROGRESS.md`.
+- ✅ Documentation draft created.
