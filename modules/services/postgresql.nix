@@ -10,11 +10,15 @@
     enable = true;
     package = pkgs.postgresql_16;
 
-    # Ensure Pocketid database and user are created
-    ensureDatabases = [ "pocketid" ];
+    # Ensure Pocketid and Jellyfin databases and users are created
+    ensureDatabases = [ "pocketid" "jellyfin" ];
     ensureUsers = [
       {
         name = "pocketid";
+        ensureDBOwnership = true;
+      }
+      {
+        name = "jellyfin";
         ensureDBOwnership = true;
       }
     ];

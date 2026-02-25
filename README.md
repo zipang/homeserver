@@ -83,6 +83,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Authelia SSO](./docs/authelia.md)
 * [Immich](./docs/immich.md)
 * [Nextcloud](./docs/nextcloud.md)
+* [Jellyfin](./docs/jellyfin.md)
 * [Syncthing](./docs/syncthing.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)
 * [Netbird VPN (Zero Trust Mesh)](./docs/netbird.md)
