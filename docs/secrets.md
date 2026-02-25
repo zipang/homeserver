@@ -139,3 +139,24 @@ Declare the secret in your module (e.g., `modules/services/jellyfin.nix`):
   systemd.services.jellyfin.serviceConfig.EnvironmentFile = config.sops.secrets."jellyfin.env".path;
 }
 ```
+
+### gitignore
+
+In a Nix Flakes environment, Nix only "sees" files that are tracked by Git. If a file is untracked (or ignored), Nix will exclude it from the build source, causing the rebuild to fail.
+
+To make Git (and thus Nix) aware of the file without actually staging its contents for a commit, use:
+```bash
+git add -N path/to/secrets.nix
+```
+
+When the file is in .gitignore, you will need to add the -f (force) flag:
+```bash
+git add -f -N path/to/secrets.nix
+```
+
+Why this works:
+*   `--intent-to-add` (`-N`): Tells Git that the path exists and should be considered part of the repository, but it doesn't actually stage the file's content yet.
+*   **Nix Visibility**: Once Git "knows" about the path, Nix Flakes will include that file when it copies the repository to the Nix store for the rebuild.
+*   **Safety**: The file remains in an "intent to add" state. It will show up in git status as a new file, but its contents aren't staged, and it won't be included in a git commit unless you explicitly git add it later.
+
+**Note:** Just be careful not to use `git commit -a` or `git add .` later, as that might accidentally stage and commit your secrets if you aren't paying attention to the status!
