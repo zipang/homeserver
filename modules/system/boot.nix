@@ -15,4 +15,7 @@
   boot.supportedFilesystems = [ "zfs" ];
   # ZFS latest kernel compatibility
   boot.zfs.package = pkgs.zfs_unstable;
+
+  # Support for NTFS storage
+  boot.kernelPackages.ntfs3.enable = true;
 }
