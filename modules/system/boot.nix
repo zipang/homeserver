@@ -11,11 +11,8 @@
   # This is crucial for typing the root password in emergency mode.
   boot.initrd.systemd.enable = true;
 
-  # Support for ZFS storage
-  boot.supportedFilesystems = [ "zfs" ];
+  # Support for NTFS and ZFS
+  boot.supportedFilesystems = [ "ntfs" "zfs" ];
   # ZFS latest kernel compatibility
   boot.zfs.package = pkgs.zfs_unstable;
-
-  # Support for NTFS storage
-  boot.kernelPackages.ntfs3.enable = true;
 }
