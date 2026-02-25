@@ -20,7 +20,11 @@ in
 
     # Trust Cloudflare IPs to get real client IPs in logs
     commonHttpConfig = lib.concatMapStrings (ip: "set_real_ip_from ${ip};\n") cloudflareIps
-      + "real_ip_header CF-Connecting-IP;";
+      + "real_ip_header CF-Connecting-IP;\n"
+      + ''
+        proxy_headers_hash_max_size 1024;
+        proxy_headers_hash_bucket_size 128;
+      '';
 
     # Optimizations for a home server
     recommendedProxySettings = true;
@@ -31,10 +35,6 @@ in
     # Default client_max_body_size is 1m, which is too small for photos/videos.
     # We set a large default, but will override it specifically for Immich.
     clientMaxBodySize = "10G";
-
-    # Resolve proxy_headers_hash warnings
-    proxyHeadersHashMaxSize = 1024;
-    proxyHeadersHashBucketSize = 128;
 
     # Virtual Hosts will be added as we implement services
     virtualHosts."${config.server.publicDomain}" = {
