@@ -32,6 +32,10 @@ in
     # We set a large default, but will override it specifically for Immich.
     clientMaxBodySize = "10G";
 
+    # Resolve proxy_headers_hash warnings
+    proxyHeadersHashMaxSize = 1024;
+    proxyHeadersHashBucketSize = 128;
+
     # Virtual Hosts will be added as we implement services
     virtualHosts."${config.server.publicDomain}" = {
       forceSSL = true;
