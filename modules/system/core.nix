@@ -45,6 +45,7 @@
     inetutils
     iotop
     lsof
+    mc
     nano
     nfs-utils
     openssh
