@@ -8,7 +8,19 @@
 
   # Hardware acceleration for Jellyfin (AMD Radeon RX Vega M GH)
   # We use VAAPI via the Mesa 'radeonsi' driver.
-  users.users.jellyfin.extraGroups = [ "video" "render" ];
+  # Added 'postgres' group for peer authentication to the local database.
+  users.users.jellyfin.extraGroups = [ "video" "render" "postgres" ];
+
+  systemd.services.jellyfin = {
+    # Configure Jellyfin to use PostgreSQL via environment variables
+    # Supported in Jellyfin 10.9.0+
+    environment = {
+      JELLYFIN_Database__Type = "PostgreSQL";
+      JELLYFIN_Database__ConnectionString = "Host=/run/postgresql;Database=jellyfin;Username=jellyfin";
+    };
+    after = [ "postgresql.service" ];
+    wants = [ "postgresql.service" ];
+  };
 
   # Nginx Reverse Proxy Configuration
   services.nginx.virtualHosts."jellyfin.skylab.local" = {
@@ -20,15 +32,12 @@
       proxyPass = "http://127.0.0.1:8096";
       proxyWebsockets = true;
       extraConfig = ''
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Protocol $scheme;
-        proxy_set_header X-Forwarded-Host $http_host;
-        
         # Disable buffering for better streaming performance
         proxy_buffering off;
+        
+        # Dedicated logging for debugging (400 error investigation)
+        access_log /var/log/nginx/jellyfin.access.log;
+        error_log /var/log/nginx/jellyfin.error.log info;
       '';
     };
   };

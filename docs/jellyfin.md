@@ -6,6 +6,9 @@ Jellyfin is a free and open-source media system that allows users to manage and 
 
 - **Module Path**: `modules/services/jellyfin.nix`
 - **Reverse Proxy**: `jellyfin.skylab.local`
+- **Official Documentation**: [jellyfin.org/docs](https://jellyfin.org/docs/general/server/settings/)
+- **Environment Variables**: [jellyfin.org/docs/general/administration/configuration](https://jellyfin.org/docs/general/administration/configuration#environment-variables)
+- **Database Options**: [jellyfin.org/docs/general/administration/database](https://jellyfin.org/docs/general/administration/database)
 
 ## Configuration Reference
 
@@ -24,7 +27,19 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
 
   # Hardware acceleration for Jellyfin (AMD Radeon RX Vega M GH)
   # We use VAAPI via the Mesa 'radeonsi' driver.
-  users.users.jellyfin.extraGroups = [ "video" "render" ];
+  # Added 'postgres' group for peer authentication to the local database.
+  users.users.jellyfin.extraGroups = [ "video" "render" "postgres" ];
+
+  systemd.services.jellyfin = {
+    # Configure Jellyfin to use PostgreSQL via environment variables
+    # Supported in Jellyfin 10.9.0+
+    environment = {
+      JELLYFIN_Database__Type = "PostgreSQL";
+      JELLYFIN_Database__ConnectionString = "Host=/run/postgresql;Database=jellyfin;Username=jellyfin";
+    };
+    after = [ "postgresql.service" ];
+    wants = [ "postgresql.service" ];
+  };
 
   # Nginx Reverse Proxy Configuration
   services.nginx.virtualHosts."jellyfin.skylab.local" = {
@@ -36,15 +51,12 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
       proxyPass = "http://127.0.0.1:8096";
       proxyWebsockets = true;
       extraConfig = ''
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Protocol $scheme;
-        proxy_set_header X-Forwarded-Host $http_host;
-        
         # Disable buffering for better streaming performance
         proxy_buffering off;
+        
+        # Dedicated logging for debugging
+        access_log /var/log/nginx/jellyfin.access.log;
+        error_log /var/log/nginx/jellyfin.error.log info;
       '';
     };
   };
@@ -56,6 +68,7 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
     mesa # Provides 'radeonsi' VAAPI driver for AMD
     vulkan-loader
     vulkan-tools
+    clinfo # To verify OpenCL if needed
   ];
 }
 ```
@@ -84,6 +97,8 @@ Jellyfin is configured to use a dedicated PostgreSQL database.
 -   **User**: `jellyfin`
 -   **Connection**: Unix socket (Peer authentication)
 
+**Note**: Switching from SQLite to PostgreSQL will result in a fresh Jellyfin instance. Existing data must be manually migrated if necessary.
+
 ## Headless Operations & Troubleshooting
 
 - **Check service status**:
@@ -93,6 +108,11 @@ Jellyfin is configured to use a dedicated PostgreSQL database.
 - **Monitor logs**:
   ```bash
   journalctl -u jellyfin -f
+  ```
+- **Nginx Access/Error Logs**:
+  ```bash
+  tail -f /var/log/nginx/jellyfin.access.log
+  tail -f /var/log/nginx/jellyfin.error.log
   ```
 - **Test VAAPI access**:
   ```bash
