@@ -25,7 +25,8 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
 
   # Hardware acceleration for Jellyfin (AMD Radeon RX Vega M GH)
   # We use VAAPI via the Mesa 'radeonsi' driver.
-  users.users.jellyfin.extraGroups = [ "video" "render" ];
+  # Added to 'users' group to allow write access (deleting media) to shared folders.
+  users.users.jellyfin.extraGroups = [ "video" "render" "users" ];
 
   # Nginx Reverse Proxy Configuration
   services.nginx.virtualHosts."jellyfin.skylab.local" = {
@@ -75,6 +76,14 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
       ls -l /dev/dri/by-path/
       ```
       Look for the path containing `pci-0000:01:00.0` (which is the typical address for the Vega M on this NUC) and see which `renderDxxx` it links to.
+
+### Media Management & Permissions
+
+To allow Jellyfin to delete media files from the dashboard:
+
+1.  **Group Membership**: The `jellyfin` user is added to the `users` group in `modules/services/jellyfin.nix`.
+2.  **Folder Permissions**: Shared directories in `/share/Storage` are configured with `0775` permissions via `modules/system/storage.nix`, granting the `users` group write access.
+3.  **Jellyfin Setting**: In the Jellyfin web interface, ensure that the "Allow media deletion from the filesystem" option is enabled for your user profile or globally in the dashboard settings.
 
 ### Database Integration
 

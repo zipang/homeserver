@@ -8,7 +8,7 @@
 
   # Hardware acceleration for Jellyfin (AMD Radeon RX Vega M GH)
   # We use VAAPI via the Mesa 'radeonsi' driver.
-  users.users.jellyfin.extraGroups = [ "video" "render" ];
+  users.users.jellyfin.extraGroups = [ "video" "render" "users" ];
 
   # Nginx Reverse Proxy Configuration
   services.nginx.virtualHosts."jellyfin.skylab.local" = {

@@ -106,10 +106,10 @@ in
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
     "d /share/Skylab 0755 root root -"
-    "d /share/Storage 0755 zipang users -"
-    "d /share/Storage/BUZZ 0755 zipang users -"
-    "d /share/Storage/WOODY 0755 zipang users -"
-    "d /share/Storage/WOODY/photos 0755 zipang users -"
+    "d /share/Storage 0775 zipang users -"
+    "d /share/Storage/BUZZ 0775 zipang users -"
+    "d /share/Storage/WOODY 0775 zipang users -"
+    "d /share/Storage/WOODY/photos 0775 zipang users -"
     "d /var/lib/nextcloud 0750 nextcloud nextcloud -"
     "d /media 0755 root root -"
   ];
