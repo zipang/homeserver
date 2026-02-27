@@ -5,14 +5,12 @@ let
     pname = "av1-converter";
     version = "1.0.0";
 
-    src = ../../.;
+    # We use the pre-bundled JS file from the dist directory
+    src = ../../scripts/av1-converter/dist;
 
-    nativeBuildInputs = [ pkgs.bun pkgs.makeWrapper ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
 
-    buildPhase = ''
-      export HOME=$TMPDIR
-      bun build ./scripts/av1-converter.ts --outfile av1-converter.js --target bun
-    '';
+    dontBuild = true;
 
     installPhase = ''
       mkdir -p $out/bin $out/share/av1-converter

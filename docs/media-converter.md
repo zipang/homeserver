@@ -26,7 +26,7 @@ The script is globally available on Skylab as `av1-converter`. You can also run 
 ```bash
 av1-converter [options]
 # OR
-bun scripts/av1-converter.ts [options]
+bun scripts/av1-converter/src/index.ts [options]
 ```
 
 ### Options
