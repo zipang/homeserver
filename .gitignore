@@ -49,5 +49,8 @@ tmp/
 # NixOS Secrets
 secrets.nix
 
+# Exceptions for bundled tools
+!scripts/av1-converter/dist/
+
 # Keep this file tracked
 !.gitignore
