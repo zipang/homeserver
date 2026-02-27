@@ -36,6 +36,27 @@ bun scripts/av1-converter.ts [options]
 | `--dry-run` | | Scan and identify files without converting | `false` |
 | `--preset` | | SVT-AV1 preset (0-13, lower is slower/better) | `6` |
 | `--crf` | | SVT-AV1 quality (0-63, lower is higher quality) | `30` |
+
+### Understanding CRF and Preset
+
+These two parameters control the balance between quality, file size, and encoding time.
+
+#### 1. CRF (Constant Rate Factor)
+- **Range**: `0` (lossless) to `63` (worst quality).
+- **Function**: Ensures a constant perceptual quality level.
+- **Recommendations**:
+    - `18-24`: High quality, larger files.
+    - `30`: (Default) The "sweet spot" for AV1 (excellent quality/size ratio).
+    - `35+`: Noticeable compression artifacts, very small files.
+
+#### 2. Preset
+- **Range**: `0` (slowest/most efficient) to `13` (fastest/least efficient).
+- **Function**: Determines how much "effort" the CPU spends on compression.
+- **Recommendations**:
+    - `4-6`: (Default 6) Balanced. Best for archiving.
+    - `8-10`: Much faster, good for quick conversions or less critical media.
+    - `12-13`: Extremely fast, but file sizes will be significantly larger for the same quality.
+
 | `--upscale-to`| | Upscale video if height is below target (e.g., `720p`) | None |
 | `--delete-original`| | Delete the original file after success | `false` |
 
@@ -60,6 +81,15 @@ bun scripts/av1-converter.ts --dir /path/to/movies --limit 2 --preset 8
 ```bash
 bun scripts/av1-converter.ts --dir /share/Storage/Movies --delete-original
 ```
+
+## Hardware Acceleration Note
+
+On the **Skylab (Intel NUC Hades Canyon)**:
+- **AV1 Encoding**: This hardware (Intel 8th Gen / AMD Vega M) **does not have a dedicated AV1 hardware encoder**. Encoding to AV1 will always use the CPU via `libsvtav1`.
+- **Why use SVT-AV1?**: SVT-AV1 is highly optimized for modern CPUs and provides significantly better compression than older hardware encoders.
+- **Transcoding Failures**: The `code 171` error you saw in Jellyfin happened because the GPU was asked to do something it couldn't handle (or the driver crashed). By pre-converting to AV1 using the CPU, we ensure the file is in a modern format that the GPU can easily **decode** (playback) later.
+
+If you absolutely require GPU-accelerated encoding, you would need to use HEVC (`-c:v hevc_vaapi`), but AV1 (CPU) is recommended for long-term storage and compatibility.
 
 ## How it works
 
