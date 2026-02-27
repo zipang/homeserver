@@ -47,8 +47,8 @@ bun scripts/av1-converter/src/index.ts [options]
 | `--dir` | `-d` | Directory to scan recursively | `.` |
 | `--limit` | `-l` | Max number of files to convert | Infinity |
 | `--dry-run` | | Scan and identify files without converting | `false` |
-| `--preset` | | SVT-AV1 preset (0-13, lower is slower/better) | `6` |
-| `--crf` | | SVT-AV1 quality (0-63, lower is higher quality) | `30` |
+| `--preset` | | Encoding preset (ultrafast, medium, slow, etc.) | `medium` |
+| `--crf` | | SVT-AV1 quality (0-63, lower is higher quality) | `24` |
 | `--verbose` | `-v` | Show ffmpeg output and full command line | `false` |
 
 ### Understanding CRF and Preset
@@ -60,16 +60,16 @@ These two parameters control the balance between quality, file size, and encodin
 - **Function**: Ensures a constant perceptual quality level.
 - **Recommendations**:
     - `18-24`: High quality, larger files.
-    - `30`: (Default) The "sweet spot" for AV1 (excellent quality/size ratio).
+    - `30`: The "sweet spot" for AV1 (excellent quality/size ratio).
     - `35+`: Noticeable compression artifacts, very small files.
 
 #### 2. Preset
-- **Range**: `0` (slowest/most efficient) to `13` (fastest/least efficient).
+- **Options**: `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow`, `slower`, `veryslow`, `placebo`.
 - **Function**: Determines how much "effort" the CPU spends on compression.
 - **Recommendations**:
-    - `4-6`: (Default 6) Balanced. Best for archiving.
-    - `8-10`: Much faster, good for quick conversions or less critical media.
-    - `12-13`: Extremely fast, but file sizes will be significantly larger for the same quality.
+    - `medium`: (Default) Balanced. Best for archiving.
+    - `fast` / `faster`: Much faster, good for quick conversions or less critical media.
+    - `slow` / `slower`: Better compression, slower encoding.
 
 | `--upscale-to`| | Upscale video if height is below target (e.g., `720p`) | None |
 | `--delete-original`| | Delete the original file after success | `false` |
