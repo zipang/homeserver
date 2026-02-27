@@ -49,6 +49,7 @@ bun scripts/av1-converter/src/index.ts [options]
 | `--dry-run` | | Scan and identify files without converting | `false` |
 | `--preset` | | SVT-AV1 preset (0-13, lower is slower/better) | `6` |
 | `--crf` | | SVT-AV1 quality (0-63, lower is higher quality) | `30` |
+| `--verbose` | `-v` | Show ffmpeg output and full command line | `false` |
 
 ### Understanding CRF and Preset
 

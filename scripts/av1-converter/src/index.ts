@@ -54,6 +54,12 @@ const argv = await yargs(hideBin(process.argv))
     type: 'string',
     description: 'Upscale video if height is below target (e.g., 720p, 1080p)',
   })
+  .option('verbose', {
+    alias: 'v',
+    type: 'boolean',
+    description: 'Show ffmpeg output and full command line',
+    default: false,
+  })
   .help()
   .argv;
 
@@ -100,12 +106,35 @@ async function convertFile(filePath: string, currentHeight: number): Promise<boo
 
   console.log(chalk.gray(`Output: ${basename(outputPath)}`));
 
+  const ffmpegArgs = [
+    "-nostdin",
+    "-i", filePath,
+    "-map", "0",
+    "-c:v", "libsvtav1",
+    "-preset", String(argv.preset),
+    "-crf", String(argv.crf),
+    ...scaleFilter,
+    "-c:a", "copy",
+    "-c:s", "copy",
+    outputPath,
+    "-y"
+  ];
+
+  const fullCommand = `ffmpeg ${ffmpegArgs.map(arg => arg.includes(' ') ? `"${arg}"` : arg).join(' ')}`;
+  console.log(chalk.gray(`\n$ ${fullCommand}\n`));
+
   try {
     // We use SVT-AV1 for encoding. 
     // -c:a copy preserves the audio streams to avoid re-encoding overhead.
     // -map 0 maps all streams (video, audio, subtitles).
     // -nostdin prevents ffmpeg from hanging in scripts.
-    await $`ffmpeg -nostdin -i ${filePath} -map 0 -c:v libsvtav1 -preset ${argv.preset} -crf ${argv.crf} ${scaleFilter} -c:a copy -c:s copy ${outputPath} -y`.quiet();
+    const proc = $`ffmpeg ${ffmpegArgs}`;
+    
+    if (!argv.verbose) {
+      await proc.quiet();
+    } else {
+      await proc;
+    }
     
     console.log(chalk.green(`✓ Successfully converted to AV1`));
     
