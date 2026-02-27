@@ -34,6 +34,7 @@
     broot
     btop
     bluetui
+    bun
     curl
     devbox
     docker

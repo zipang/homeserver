@@ -66,6 +66,7 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] `devbox` for isolated development environments (Bun is now managed via Devbox)
 * [x] `pocketid` for passwordless OIDC authentication via passkeys
 * [x] `jellyfin` to stream music and local movies
+* [x] `av1-converter` to re-encode legacy media to modern AV1
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)
 
 ## Documentation

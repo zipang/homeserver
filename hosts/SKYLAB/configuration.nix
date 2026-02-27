@@ -23,6 +23,7 @@ in
 
     # Programs
     ../../modules/programs/neovim.nix
+    ../../modules/programs/media-tools.nix
     # ../../modules/programs/tmux.nix
 
     # Services
