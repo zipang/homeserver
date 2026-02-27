@@ -88,11 +88,12 @@ async function convertFile(filePath: string, currentHeight: number): Promise<boo
   console.log(chalk.blue(`\nConverting: ${basename(filePath)}`));
   
   const targetHeight = getTargetHeight(argv['upscale-to']);
-  let vf = '';
-  
-  if (targetHeight && currentHeight < targetHeight) {
+  const scaleFilter = targetHeight && currentHeight < targetHeight
+    ? ["-vf", `scale=-2:${targetHeight}:flags=lanczos`]
+    : [];
+
+  if (scaleFilter.length > 0) {
     console.log(chalk.yellow(`↑ Upscaling: ${currentHeight}p -> ${targetHeight}p`));
-    vf = `-vf scale=-2:${targetHeight}:flags=lanczos`;
   } else {
     console.log(chalk.gray(`Height: ${currentHeight}p`));
   }
@@ -103,20 +104,8 @@ async function convertFile(filePath: string, currentHeight: number): Promise<boo
     // We use SVT-AV1 for encoding. 
     // -c:a copy preserves the audio streams to avoid re-encoding overhead.
     // -map 0 maps all streams (video, audio, subtitles).
-    const ffmpegArgs = [
-      '-i', filePath,
-      '-map', '0',
-      '-c:v', 'libsvtav1',
-      '-preset', String(argv.preset),
-      '-crf', String(argv.crf),
-      ...(vf ? vf.split(' ') : []),
-      '-c:a', 'copy',
-      '-c:s', 'copy',
-      outputPath,
-      '-y'
-    ];
-
-    await $`ffmpeg ${ffmpegArgs}`.quiet();
+    // -nostdin prevents ffmpeg from hanging in scripts.
+    await $`ffmpeg -nostdin -i ${filePath} -map 0 -c:v libsvtav1 -preset ${argv.preset} -crf ${argv.crf} ${scaleFilter} -c:a copy -c:s copy ${outputPath} -y`.quiet();
     
     console.log(chalk.green(`✓ Successfully converted to AV1`));
     
