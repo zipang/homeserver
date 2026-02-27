@@ -2,6 +2,9 @@
   "name": "av1-converter",
   "version": "1.0.0",
   "main": "dist/av1-converter.js",
+  "bin": {
+    "av1-converter": "./dist/av1-converter.js"
+  },
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/av1-converter.js --target bun --bundle --minify --tree-shaking"
   },

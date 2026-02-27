@@ -21,11 +21,22 @@ It uses `ffprobe` to identify codecs and `ffmpeg` with the `libsvtav1` encoder f
 
 ## Usage
 
-The script is globally available on Skylab as `av1-converter`. You can also run it using Bun from the root of the repository:
+### On Skylab (NixOS)
+The script is globally available on Skylab as `av1-converter`.
+
+### On Local Computer (Global Installation)
+To install the tool globally on your local machine using Bun:
 
 ```bash
-av1-converter [options]
-# OR
+cd scripts/av1-converter
+bun add -g .
+```
+
+### Direct Execution
+You can also run it using Bun directly:
+
+```bash
+# From the root of the repository
 bun scripts/av1-converter/src/index.ts [options]
 ```
 
