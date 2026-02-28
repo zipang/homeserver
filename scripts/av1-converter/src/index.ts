@@ -129,7 +129,7 @@ async function convertFile(
   let videoFilters: string[] = [];
 
   if (argv["apply-smoothing"]) {
-    const smoothingChain = "deblock=filter=strong:block=8:alpha=0.1:beta=0.08:gamma=0.07:delta=0.06,hqdn3d=luma_spatial=4:chroma_spatial=3:luma_temporal=6:chroma_temporal=4,deband=range=16:threshold=32:dither=1";
+    const smoothingChain = "deblock=filter=strong:block=8:alpha=0.1:beta=0.08:gamma=0.07:delta=0.06,hqdn3d=luma_spatial=4:chroma_spatial=3,deband=range=16:threshold=32:dither=1";
     videoFilters.push(smoothingChain);
     console.log(chalk.yellow(`✨ Applying smoothing filters`));
   }
