@@ -15,6 +15,7 @@ const TARGET_CODECS = [
   "vp8",
   "h263",
   "flv1",
+  "rv40",
 ];
 
 const PRESET_MAP: Record<string, number> = {
@@ -206,7 +207,7 @@ async function main() {
   if (argv.limit !== Infinity)
     console.log(chalk.gray(`Limit: ${argv.limit} files`));
 
-  const glob = new Glob("**/*.{avi,mp4,mkv,wmv,flv,mpg,mpeg,mov,ts}");
+  const glob = new Glob("**/*.{avi,mp4,mkv,wmv,flv,mpg,mpeg,mov,ts,rmvb}");
   const files = Array.from(glob.scanSync(scanDir));
 
   console.log(chalk.gray(`Found ${files.length} potential media files.`));

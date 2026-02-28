@@ -9,7 +9,7 @@ The script targets several "legacy" codecs that often cause issues with modern h
 - `msmpeg4v3`
 - `mpeg2video` (DVD)
 - `vc1` (Early Blu-ray)
-- `theora`, `vp8`, `h263`, `flv1`
+- `theora`, `vp8`, `h263`, `flv1`, `rv40` (RealVideo)
 
 It uses `ffprobe` to identify codecs and `ffmpeg` with the `libsvtav1` encoder for high-quality AV1 compression.
 
@@ -78,22 +78,22 @@ These two parameters control the balance between quality, file size, and encodin
 
 **Dry run to see what would be converted:**
 ```bash
-bun scripts/av1-converter.ts --dir /path/to/movies --dry-run
+bun scripts/av1-converter/src/index.ts --dir /path/to/movies --dry-run
 ```
 
 **Upscale old movies to 720p:**
 ```bash
-bun scripts/av1-converter.ts --dir /path/to/movies --upscale-to 720p
+bun scripts/av1-converter/src/index.ts --dir /path/to/movies --upscale-to 720p
 ```
 
 **Convert 2 files for testing:**
 ```bash
-bun scripts/av1-converter.ts --dir /path/to/movies --limit 2 --preset 8
+bun scripts/av1-converter/src/index.ts --dir /path/to/movies --limit 2 --preset fast
 ```
 
 **Full conversion with cleanup:**
 ```bash
-bun scripts/av1-converter.ts --dir /share/Storage/Movies --delete-original
+bun scripts/av1-converter/src/index.ts --dir /share/Storage/Movies --delete-original
 ```
 
 ## Hardware Acceleration Note
