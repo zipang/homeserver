@@ -96,6 +96,17 @@ bun scripts/av1-converter/src/index.ts --dir /path/to/movies --limit 2 --preset 
 bun scripts/av1-converter/src/index.ts --dir /share/Storage/Movies --delete-original
 ```
 
+### Running in Background
+
+Since video encoding takes a long time, it is recommended to run the script inside a `tmux` session. This allows you to disconnect from SSH while the conversion continues.
+
+1.  **Start a new session**: `tmux new -s conversion`
+2.  **Run the script**: `av1-converter --dir /path/to/media --upscale-to 720p`
+3.  **Detach**: Press `Ctrl+b` then `d`.
+4.  **Re-attach later**: `tmux attach -t conversion`
+
+For more details, see the [Tmux Guide](./tmux.md).
+
 ## Hardware Acceleration Note
 
 On the **Skylab (Intel NUC Hades Canyon)**:
