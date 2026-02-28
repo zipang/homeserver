@@ -123,7 +123,7 @@ async function convertFile(
   const targetHeight = getTargetHeight(argv["upscale-to"]);
   const scaleFilter =
     targetHeight && currentHeight < targetHeight
-      ? ["-vf", `scale=-2:${targetHeight}:flags=lanczos`]
+      ? ["-vf", `scale=-2:${targetHeight}:flags=lanczos,unsharp=5:0.8:0.0:2.0:0.5:0.0`]
       : [];
 
   if (scaleFilter.length > 0) {
