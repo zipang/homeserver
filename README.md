@@ -84,7 +84,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Immich](./docs/immich.md)
 * [Nextcloud](./docs/nextcloud.md)
 * [Jellyfin](./docs/jellyfin.md)
-* [AV1 Media Converter](./docs/media-converter.md)
+* [AV1 Converter Script](./docs/av1-converter.md)
 * [Syncthing](./docs/syncthing.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)
 * [Netbird VPN (Zero Trust Mesh)](./docs/netbird.md)

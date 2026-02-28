@@ -69,6 +69,11 @@ const argv = await yargs(hideBin(process.argv))
     type: "string",
     description: "Upscale video if height is below target (e.g., 720p, 1080p)",
   })
+  .option("apply-smoothing", {
+    type: "boolean",
+    description: "Apply video smoothing filters to reduce compression artifacts (deblock, hqdn3d, deband)",
+    default: false,
+  })
   .option("verbose", {
     alias: "v",
     type: "boolean",
@@ -121,18 +126,25 @@ async function convertFile(
   console.log(chalk.blue(`\nConverting: ${basename(filePath)}`));
 
   const targetHeight = getTargetHeight(argv["upscale-to"]);
-  const scaleFilter =
-    targetHeight && currentHeight < targetHeight
-      ? ["-vf", `scale=-2:${targetHeight}:flags=lanczos,unsharp=5:5:1.0:5:5:0.0`]
-      : [];
+  let videoFilters: string[] = [];
 
-  if (scaleFilter.length > 0) {
+  if (argv["apply-smoothing"]) {
+    const smoothingChain = "deblock=filter=strong:block=8:alpha=0.1:beta=0.08:gamma=0.07:delta=0.06,hqdn3d=luma_spatial=4:chroma_spatial=3:luma_temporal=6:chroma_temporal=4,deband=range=16:threshold=32:dither=1";
+    videoFilters.push(smoothingChain);
+    console.log(chalk.yellow(`✨ Applying smoothing filters`));
+  }
+
+  if (targetHeight && currentHeight < targetHeight) {
+    const scaleUnsharpChain = `scale=-2:${targetHeight}:flags=lanczos,unsharp=5:5:1.0:5:5:0.0`;
+    videoFilters.push(scaleUnsharpChain);
     console.log(
       chalk.yellow(`↑ Upscaling: ${currentHeight}p -> ${targetHeight}p`),
     );
   } else {
     console.log(chalk.gray(`Height: ${currentHeight}p`));
   }
+
+  const vfArgs = videoFilters.length > 0 ? ["-vf", videoFilters.join(",")] : [];
 
   // Detect problematic audio codecs that Matroska muxer or modern players dislike
   const legacyAudioCodecs = ["cook", "atrac3", "sipr", "ra_144", "ra_288", "wmav2", "wmav1"];
@@ -162,7 +174,7 @@ async function convertFile(
     String(numericPreset),
     "-crf",
     String(argv.crf),
-    ...scaleFilter,
+    ...vfArgs,
     ...audioArgs,
     "-c:s",
     "copy",
