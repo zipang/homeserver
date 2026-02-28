@@ -79,14 +79,20 @@ const argv = await yargs(hideBin(process.argv))
 
 async function getMediaInfo(
   filePath: string,
-): Promise<{ codec: string; height: number } | null> {
+): Promise<{ videoCodec: string; height: number; audioCodecs: string[] } | null> {
   try {
     const result =
-      await $`ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,height -of json ${filePath}`.json();
-    const stream = result.streams[0];
+      await $`ffprobe -v error -show_streams -of json ${filePath}`.json();
+    
+    const videoStream = result.streams.find((s: any) => s.codec_type === "video");
+    const audioStreams = result.streams.filter((s: any) => s.codec_type === "audio");
+
+    if (!videoStream) return null;
+
     return {
-      codec: stream.codec_name,
-      height: stream.height,
+      videoCodec: videoStream.codec_name,
+      height: videoStream.height,
+      audioCodecs: audioStreams.map((s: any) => s.codec_name),
     };
   } catch (e) {
     return null;
@@ -104,8 +110,9 @@ function getTargetHeight(spec: string | undefined): number | null {
 
 async function convertFile(
   filePath: string,
-  currentHeight: number,
+  info: { videoCodec: string; height: number; audioCodecs: string[] },
 ): Promise<boolean> {
+  const currentHeight = info.height;
   const dir = dirname(filePath);
   const ext = extname(filePath);
   const base = basename(filePath, ext);
@@ -127,6 +134,18 @@ async function convertFile(
     console.log(chalk.gray(`Height: ${currentHeight}p`));
   }
 
+  // Detect problematic audio codecs that Matroska muxer or modern players dislike
+  const legacyAudioCodecs = ["cook", "atrac3", "sipr", "ra_144", "ra_288", "wmav2", "wmav1"];
+  const needsAudioConversion = info.audioCodecs.some(c => legacyAudioCodecs.includes(c));
+  
+  const audioArgs = needsAudioConversion 
+    ? ["-c:a", "libopus", "-b:a", "128k"] 
+    : ["-c:a", "copy"];
+
+  if (needsAudioConversion) {
+    console.log(chalk.yellow(`♪ Re-encoding audio to Opus (legacy codec detected: ${info.audioCodecs.join(", ")})`));
+  }
+
   console.log(chalk.gray(`Output: ${basename(outputPath)}`));
 
   const numericPreset = PRESET_MAP[argv.preset] ?? 6;
@@ -144,8 +163,7 @@ async function convertFile(
     "-crf",
     String(argv.crf),
     ...scaleFilter,
-    "-c:a",
-    "copy",
+    ...audioArgs,
     "-c:s",
     "copy",
     outputPath,
@@ -221,16 +239,16 @@ async function main() {
     const fullPath = join(scanDir, file);
     const info = await getMediaInfo(fullPath);
 
-    if (info && TARGET_CODECS.includes(info.codec)) {
+    if (info && TARGET_CODECS.includes(info.videoCodec)) {
       processedCount++;
       const upscaleNote =
         targetHeight && info.height < targetHeight
           ? chalk.yellow(" [UP] ")
           : " ";
-      console.log(chalk.yellow(`[${info.codec}]`) + upscaleNote + file);
+      console.log(chalk.yellow(`[${info.videoCodec}]`) + upscaleNote + file);
 
       if (!argv["dry-run"]) {
-        const success = await convertFile(fullPath, info.height);
+        const success = await convertFile(fullPath, info);
         if (success) convertedCount++;
       } else {
         convertedCount++;

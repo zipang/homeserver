@@ -108,10 +108,11 @@ If you absolutely require GPU-accelerated encoding, you would need to use HEVC (
 ## How it works
 
 1.  **Scanning**: Uses `Bun.Glob` to recursively find common video extensions.
-2.  **Analysis**: Runs `ffprobe` on each file to detect the video codec.
+2.  **Analysis**: Runs `ffprobe` on each file to detect video and audio codecs.
 3.  **Encoding**: If a legacy codec is found, it triggers `ffmpeg` to:
     - Encode video to AV1 using `libsvtav1`.
-    - Copy audio and subtitle streams (`-c:a copy -c:s copy`) to preserve quality and speed.
+    - **Audio Modernization**: If legacy audio codecs (like `cook`, `wmav2`, `sipr`) are detected, they are automatically re-encoded to **Opus** (128k) to ensure compatibility with modern containers and players.
+    - Copy standard audio and subtitle streams (`-c:a copy -c:s copy`) when safe.
     - Output to a `.av1.mkv` file.
 4.  **Verification**: Only if `ffmpeg` exits successfully, the script marks the conversion as complete.
 5.  **Cleanup**: If `--delete-original` is set, it removes the old file and renames the new one to the original name (with `.mkv` extension).
