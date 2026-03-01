@@ -8,7 +8,7 @@ We use a combination of **Netdata** for a persistent web-based overview and spec
 
 | Tool | Primary Purpose | NixOS Module | Access / Command |
 | :--- | :--- | :--- | :--- |
-| **Netdata** | **Real-time Web Dashboard** for all metrics. | `modules/services/netdata.nix` | [http://monitor.{{privateDomain}}](http://monitor.{{privateDomain}}) |
+| **Netdata** | **Real-time Web Dashboard** for all metrics. | `modules/services/netdata.nix` | [https://monitor.{{privateDomain}}](https://monitor.{{privateDomain}}) |
 | **iotop** | Identify **processes** causing Disk I/O. | `modules/system/core.nix` | `sudo iotop -o` |
 | **fatrace** | Identify **files** being read/written in real-time. | `modules/system/core.nix` | `sudo fatrace -f W` |
 | **lsof** | List **open files** by process or directory. | `modules/system/core.nix` | `sudo lsof -p <PID>` |

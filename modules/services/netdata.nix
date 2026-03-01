@@ -29,9 +29,11 @@ in
     };
   };
 
-  # Nginx Reverse Proxy (Private Domain only)
+  # Nginx Reverse Proxy (Private Domain with Local SSL)
   services.nginx.virtualHosts."monitor.${config.server.privateDomain}" = {
-    addSSL = false; # Private network only
+    forceSSL = true;
+    sslCertificate = "/var/lib/secrets/certs/${config.server.privateDomain}.crt";
+    sslCertificateKey = "/var/lib/secrets/certs/${config.server.privateDomain}.key";
     locations."/" = {
       proxyPass = "http://127.0.0.1:19999";
       proxyWebsockets = true;
