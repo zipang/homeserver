@@ -1,24 +1,37 @@
 # System Monitoring & Troubleshooting
 
-This guide explains how to monitor system resources, specifically Disk I/O, on the SKYLAB server using terminal-only tools.
+This guide explains how to monitor system resources, specifically Disk I/O, on the SKYLAB server using both real-time web dashboards and terminal-only tools.
 
 ## Overview
 
-We use a combination of tools to identify what is causing load on the system and which files are being accessed in real-time.
+We use a combination of **Netdata** for a persistent web-based overview and specialized CLI tools for deep-dive troubleshooting.
 
-| Tool | Primary Purpose | NixOS Module |
-| :--- | :--- | :--- |
-| **iotop** | Identify **processes** causing Disk I/O. | `modules/system/core.nix` |
-| **fatrace** | Identify **files** being read/written in real-time. | `modules/system/core.nix` |
-| **lsof** | List **open files** by process or directory. | `modules/system/core.nix` |
-| **btop** | General system resource overview (CPU, RAM, Net). | `modules/system/core.nix` |
-| **zpool iostat**| Monitor health and I/O of **ZFS Pools**. | Native ZFS Tool |
+| Tool | Primary Purpose | NixOS Module | Access / Command |
+| :--- | :--- | :--- | :--- |
+| **Netdata** | **Real-time Web Dashboard** for all metrics. | `modules/services/netdata.nix` | [http://monitor.{{privateDomain}}](http://monitor.{{privateDomain}}) |
+| **iotop** | Identify **processes** causing Disk I/O. | `modules/system/core.nix` | `sudo iotop -o` |
+| **fatrace** | Identify **files** being read/written in real-time. | `modules/system/core.nix` | `sudo fatrace -f W` |
+| **lsof** | List **open files** by process or directory. | `modules/system/core.nix` | `sudo lsof -p <PID>` |
+| **btop** | General system resource overview (CPU, RAM, Net). | `modules/system/core.nix` | `btop` |
+| **zpool iostat**| Monitor health and I/O of **ZFS Pools**. | Native ZFS Tool | `zpool iostat -v 5` |
+
+---
+
+## Netdata Web Dashboard
+
+Netdata provides an incredibly detailed dashboard with zero-configuration. It is particularly useful for:
+*   **ZFS ARC Health**: Monitor hit rates and cache size (crucial for ZFS performance).
+*   **Disk Latency**: Identify if your external USB-C drives are causing bottlenecks.
+*   **Long-term History**: See what happened while you were away.
+
+### Security
+The dashboard is accessible via `monitor.${privateDomain}` and is restricted to your **Local Network** only. It is further protected by Nginx-level security.
 
 ---
 
 ## Disk I/O Troubleshooting Guide
 
-If you notice high disk activity and want to find the culprit:
+If you notice high disk activity (like the `dsl_scan_iss` kernel thread) and want to find the culprit:
 
 ### 1. Identify the Process with `iotop`
 
@@ -70,17 +83,12 @@ Since SKYLAB uses ZFS for the `BUZZ` and `WOODY` pools, use ZFS native tools for
 zpool iostat -v 5
 
 # Check if a scrub (maintenance) is currently running
-zfs status
+zpool status
 ```
 
-## General System Health
+*Note: `dsl_scan_iss` is the kernel process responsible for ZFS scrubbing. This is normal maintenance.*
 
-For a global view of CPU, Memory, and Network:
-
-```bash
-# Launch the interactive dashboard
-btop
-```
+---
 
 ## Headless Operations & Troubleshooting
 
@@ -88,8 +96,8 @@ btop
 If a specific service is identified as the cause of I/O, check its logs:
 
 ```bash
-# Monitor logs for a specific service (e.g., nextcloud)
-journalctl -u php-fpm-nextcloud -f
+# Monitor logs for a specific service (e.g., netdata)
+journalctl -u netdata.service -f
 ```
 
 ### System Load

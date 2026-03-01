@@ -37,6 +37,7 @@ in
     ../../modules/services/redis.nix
     # ../../modules/services/authelia.nix
     ../../modules/services/pocketid.nix
+    ../../modules/services/netdata.nix
     ../../modules/services/immich.nix
     ../../modules/services/jellyfin.nix
     # ../../modules/services/nextcloud.nix
