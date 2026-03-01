@@ -1,13 +1,5 @@
 { config, pkgs, lib, ... }:
 
-let
-  cloudflareIps = config.services.cloudflare.ipv4 ++ config.services.cloudflare.ipv6;
-  lanIps = [ "192.168.1.0/24" "127.0.0.1" "::1" ];
-  
-  # Helper to generate allow/deny for Cloudflare + LAN
-  restrictionConfig = lib.concatMapStrings (ip: "allow ${ip};\n") (cloudflareIps ++ lanIps)
-    + "deny all;";
-in
 {
   services.netdata = {
     enable = true;
@@ -32,12 +24,12 @@ in
   # Nginx Reverse Proxy (Private Domain with Local SSL)
   services.nginx.virtualHosts."monitor.${config.server.privateDomain}" = {
     forceSSL = true;
-    sslCertificate = "/var/lib/secrets/certs/${config.server.privateDomain}.crt";
-    sslCertificateKey = "/var/lib/secrets/certs/${config.server.privateDomain}.key";
+    sslCertificate = "/var/lib/secrets/certs/skylab.crt";
+    sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
+
     locations."/" = {
       proxyPass = "http://127.0.0.1:19999";
       proxyWebsockets = true;
-      extraConfig = restrictionConfig;
     };
   };
 }
