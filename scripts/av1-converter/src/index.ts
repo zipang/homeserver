@@ -58,7 +58,7 @@ const argv = await yargs(hideBin(process.argv))
   .option("crf", {
     type: "number",
     description: "SVT-AV1 CRF (0-63, lower is higher quality)",
-    default: 24,
+    default: 30,
   })
   .option("delete-original", {
     type: "boolean",
@@ -71,7 +71,8 @@ const argv = await yargs(hideBin(process.argv))
   })
   .option("apply-smoothing", {
     type: "boolean",
-    description: "Apply video smoothing filters to reduce compression artifacts (deblock, hqdn3d, deband)",
+    description:
+      "Apply video smoothing filters to reduce compression artifacts (deblock, hqdn3d, deband)",
     default: false,
   })
   .option("verbose", {
@@ -82,15 +83,21 @@ const argv = await yargs(hideBin(process.argv))
   })
   .help().argv;
 
-async function getMediaInfo(
-  filePath: string,
-): Promise<{ videoCodec: string; height: number; audioCodecs: string[] } | null> {
+async function getMediaInfo(filePath: string): Promise<{
+  videoCodec: string;
+  height: number;
+  audioCodecs: string[];
+} | null> {
   try {
     const result =
       await $`ffprobe -v error -show_streams -of json ${filePath}`.json();
-    
-    const videoStream = result.streams.find((s: any) => s.codec_type === "video");
-    const audioStreams = result.streams.filter((s: any) => s.codec_type === "audio");
+
+    const videoStream = result.streams.find(
+      (s: any) => s.codec_type === "video",
+    );
+    const audioStreams = result.streams.filter(
+      (s: any) => s.codec_type === "audio",
+    );
 
     if (!videoStream) return null;
 
@@ -121,7 +128,7 @@ async function convertFile(
   const dir = dirname(filePath);
   const ext = extname(filePath);
   const base = basename(filePath, ext);
-  const outputPath = join(dir, `${base}.av1.mkv`);
+  const outputPath = join(dir, `${base}.mkv`);
 
   console.log(chalk.blue(`\nConverting: ${basename(filePath)}`));
 
@@ -129,7 +136,8 @@ async function convertFile(
   let videoFilters: string[] = [];
 
   if (argv["apply-smoothing"]) {
-    const smoothingChain = "deblock=filter=strong:block=8:alpha=0.1:beta=0.08:gamma=0.07:delta=0.06,hqdn3d=luma_spatial=4:chroma_spatial=3,deband=range=16:1thr=0.02:2thr=0.02:3thr=0.02:4thr=0.02";
+    const smoothingChain =
+      "deblock=filter=strong:block=8:alpha=0.2:beta=0.1:gamma=0.1:delta=0.1,hqdn3d=luma_spatial=12:chroma_spatial=4";
     videoFilters.push(smoothingChain);
     console.log(chalk.yellow(`✨ Applying smoothing filters`));
   }
@@ -147,15 +155,29 @@ async function convertFile(
   const vfArgs = videoFilters.length > 0 ? ["-vf", videoFilters.join(",")] : [];
 
   // Detect problematic audio codecs that Matroska muxer or modern players dislike
-  const legacyAudioCodecs = ["cook", "atrac3", "sipr", "ra_144", "ra_288", "wmav2", "wmav1"];
-  const needsAudioConversion = info.audioCodecs.some(c => legacyAudioCodecs.includes(c));
-  
-  const audioArgs = needsAudioConversion 
-    ? ["-c:a", "libopus", "-b:a", "128k"] 
+  const legacyAudioCodecs = [
+    "cook",
+    "atrac3",
+    "sipr",
+    "ra_144",
+    "ra_288",
+    "wmav2",
+    "wmav1",
+  ];
+  const needsAudioConversion = info.audioCodecs.some((c) =>
+    legacyAudioCodecs.includes(c),
+  );
+
+  const audioArgs = needsAudioConversion
+    ? ["-c:a", "libopus", "-b:a", "128k"]
     : ["-c:a", "copy"];
 
   if (needsAudioConversion) {
-    console.log(chalk.yellow(`♪ Re-encoding audio to Opus (legacy codec detected: ${info.audioCodecs.join(", ")})`));
+    console.log(
+      chalk.yellow(
+        `♪ Re-encoding audio to Opus (legacy codec detected: ${info.audioCodecs.join(", ")})`,
+      ),
+    );
   }
 
   console.log(chalk.gray(`Output: ${basename(outputPath)}`));
