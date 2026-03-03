@@ -34,7 +34,7 @@ in
     ../../modules/services/nfs.nix
     ../../modules/services/syncthing.nix
     ../../modules/services/postgresql.nix
-    ../../modules/services/redis.nix
+#     ../../modules/services/redis.nix
     # ../../modules/services/authelia.nix
     ../../modules/services/pocketid.nix
     ../../modules/services/netdata.nix
@@ -68,3 +68,16 @@ in
   # is out of date, out of support, or vulnerable.
   system.stateVersion = "24.05"; # Did you read the comment?
 }
+
+  # Override services.redis to use the older, working redis package instead of valkey
+  services.redis = {
+    enable = true;
+    package = pkgs.redis; # Use the standard, non-Valkey package
+    servers = {
+      "" = {
+        enable = true;
+        unixSocket = "/run/redis/redis.sock";
+        unixSocketPerm = 660;
+      };
+    };
+  };
