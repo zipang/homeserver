@@ -1,31 +1,22 @@
 { config, pkgs, lib, ... }:
 
 {
-  services.netdata = {
-    enable = true;
-    package = pkgs.netdata;
+  nixpkgs.config.allowUnfree = true;
 
-    # Optimize for performance and storage
-    config = {
-      global = {
-        "memory mode" = "none"; # Disable local metric storage entirely
-      };
-
-      # Ensure ZFS monitoring is prioritized and necessary plugins are enabled
-      plugins = {
-        "zfs" = "yes";
-        "proc" = "yes";
-        "ipmi" = "yes";
-      };
-    };
+  services.netdata.package = pkgs.netdata.override {
+    withCloudUi = true;
   };
 
-  # Dependency configuration for IPMI: Kernel Modules
-  boot.kernelModules = [ "ipmi_si" "ipmi_devintf" ];
-
-  # Dependency configuration for IPMI: User Permissions
-  users.users.netdata = {
-    extraGroups = [ "ipmi" ];
+  services.netdata = {
+    enable = true;
+    config = {
+      global = {
+        "memory mode" = "ram";
+        "debug log" = "none";
+        "access log" = "none";
+        "error log" = "syslog";
+      };
+    };
   };
 
   # Nginx Reverse Proxy (Private Domain with Local SSL)
