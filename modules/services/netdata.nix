@@ -17,8 +17,24 @@
       plugins = {
         "zfs" = "yes";
         "proc" = "yes";
+        "postgresql" = "yes"; # Explicitly enable
+        "ipmi" = "yes";       # Explicitly enable
       };
     };
+    # Netdata is often configured via raw config lines for complex settings
+    # Note: Using raw config lines for socket/error suppression based on investigation.
+    configOptions = {
+        "plugin:postgresql" = "socket: /var/run/postgresql/.s.PGSQL.5432";
+        "plugin:ipmi" = "error_level: WARN";
+    };
+  };
+
+  # Dependency configuration for IPMI: Kernel Modules
+  boot.kernelModules = [ "ipmi_si" "ipmi_devintf" ];
+
+  # Dependency configuration for IPMI: User Permissions
+  users.users.netdata = {
+    extraGroups = [ "ipmi" ];
   };
 
   # Nginx Reverse Proxy (Private Domain with Local SSL)
