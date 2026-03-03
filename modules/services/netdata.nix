@@ -15,14 +15,10 @@
       plugins = {
         "zfs" = "yes";
         "proc" = "yes";
-        "postgresql" = "yes"; 
+        "postgresql" = "no"; # Disabled due to authentication issues and lack of requirement
         "ipmi" = "yes";       
       };
     };
-
-    # Nginx Reverse Proxy (Private Domain with Local SSL)
-    # Note: Moving Nginx config outside if it conflicts with Netdata block structure, 
-    # but keeping it inside the outer {} block.
   };
 
   # Dependency configuration for IPMI: Kernel Modules
