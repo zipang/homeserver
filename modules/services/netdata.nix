@@ -4,19 +4,18 @@
   services.netdata = {
     enable = true;
     package = pkgs.netdata;
-    
+
     # Optimize for performance and storage
     config = {
       global = {
         "memory mode" = "none"; # Disable local metric storage entirely
       };
-      
+
       # Ensure ZFS monitoring is prioritized and necessary plugins are enabled
       plugins = {
         "zfs" = "yes";
         "proc" = "yes";
-        "postgresql" = "no"; # Disabled due to authentication issues and lack of requirement
-        "ipmi" = "yes";       
+        "ipmi" = "yes";
       };
     };
   };
