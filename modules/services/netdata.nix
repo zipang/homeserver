@@ -8,9 +8,7 @@
     # Optimize for performance and storage
     config = {
       global = {
-        "history main cache size" = "128"; # RAM cache size in MB
-        "dbengine multihost disk space" = "1024"; # Retention size in MB
-        "memory mode" = "dbengine";
+        "memory mode" = "none"; # Disable local metric storage entirely
       };
       
       # Ensure ZFS monitoring is prioritized and necessary plugins are enabled
