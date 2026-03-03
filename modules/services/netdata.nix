@@ -13,19 +13,18 @@
         "memory mode" = "dbengine";
       };
       
-      # Ensure ZFS monitoring is prioritized
+      # Ensure ZFS monitoring is prioritized and necessary plugins are enabled
       plugins = {
         "zfs" = "yes";
         "proc" = "yes";
-        "postgresql" = "yes"; # Explicitly enable
-        "ipmi" = "yes";       # Explicitly enable
+        "postgresql" = "yes"; 
+        "ipmi" = "yes";       
       };
-    };
-    # Netdata is often configured via raw config lines for complex settings
-    # Note: Using raw config lines for socket/error suppression based on investigation.
-    configOptions = {
-        "plugin:postgresql" = "socket: /var/run/postgresql/.s.PGSQL.5432";
-        "plugin:ipmi" = "error_level: WARN";
+      
+      # Inject raw configuration lines to fix socket path and IPMI warnings
+      # This syntax uses key-value pairs for config injection.
+      "plugin:postgresql" = "socket: /var/run/postgresql/.s.PGSQL.5432";
+      "plugin:ipmi" = "error_level: WARN";
     };
   };
 
