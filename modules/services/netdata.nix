@@ -20,12 +20,11 @@
         "postgresql" = "yes"; 
         "ipmi" = "yes";       
       };
-      
-      # Inject raw configuration lines to fix socket path and IPMI warnings
-      # This syntax uses key-value pairs for config injection.
-      "plugin:postgresql" = "socket: /var/run/postgresql/.s.PGSQL.5432";
-      "plugin:ipmi" = "error_level: WARN";
     };
+
+    # Nginx Reverse Proxy (Private Domain with Local SSL)
+    # Note: Moving Nginx config outside if it conflicts with Netdata block structure, 
+    # but keeping it inside the outer {} block.
   };
 
   # Dependency configuration for IPMI: Kernel Modules
