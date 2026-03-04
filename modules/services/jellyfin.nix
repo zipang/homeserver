@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   services.jellyfin = {
@@ -12,7 +12,8 @@
   users.users.jellyfin.extraGroups = [ "video" "render" "users" ];
 
   # Set file permissions: 664 for files (rw-rw-r--), 775 for directories
-  systemd.services.jellyfin.serviceConfig.UMask = "0002";
+  # Using mkForce to override the default UMask "0077" from the NixOS module
+  systemd.services.jellyfin.serviceConfig.UMask = lib.mkForce "0002";
 
   # Nginx Reverse Proxy Configuration
   services.nginx.virtualHosts."jellyfin.skylab.local" = {
