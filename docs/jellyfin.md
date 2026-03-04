@@ -20,6 +20,7 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
 {
   services.jellyfin = {
     enable = true;
+    group = "users";      # Run in users group for shared file access
     openFirewall = false; # We use Nginx as a reverse proxy
   };
 
@@ -27,6 +28,9 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
   # We use VAAPI via the Mesa 'radeonsi' driver.
   # Added to 'users' group to allow write access (deleting media) to shared folders.
   users.users.jellyfin.extraGroups = [ "video" "render" "users" ];
+
+  # Set file permissions: 664 for files (rw-rw-r--), 775 for directories
+  systemd.services.jellyfin.serviceConfig.UMask = "0002";
 
   # Nginx Reverse Proxy Configuration
   services.nginx.virtualHosts."jellyfin.skylab.local" = {
@@ -82,8 +86,9 @@ Refer to the official [NixOS Search: services.jellyfin](https://search.nixos.org
 To allow Jellyfin to delete media files from the dashboard:
 
 1.  **Group Membership**: The `jellyfin` user is added to the `users` group in `modules/services/jellyfin.nix`.
-2.  **Folder Permissions**: Shared directories in `/share/Storage` are configured with `0775` permissions via `modules/system/storage.nix`, granting the `users` group write access.
-3.  **Jellyfin Setting**: In the Jellyfin web interface, ensure that the "Allow media deletion from the filesystem" option is enabled for your user profile or globally in the dashboard settings.
+2.  **File Permissions**: Files created by Jellyfin have `664` (rw-rw-r--) permissions via `UMask = "0002"`.
+3.  **Folder Permissions**: Shared directories in `/share/Storage` are configured with `0775` permissions via `modules/system/storage.nix`, granting the `users` group write access.
+4.  **Jellyfin Setting**: In the Jellyfin web interface, ensure that the "Allow media deletion from the filesystem" option is enabled for your user profile or globally in the dashboard settings.
 
 ### Database Integration
 
