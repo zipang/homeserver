@@ -23,12 +23,9 @@
       APP_URL = "https://pocketid.${config.server.privateDomain}";
       TRUST_PROXY = true;
 
-      # Database configuration for v1.15.0+ and v2.x
+      # Database configuration for v1.15.0+
       DB_PROVIDER = "postgres";
       DB_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
-
-      # Compatibility for older v1.x (though 1.15.0 should use the above)
-      POSTGRES_CONNECTION_STRING = "host=/run/postgresql user=pocketid database=pocketid";
 
       # Where to store JWKs (database is recommended for stateless/easier backups)
       KEYS_STORAGE = "database";
