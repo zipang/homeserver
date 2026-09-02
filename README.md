@@ -85,6 +85,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Nextcloud](./docs/nextcloud.md)
 * [Jellyfin](./docs/jellyfin.md)
 * [AV1 Converter Script](./docs/av1-converter.md)
+* [Copyparty File Sharing](./docs/copyparty.md)
 * [Syncthing](./docs/syncthing.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)
 * [Netbird VPN (Zero Trust Mesh)](./docs/netbird.md)

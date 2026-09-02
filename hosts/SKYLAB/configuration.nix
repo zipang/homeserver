@@ -41,7 +41,7 @@ in
     ../../modules/services/immich.nix
     ../../modules/services/jellyfin.nix
     # ../../modules/services/nextcloud.nix
-    # ../../modules/services/copyparty.nix
+    ../../modules/services/copyparty.nix
 
   ];
 
