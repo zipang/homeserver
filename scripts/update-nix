@@ -7,25 +7,34 @@ cd /home/master/homeserver
 # Ensure current user owns the directory to avoid git permission errors
 sudo chown -R $USER:wheel .
 
-echo "📥 [1/4] Pulling latest changes from Git..."
+echo "📥 [1/5] Pulling latest changes from Git..."
 git fetch origin
 git checkout "$BRANCH"
 git pull origin "$BRANCH"
 
-echo "🔄 [2/4] Updating Flake lockfile..."
+echo "🔄 [2/5] Updating Flake lockfile..."
 nix flake update
 
-echo "⚒️  [3/4] Rebuilding NixOS system..."
-sudo nixos-rebuild switch --impure --flake .#SKYLAB
-
-echo "📝 [4/4] Checking for lockfile changes..."
+# Commit the lockfile *before* rebuilding: Nix evaluates the git working
+# tree, so an uncommitted flake.lock makes it warn "Git tree is dirty" and
+# the built configuration would not match the repository state.
+LOCK_COMMIT=0
 if ! git diff --quiet flake.lock; then
-  echo "📤 Pushing updated flake.lock to repository..."
   git add flake.lock
   git commit -m "chore: update flake.lock after system upgrade"
-  git push origin "$BRANCH"
+  LOCK_COMMIT=1
 else
   echo "✅ No changes to flake.lock. System is up to date."
 fi
 
-echo "✨ Update complete!"
+echo "⚒️  [3/5] Rebuilding NixOS system..."
+sudo nixos-rebuild switch --impure --flake .#SKYLAB
+
+if [ "$LOCK_COMMIT" -eq 1 ]; then
+  echo "📤 [4/5] Pushing updated flake.lock to repository..."
+  git push origin "$BRANCH"
+else
+  echo "✅ [4/5] Nothing to push."
+fi
+
+echo "✨ [5/5] Update complete!"

@@ -49,6 +49,9 @@ tmp/
 # NixOS Secrets
 secrets.nix
 
+# OpenCode tooling artifacts
+.opencode/package-lock.json
+
 # Exceptions for bundled tools
 !scripts/av1-converter/dist/
 

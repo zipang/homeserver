@@ -6,6 +6,13 @@
 
   # Optimization settings
   nix.settings.auto-optimise-store = true;
+
+  # Nix < 2.33 warns when a single download consumer cannot keep up with the
+  # 64 MiB default buffer during large substitutions ("download buffer is
+  # full"). 500 MiB is the community-validated value for fast connections.
+  # (Fixed upstream in Nix 2.33 - this line can be dropped after upgrading.)
+  nix.settings.download-buffer-size = 524288000; # 500 MiB
+
   nix.gc = {
     automatic = true;
     dates = "weekly";
