@@ -19,21 +19,21 @@
     # No accounts: there is no password authentication on this service.
     #
     # No volume is mounted at "/" so copyparty serves a picker page listing
-    # the available volumes; every volume is anonymous upload-only (w), so
-    # LAN visitors can drop files but never list or read them back.
-    # App-level assets (/.cpr/...) are served by the Nginx full proxy below.
+    # the available volumes; every volume is anonymous read-write (rw) for
+    # the local network. Note: rw does not include move/delete - those stay
+    # terminal-only.
     volumes = {
       "/buzz" = {
         path = "/share/Storage/BUZZ";
         access = {
-          w = "*";
+          rw = "*";
         };
       };
 
-      "/photos" = {
-        path = "/share/Storage/WOODY/photos";
+      "/woody" = {
+        path = "/share/Storage/WOODY";
         access = {
-          w = "*";
+          rw = "*";
         };
       };
     };
@@ -44,12 +44,12 @@
   # pool is not mounted yet. Require the mounts instead.
   systemd.services.copyparty.unitConfig.RequiresMountsFor = [
     "/share/Storage/BUZZ"
-    "/share/Storage/WOODY/photos"
+    "/share/Storage/WOODY"
   ];
 
   # Nginx TLS reverse proxy: full proxy per upstream recommendation
   # (contrib/nginx/copyparty.conf). File exposure stays controlled by the
-  # copyparty volumes themselves (upload-only, no root volume).
+  # copyparty volumes themselves (anonymous rw, no root volume).
   services.nginx.virtualHosts."copyparty.${config.server.privateDomain}" = {
     forceSSL = true;
     sslCertificate = "/var/lib/secrets/certs/skylab.crt";

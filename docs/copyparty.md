@@ -11,12 +11,12 @@ The security model:
 | Surface | Reachable from | Authentication |
 |---|---|---|
 | `https://copyparty.<privateDomain>/` - volume picker page | LAN (via Nginx TLS) | **None** - anonymous |
-| `/buzz` and `/photos` volumes (upload-only) | LAN (via Nginx TLS) | **None** - anonymous, upload-only |
+| `/buzz` and `/woody` volumes (read-write) | LAN (via Nginx TLS) | **None** - anonymous, read-write |
 | Full UI + admin console (gear icon) | LAN and SSH tunnel | **None** - but no file access without a volume permission |
 
-Anonymous visitors can push files but never list or download anything
-(volumes are `w` only, and no volume is mounted at `/`). File management
-stays in the terminal (SSH / SFTP / Samba / NFS).
+Both pool roots are **anonymous read-write** (`rw = "*"`): anyone on the LAN
+can browse, upload and download. Move/delete operations are not included in
+`rw` - they stay terminal-only (SSH / SFTP / Samba / NFS).
 
 **Module paths**
 
@@ -72,14 +72,14 @@ Key options:
     # No accounts: no password authentication on this service.
     # No volume at "/" -> copyparty serves a picker page listing the volumes.
     volumes = {
-      "/buzz" = {                # anonymous upload-only drop box
+      "/buzz" = {                # anonymous read-write share (BUZZ pool)
         path = "/share/Storage/BUZZ";
-        access = { w = "*"; };
+        access = { rw = "*"; };
       };
 
-      "/photos" = {              # anonymous upload-only drop box
-        path = "/share/Storage/WOODY/photos";
-        access = { w = "*"; };
+      "/woody" = {               # anonymous read-write share (WOODY pool)
+        path = "/share/Storage/WOODY";
+        access = { rw = "*"; };
       };
     };
   };
@@ -88,7 +88,7 @@ Key options:
   # volume paths and would fail to start if a pool is not mounted yet
   systemd.services.copyparty.unitConfig.RequiresMountsFor = [
     "/share/Storage/BUZZ"
-    "/share/Storage/WOODY/photos"
+    "/share/Storage/WOODY"
   ];
 
   # TLS vhost: full proxy per upstream recommendation (contrib/nginx) -
@@ -120,14 +120,15 @@ Key options:
 
 1. Open `https://copyparty.<privateDomain>/` in any browser on the local
    network: the picker page lists the available drop targets (`buzz`,
-   `photos`, ...). Open one, or go directly to
+   `woody`). Open one, or go directly to
    `https://copyparty.<privateDomain>/buzz`.
 2. Accept the self-signed certificate warning if the mkcert CA is not
    installed on that device (see [Security & SSL Setup](./security.md)).
 3. Drag & drop files: uploads are **resumable**, which makes them reliable
    even from phones on flaky Wi-Fi.
-4. Dropped files land in `/share/Storage/BUZZ` or `/share/Storage/WOODY/photos`
-   owned by `zipang:users`. Senders cannot list or read them back.
+4. Dropped files land in `/share/Storage/BUZZ` or `/share/Storage/WOODY`
+   owned by `zipang:users`. Both volumes are read-write, so files can also
+   be browsed and downloaded back from the browser.
 
 Command-line test from a LAN client:
 
