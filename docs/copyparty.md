@@ -6,15 +6,17 @@ Copyparty is an always-on HTTP file server: any device on the local network
 (phone, laptop, tablet) can upload files to the Skylab drop boxes from a plain
 web browser - no app, no account, no password.
 
-The security model is split in two:
+The security model:
 
 | Surface | Reachable from | Authentication |
 |---|---|---|
-| `https://copyparty.<privateDomain>/drop/buzz` and `/drop/photos` | LAN (via Nginx TLS) | **None** - anonymous, upload-only |
-| Full UI on `127.0.0.1:3923` (browse `/share`, admin console) | SSH tunnel only | **SSH keys** (enforced by sshd) |
+| `https://copyparty.<privateDomain>/` - volume picker page | LAN (via Nginx TLS) | **None** - anonymous |
+| `/buzz` and `/photos` volumes (upload-only) | LAN (via Nginx TLS) | **None** - anonymous, upload-only |
+| Full UI + admin console (gear icon) | LAN and SSH tunnel | **None** - but no file access without a volume permission |
 
-Anonymous users can push files but never list or download what was dropped.
-File management stays in the terminal (SSH / Samba / NFS).
+Anonymous visitors can push files but never list or download anything
+(volumes are `w` only, and no volume is mounted at `/`). File management
+stays in the terminal (SSH / SFTP / Samba / NFS).
 
 **Module paths**
 
@@ -67,19 +69,15 @@ Key options:
       hist = "/var/cache/copyparty";
     };
 
-    # No accounts: no password authentication on this service
+    # No accounts: no password authentication on this service.
+    # No volume at "/" -> copyparty serves a picker page listing the volumes.
     volumes = {
-      "/" = {                    # browse the whole share tree
-        path = "/share";         # (SSH tunnel only - Nginx denies it on LAN)
-        access = { r = "*"; };
-      };
-
-      "/drop/buzz" = {           # anonymous upload-only drop box
+      "/buzz" = {                # anonymous upload-only drop box
         path = "/share/Storage/BUZZ";
         access = { w = "*"; };
       };
 
-      "/drop/photos" = {         # anonymous upload-only drop box
+      "/photos" = {              # anonymous upload-only drop box
         path = "/share/Storage/WOODY/photos";
         access = { w = "*"; };
       };
@@ -93,19 +91,24 @@ Key options:
     "/share/Storage/WOODY/photos"
   ];
 
-  # TLS vhost: only the drop boxes are exposed to the LAN
+  # TLS vhost: full proxy per upstream recommendation (contrib/nginx) -
+  # file exposure is controlled by the copyparty volumes, not by Nginx
   services.nginx.virtualHosts."copyparty.${config.server.privateDomain}" = {
     forceSSL = true;
     sslCertificate = "/var/lib/secrets/certs/skylab.crt";
     sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
 
     locations."/" = {
-      extraConfig = ''deny all;'';
-    };
-
-    locations."/drop/" = {
       proxyPass = "http://127.0.0.1:3923";
       proxyWebsockets = true;
+      extraConfig = ''
+        # Recommended by upstream for fast uploads/downloads
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_buffers 32 8k;
+        proxy_buffer_size 16k;
+        proxy_busy_buffers_size 24k;
+      '';
     };
   };
 }
@@ -115,8 +118,10 @@ Key options:
 
 ### Upload files from any device (LAN)
 
-1. Open `https://copyparty.<privateDomain>/drop/buzz` (or `/drop/photos`)
-   in any browser on the local network.
+1. Open `https://copyparty.<privateDomain>/` in any browser on the local
+   network: the picker page lists the available drop targets (`buzz`,
+   `photos`, ...). Open one, or go directly to
+   `https://copyparty.<privateDomain>/buzz`.
 2. Accept the self-signed certificate warning if the mkcert CA is not
    installed on that device (see [Security & SSL Setup](./security.md)).
 3. Drag & drop files: uploads are **resumable**, which makes them reliable
@@ -127,21 +132,22 @@ Key options:
 Command-line test from a LAN client:
 
 ```bash
-curl -k -T myfile.jpg "https://copyparty.<privateDomain>/drop/buzz/"
+curl -k -T myfile.jpg "https://copyparty.<privateDomain>/buzz/"
 ```
 
 ### Access the full UI via SSH tunnel
 
-The browse/admin interface only listens on loopback. From a machine whose SSH
-key is authorized on Skylab:
+The same web UI is reachable on the LAN, but for privacy (readable
+`?admin`/config panes, session lists) you can also open it through a tunnel:
 
 ```bash
 ssh -L 3923:127.0.0.1:3923 zipang@skylab
 # then open: http://127.0.0.1:3923
 ```
 
-From there you can browse `/share`, inspect received files, and open the admin
-console (gear icon) to review the live configuration and logs.
+From there you can open the admin console (gear icon) to review the live
+configuration and logs. Note: there is intentionally no web browsing of
+`/share` - file management is done over SFTP / Samba / NFS / terminal.
 
 ### Manage received files
 
@@ -174,10 +180,14 @@ systemctl status copyparty.service
 ss -tlnp | grep 3923
 
 # Confirm the Nginx vhost answers (from the server itself)
-curl -k https://copyparty.<privateDomain>/drop/buzz/
+curl -k https://copyparty.<privateDomain>/
 ```
 
 Common issues:
+
+- **FATAL ERROR: cannot load util.js ... broken reverse-proxy**: the proxy
+  must forward **all** app-level paths (`location /`), not just `/drop/*` -
+  the UI loads its assets from global paths like `/.cpr/util.js`.
 
 - **Service fails to start after boot with a USB pool disconnected**:
   `RequiresMountsFor` makes the service wait for the mounts, but `nofail`
@@ -188,5 +198,3 @@ Common issues:
 - **Uploads rejected by Nginx (413)**: the global `client_max_body_size`
   is set to `10G` in `modules/services/nginx.nix`; raise it there if needed.
   Copyparty itself chunks uploads, so this limit is rarely hit.
-- **`/` returns 403 from the LAN**: expected - the Nginx vhost only exposes
-  `/drop/*`; use the SSH tunnel for anything else.

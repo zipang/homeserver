@@ -8,9 +8,7 @@
     group = "users";
 
     settings = {
-      # Bind to loopback only:
-      # - LAN traffic goes through the Nginx TLS proxy (drop boxes only)
-      # - the full UI is reached via SSH tunnel (ssh -L 3923:...)
+      # Bind to loopback only: LAN traffic goes through the Nginx TLS proxy
       i = "127.0.0.1";
       p = 3923;
       # Keep the module defaults (types.attrs replaces them otherwise)
@@ -19,26 +17,20 @@
     };
 
     # No accounts: there is no password authentication on this service.
-    # - "/drop/*" volumes are anonymous upload-only (w), exposed on the LAN
-    #   through Nginx - senders can never list or download what they dropped.
-    # - "/" (browse) is only reachable through an SSH tunnel, which is
-    #   authenticated by SSH keys (PasswordAuthentication = false in ssh.nix).
+    #
+    # No volume is mounted at "/" so copyparty serves a picker page listing
+    # the available volumes; every volume is anonymous upload-only (w), so
+    # LAN visitors can drop files but never list or read them back.
+    # App-level assets (/.cpr/...) are served by the Nginx full proxy below.
     volumes = {
-      "/" = {
-        path = "/share";
-        access = {
-          r = "*";
-        };
-      };
-
-      "/drop/buzz" = {
+      "/buzz" = {
         path = "/share/Storage/BUZZ";
         access = {
           w = "*";
         };
       };
 
-      "/drop/photos" = {
+      "/photos" = {
         path = "/share/Storage/WOODY/photos";
         access = {
           w = "*";
@@ -55,23 +47,25 @@
     "/share/Storage/WOODY/photos"
   ];
 
-  # Nginx TLS reverse proxy: anonymous drop boxes for the local network.
-  # Only /drop/* is exposed; the root volume and the admin UI are NOT.
+  # Nginx TLS reverse proxy: full proxy per upstream recommendation
+  # (contrib/nginx/copyparty.conf). File exposure stays controlled by the
+  # copyparty volumes themselves (upload-only, no root volume).
   services.nginx.virtualHosts."copyparty.${config.server.privateDomain}" = {
     forceSSL = true;
     sslCertificate = "/var/lib/secrets/certs/skylab.crt";
     sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
 
-    # Everything except /drop/* stays LAN-private (use the SSH tunnel)
     locations."/" = {
-      extraConfig = ''
-        deny all;
-      '';
-    };
-
-    locations."/drop/" = {
       proxyPass = "http://127.0.0.1:3923";
       proxyWebsockets = true;
+      extraConfig = ''
+        # Recommended by upstream for fast uploads/downloads
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_buffers 32 8k;
+        proxy_buffer_size 16k;
+        proxy_busy_buffers_size 24k;
+      '';
     };
   };
 }
