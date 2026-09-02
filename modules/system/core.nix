@@ -37,7 +37,7 @@
     bun
     curl
     devbox
-    docker
+    docker_29
     docker-compose
     fastfetch
     fd
