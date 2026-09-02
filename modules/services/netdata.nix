@@ -5,6 +5,10 @@
 
   services.netdata.package = pkgs.netdata.override {
     withCloudUi = true;
+    # The NUC8i7HVK has no BMC/IPMI management controller. Building netdata
+    # without its freeipmi plugin avoids journalctl spam ("internal error" +
+    # kernel x86/PAT warnings) from sensor polling that can never succeed.
+    withIpmi = false;
   };
 
   services.netdata = {
