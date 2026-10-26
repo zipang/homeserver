@@ -72,12 +72,12 @@ Configured in **`modules/system/local-certs.nix`** and **`scripts/local-certs`**
 
 ### Files on the Server
 
-| Path | Content | Mode | Validity | Rotated? |
+| Path | Content | Mode / Owner | Validity | Rotated? |
 | :--- | :--- | :--- | :--- | :--- |
-| `/var/lib/secrets/certs/skylab-ca.crt` | SKYLAB Root CA (public certificate) | `0444` | 10 years | Never automatically |
-| `/var/lib/secrets/certs/skylab-ca.key` | SKYLAB Root CA private key | `0400` | — | Never leaves the server |
-| `/var/lib/secrets/certs/skylab.crt` | Wildcard leaf (`*.skylab.local`, `skylab.local`, `127.0.0.1`, `::1`) | `0644` | 825 days | Auto-renewed when `< 30` days remain |
-| `/var/lib/secrets/certs/skylab.key` | Wildcard leaf private key | `0600` | — | Re-generated on each renewal |
+| `/var/lib/secrets/certs/skylab-ca.crt` | SKYLAB Root CA (public certificate) | `0444 root:root` | 10 years | Never automatically |
+| `/var/lib/secrets/certs/skylab-ca.key` | SKYLAB Root CA private key | `0400 root:root` | — | Never leaves the server |
+| `/var/lib/secrets/certs/skylab.crt` | Wildcard leaf (`*.skylab.local`, `skylab.local`, `127.0.0.1`, `::1`) | `0644 root:root` | 825 days | Auto-renewed when `< 30` days remain |
+| `/var/lib/secrets/certs/skylab.key` | Wildcard leaf private key | `0640 root:nginx` | — | Re-generated on each renewal |
 | `/etc/ssl/certs/skylab-local-ca.crt` | World-readable symlink to `skylab-ca.crt` (for `scp` to clients) | symlink | — | — |
 
 ### How Automatic Renewal Works

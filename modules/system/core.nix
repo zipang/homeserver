@@ -76,7 +76,11 @@
   # Ensure persistent directories for manual secrets (like SSL certs)
   systemd.tmpfiles.rules = [
     "d /var/lib/secrets 0755 root root -"
-    "d /var/lib/secrets/certs 0700 nginx nginx -"
+    # 0755 root:root so nginx can traverse to skylab.key (0640 root:nginx) and
+    # normal users can scp the public skylab-ca.crt (0444); private keys inside
+    # are mode-restricted (skylab-ca.key is 0400 root:root).
+    "z /var/lib/secrets/certs 0755 root root -"
+    "d /var/lib/secrets/certs 0755 root root -"
     "d /var/lib/secrets/ssh 0755 root root -"
     "d /var/lib/secrets/sso 0700 root root -"
   ];

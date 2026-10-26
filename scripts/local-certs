@@ -28,7 +28,13 @@ leafKey="$certDir/skylab.key"
 leafCert="$certDir/skylab.crt"
 
 umask 0077
-install -d -m 0750 "$certDir"
+# 0755 so nginx can traverse to skylab.key (0640 root:nginx) and unprivileged
+# users can read skylab-ca.crt (0444); private keys inside are mode-restricted.
+install -d -m 0755 "$certDir"
+chmod 0755 "$certDir"
+if [ "$(id -u)" -eq 0 ]; then
+  chown root:root "$certDir"
+fi
 
 # ---------------------------------------------------------------------------
 # 1. Root CA (10 years) — created once.
@@ -53,6 +59,25 @@ fi
 # Keep the CA material at the intended modes even if it was provisioned by hand.
 chmod 0400 "$caKey"
 chmod 0444 "$caCert"
+if [ "$(id -u)" -eq 0 ]; then
+  chown root:root "$caKey" "$caCert"
+fi
+
+fix_leaf_perms() {
+  if [ -e "$leafKey" ]; then
+    chmod 0640 "$leafKey"
+    if [ "$(id -u)" -eq 0 ]; then
+      chown root "$leafKey"
+      chgrp nginx "$leafKey" 2>/dev/null || true
+    fi
+  fi
+  if [ -e "$leafCert" ]; then
+    chmod 0644 "$leafCert"
+    if [ "$(id -u)" -eq 0 ]; then
+      chown root:root "$leafCert"
+    fi
+  fi
+}
 
 # ---------------------------------------------------------------------------
 # 2. Leaf certificate — re-issued when missing, not signed by the current CA
@@ -69,6 +94,7 @@ elif ! openssl verify -CAfile "$caCert" "$leafCert" >/dev/null 2>&1; then
 elif ! openssl x509 -checkend $((minValidDays * 86400)) -noout -in "$leafCert" >/dev/null; then
   issueReason="certificate expires on $(openssl x509 -enddate -noout -in "$leafCert" | cut -d= -f2)"
 else
+  fix_leaf_perms
   notAfter="$(openssl x509 -enddate -noout -in "$leafCert" | cut -d= -f2)"
   echo "local-certs: $leafCert is valid until $notAfter (> ${minValidDays}d left), nothing to do"
   exit 0
@@ -94,8 +120,9 @@ openssl x509 -req -sha256 -days 825 \
   -CAserial "$caSerial" -CAcreateserial \
   -extfile "$tmp/ext.cnf"
 
-install -m 0600 "$tmp/leaf.key" "$leafKey"
+install -m 0640 "$tmp/leaf.key" "$leafKey"
 install -m 0644 "$tmp/leaf.crt" "$leafCert"
+fix_leaf_perms
 
 echo "local-certs: issued $leafCert ($domain), signed by $caCert"
 openssl x509 -noout -subject -enddate -in "$leafCert"
