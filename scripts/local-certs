@@ -127,13 +127,13 @@ fix_leaf_perms
 echo "local-certs: issued $leafCert ($domain), signed by $caCert"
 openssl x509 -noout -subject -enddate -in "$leafCert"
 
-# nginx only reads certificates at start/reload time. The unit also runs before
-# nginx on boot, where nginx is not up yet: skip the reload in that case, and
-# never fail the unit just because nginx happened to be restarting (the
-# certificate is already on disk and will be picked up by that restart).
+# nginx only reads certificates at start/reload time. The unit has
+# Before=nginx.service, so a synchronous `systemctl reload` would deadlock
+# waiting for this very unit to finish; `--no-block` enqueues the reload job
+# and lets systemd run it as soon as this oneshot exits.
 if systemctl is-active --quiet nginx.service; then
-  if systemctl reload nginx.service; then
-    echo "local-certs: nginx reloaded"
+  if systemctl reload --no-block nginx.service; then
+    echo "local-certs: queued nginx reload"
   else
     echo "local-certs: WARNING: nginx reload failed, run 'systemctl reload nginx' manually" >&2
   fi

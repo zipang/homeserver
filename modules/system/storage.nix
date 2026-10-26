@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 let
   mediasDevice = "/dev/disk/by-label/MEDIAS";
@@ -102,15 +102,14 @@ in
     options = [ "nofail" "X-systemd.automount" "x-systemd.mount-timeout=5s" ];
   };
 
-  # Ensure only the parent directory exists
+  # Ensure parent directories exist (BUZZ and WOODY are managed by copyparty/automount)
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
     "d /share/Skylab 0755 root root -"
     "d /share/Storage 0775 zipang users -"
-    "d /share/Storage/BUZZ 0775 zipang users -"
-    "d /share/Storage/WOODY 0775 zipang users -"
     "d /share/Storage/WOODY/photos 0775 zipang users -"
-    "d /var/lib/nextcloud 0750 nextcloud nextcloud -"
     "d /media 0755 root root -"
+  ] ++ lib.optionals config.services.nextcloud.enable [
+    "d /var/lib/nextcloud 0750 nextcloud nextcloud -"
   ];
 }

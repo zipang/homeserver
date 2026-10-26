@@ -75,9 +75,8 @@
     chmod 755 /var/lib/secrets
   '';
 
-  # Ensure the data directory and subdirectories exist with correct permissions
+  # Ensure the data subdirectories exist (/var/lib/pocketid itself is created by the upstream module)
   systemd.tmpfiles.rules = [
-    "d /var/lib/pocketid 0750 pocketid pocketid -"
     "d /var/lib/pocketid/data 0750 pocketid pocketid -"
     "d /var/lib/pocketid/data/uploads 0750 pocketid pocketid -"
     "d /var/lib/pocketid/data/uploads/application-images 0750 pocketid pocketid -"
