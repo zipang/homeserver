@@ -58,7 +58,6 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] Secrets management with sops and age
 * [x] SAMBA to share the Skylab root folder on the local network
 * [x] NFS to share the Skylab root folder for Linux-to-Linux performance testing
-* [x] `tmux` for terminal multiplexing and persistent sessions
 * [x] `syncthing` to sync files between devices
 * [x] SSL/TLS certificates with `mkcert` and `sops`
 * [x] `immich` to backup and index photos
@@ -67,6 +66,7 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] `pocketid` for passwordless OIDC authentication via passkeys
 * [x] `jellyfin` to stream music and local movies
 * [x] `av1-converter` to re-encode legacy media to modern AV1
+* [ ] `opencode` and `pi` agent harnesses, reachable remotely via an Orca SSH target
 * [ ] `home-assistant` to control the connected hardware in the home (cameras, sensors, lights...)
 
 ## Documentation

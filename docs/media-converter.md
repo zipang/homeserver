@@ -98,14 +98,26 @@ bun scripts/av1-converter/src/index.ts --dir /share/Storage/Movies --delete-orig
 
 ### Running in Background
 
-Since video encoding takes a long time, it is recommended to run the script inside a `tmux` session. This allows you to disconnect from SSH while the conversion continues.
+Video encoding takes hours, so run the converter as a transient **systemd user unit**
+instead of keeping an SSH session open. Because user lingering is enabled
+(`users.users.<mainUser>.linger` in `modules/programs/agents.nix`), the job keeps
+running after you disconnect.
 
-1.  **Start a new session**: `tmux new -s conversion`
-2.  **Run the script**: `av1-converter --dir /path/to/media --upscale-to 720p`
-3.  **Detach**: Press `Ctrl+b` then `d`.
-4.  **Re-attach later**: `tmux attach -t conversion`
+1.  **Start the job** (in the background, survives logout):
+    ```bash
+    systemd-run --user --unit=av1-conversion --collect \
+      bun scripts/av1-converter/src/index.ts --dir /share/Storage/Movies --delete-original
+    ```
+2.  **Follow the progress**:
+    ```bash
+    journalctl --user -u av1-conversion -f
+    ```
+3.  **Check status**: `systemctl --user status av1-conversion`
+4.  **Stop it**: `systemctl --user stop av1-conversion`
 
-For more details, see the [Tmux Guide](./tmux.md).
+To run it in the foreground instead (progress visible directly in the terminal,
+job interrupted on logout), simply execute the `bun ...` command without
+`systemd-run`.
 
 ## Hardware Acceleration Note
 

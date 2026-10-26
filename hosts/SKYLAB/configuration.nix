@@ -24,7 +24,7 @@ in
     # Programs
     ../../modules/programs/neovim.nix
     ../../modules/programs/media-tools.nix
-    ../../modules/programs/tmux.nix
+    ../../modules/programs/agents.nix
 
     # Services
     ../../modules/services/nginx.nix

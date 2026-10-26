@@ -76,7 +76,6 @@ Specific services have a dedicated documentation to explain their configuration 
 * [NFS Shares](./docs/nfs-shares.md)
 * [ZFS Storage](./docs/zfs-storage.md)
 * [Devbox](./docs/devbox.md)
-* [Tmux](./docs/tmux.md)
 * [PostgreSQL (Global)](./docs/postgresql.md)
 * [Redis (Global)](./docs/redis.md)
 * [Pocketid OIDC Provider](./docs/pocketid.md) - Use `scripts/generate-pocketid-secrets` to initialize
@@ -87,6 +86,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [AV1 Converter Script](./docs/av1-converter.md)
 * [Copyparty File Sharing](./docs/copyparty.md)
 * [Syncthing](./docs/syncthing.md)
+* [AI Coding Agents (OpenCode, Pi & Orca)](./docs/agents.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)
 * [Netbird VPN (Zero Trust Mesh)](./docs/netbird.md)
 
