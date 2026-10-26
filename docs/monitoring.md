@@ -105,3 +105,84 @@ To see the system load average:
 ```bash
 uptime
 ```
+
+---
+
+## SSH & Git Troubleshooting
+
+### `hostkeys_foreach failed for /home/zipang/.ssh/known_hosts: Permission denied`
+
+Symptom, when running any `git`/`ssh` command as `zipang` (for instance
+`git clone git@github.com:...`):
+
+```text
+hostkeys_find_by_key_hostfile: hostkeys_foreach failed for
+/home/zipang/.ssh/known_hosts: Permission denied
+The authenticity of host 'github.com (140.82.121.3)' can't be established.
+```
+
+**Cause.** `/home/zipang/.ssh` is owned by `root:root` with mode `0700`, so the
+SSH client running as `zipang` cannot even stat `known_hosts` (or read a private
+key). NixOS never creates this directory: it provisions `$HOME` (owner = the
+user, mode `0700`) and reads authorized keys from `/etc/ssh/authorized_keys.d`,
+so `~/.ssh` is created by the first tool that needs it. If that tool ran under
+`sudo` — `sudo ssh ...`, `sudo git clone git@...`, or a `sudo -i` shell — the
+directory is born root-owned and stays that way. This is the usual root cause —
+nothing in this flake creates `~/.ssh` (`users.users.*` only manage `$HOME`,
+`programs.git` only writes the system-wide config).
+
+**Fix.** The configuration re-asserts the correct ownership on every boot via
+`systemd.tmpfiles.rules` in `modules/system/users.nix`, so a rebuild repairs it:
+
+```bash
+update-nix
+```
+
+Without waiting for a rebuild, the equivalent manual repair is:
+
+```bash
+sudo chown -R zipang:users /home/zipang/.ssh
+sudo chmod 700 /home/zipang/.ssh
+```
+
+**Verify:**
+
+```bash
+ls -ld ~/.ssh            # drwx------ zipang users
+ssh -T git@github.com    # "Hi zipang! You've successfully authenticated..."
+```
+
+### `WARNING: UNPROTECTED PRIVATE KEY FILE!`
+
+Only the *ownership* of the directory contents is repaired automatically; modes
+are left untouched. If the SSH client refuses a key, fix its mode:
+
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_* ~/.ssh/config ~/.ssh/known_hosts
+chmod 644 ~/.ssh/*.pub
+```
+
+### First connection to a new host (`authenticity of host can't be established`)
+
+This prompt is normal and unrelated to the ownership bug above: the host key of
+the server is not in `~/.ssh/known_hosts` yet. Answer once — the key is then
+stored for that user. To check it out-of-band first, compare the fingerprint
+with the one published by the remote (for GitHub:
+<https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints>):
+
+```bash
+ssh-keyscan github.com 2>/dev/null | ssh-keygen -lf -
+```
+
+A common way to avoid the prompt is declaring the host keys in
+`programs.ssh.knownHosts` (they land in `/etc/ssh/ssh_known_hosts`), but that
+would put third-party key material in this public repository, so we rely on the
+per-user `known_hosts` instead.
+
+### Rule of thumb
+
+Never run an SSH-dependent command with `sudo`. `sudo` is for system
+administration (`nixos-rebuild`, `systemctl`, editing `/etc`), not for `git`,
+`ssh`, `ssh-keygen` or `gh` — those must run as `zipang` so that keys,
+`known_hosts` and `~/.config` stay user-owned.
