@@ -76,6 +76,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [NFS Shares](./docs/nfs-shares.md)
 * [ZFS Storage](./docs/zfs-storage.md)
 * [Devbox](./docs/devbox.md)
+* [Bun Runtime](./docs/bun.md)
 * [PostgreSQL (Global)](./docs/postgresql.md)
 * [Redis (Global)](./docs/redis.md)
 * [Pocketid OIDC Provider](./docs/pocketid.md) - Use `scripts/generate-pocketid-secrets` to initialize

@@ -24,11 +24,17 @@ The complete list of Devbox CLI commands can be found in the [official documenta
 devbox shell
 ```
 
-## Managing Specific Tools (e.g., Bun)
+## Managing Specific Tools
 
-Since tools like `bun` are frequently updated and often prefer their own update mechanisms, it's ideal to manage them within a Devbox environment rather than as a system-wide Nix package. This allows you to easily pin versions, upgrade without rebuilding your entire NixOS system, and keep development environments isolated.
+Devbox is the right place to pin a tool to a version *for one project*, without
+touching the system profile. Note that Devbox resolves packages from Nixpkgs, so
+the resulting binaries are still read-only store paths and cannot self-update
+(`npm -g`, `bun upgrade`, `pip install -U` will all fail with `EROFS`).
 
-### Installing and Updating Bun with Devbox
+> **Bun is installed system-wide**, not via Devbox. See [Bun](./bun.md) for why
+> it comes from the `nixpkgs-unstable` package set and how to upgrade it.
+
+### Installing a project-scoped tool
 
 1.  **Initialize a Devbox project** in your desired working directory (if you haven't already):
     ```bash
@@ -36,11 +42,12 @@ Since tools like `bun` are frequently updated and often prefer their own update 
     ```
     This creates `devbox.json` and `devbox.lock` files.
 
-2.  **Add Bun to your Devbox environment**:
+2.  **Add the tool to your Devbox environment**:
     ```bash
     devbox add bun
     ```
-    Devbox will fetch the latest stable version of Bun. If you need a specific version, you can specify it: `devbox add bun@1.0.0`.
+    Devbox will fetch the latest stable version available in its catalog. If you
+    need a specific version, specify it: `devbox add bun@1.3.3`.
 
 3.  **Enter the Devbox shell**:
     ```bash
@@ -48,12 +55,12 @@ Since tools like `bun` are frequently updated and often prefer their own update 
     ```
     Now, when you run `bun --version`, it will be the version managed by Devbox.
 
-4.  **Upgrade Bun**:
-    To upgrade `bun` to the latest version, simply run within your Devbox shell:
+4.  **Upgrade it**:
     ```bash
     devbox update bun
     ```
-    This will update the `bun` package within your `devbox.json` and `devbox.lock` files.
+    This updates the package within `devbox.json` and `devbox.lock` — it is the
+    Nix-native equivalent of `bun upgrade`.
 
 5.  **Exit the Devbox shell**:
     ```bash

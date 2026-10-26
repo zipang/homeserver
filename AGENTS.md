@@ -62,7 +62,8 @@ Memory: 1 x 16GiB SODIMM DDR4 Synchronous Unbuffered 2400 MHz (0.4 ns)
 * [x] SSL/TLS certificates with `mkcert` and `sops`
 * [x] `immich` to backup and index photos
 * [x] `nextcloud` to share files and collaborate
-* [x] `devbox` for isolated development environments (Bun is now managed via Devbox)
+* [x] `devbox` for isolated development environments
+* [x] `bun` runtime, tracking `nixpkgs-unstable` (upgrade via `update-nix`)
 * [x] `pocketid` for passwordless OIDC authentication via passkeys
 * [x] `jellyfin` to stream music and local movies
 * [x] `av1-converter` to re-encode legacy media to modern AV1

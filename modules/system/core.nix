@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, pkgs-unstable, ... }:
 
 {
 
@@ -41,7 +41,11 @@
     broot
     btop
     bluetui
-    bun
+    # Bun is a fast-moving runtime and nixos-25.11 lags behind upstream, so it
+    # comes from the unstable package set (already used by the agent module).
+    # NOTE: `bun upgrade` can never work here - the binary lives in the
+    # read-only Nix store. Upgrade with `update-nix` instead. See docs/bun.md.
+    pkgs-unstable.bun
     curl
     devbox
     docker_29

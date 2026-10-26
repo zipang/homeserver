@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-unstable, ... }:
 
 let
   av1-converter = pkgs.stdenv.mkDerivation {
@@ -16,7 +16,8 @@ let
       mkdir -p $out/bin $out/share/av1-converter
       cp av1-converter.js $out/share/av1-converter/
       
-      makeWrapper ${pkgs.bun}/bin/bun $out/bin/av1-converter \
+      # Same Bun runtime as the system-wide one (see docs/bun.md).
+      makeWrapper ${pkgs-unstable.bun}/bin/bun $out/bin/av1-converter \
         --add-flags $out/share/av1-converter/av1-converter.js \
         --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.ffmpeg-full ]}
     '';
