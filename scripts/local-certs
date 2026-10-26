@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+#
+# Issue or renew the internal wildcard certificate used by the nginx virtual
+# hosts (immich, jellyfin, syncthing, copyparty, pocketid, nextcloud, monitor).
+#
+# Called by systemd/skylab-local-certs.service on every boot and daily by
+# skylab-local-certs.timer; see modules/system/local-certs.nix and
+# docs/security.md.
+#
+#   * A dedicated 10-year root CA is created once in $CERT_DIR. It is never
+#     rotated automatically: doing so would invalidate the trust store of every
+#     client device, so rotation stays a deliberate manual operation.
+#   * The leaf (wildcard, 825 days) is re-issued whenever it is missing or has
+#     less than $MIN_VALID_DAYS days left, then nginx is reloaded.
+#
+# Usage: local-certs <private-domain>
+#
+set -euo pipefail
+
+domain="${1:?usage: local-certs <private-domain>}"
+certDir="${CERT_DIR:-/var/lib/secrets/certs}"
+minValidDays="${MIN_VALID_DAYS:-30}"
+
+caKey="$certDir/skylab-ca.key"
+caCert="$certDir/skylab-ca.crt"
+caSerial="$certDir/skylab-ca.srl"
+leafKey="$certDir/skylab.key"
+leafCert="$certDir/skylab.crt"
+
+umask 0077
+install -d -m 0750 "$certDir"
+
+# ---------------------------------------------------------------------------
+# 1. Root CA (10 years) — created once.
+# ---------------------------------------------------------------------------
+caCreated=0
+if [ ! -s "$caKey" ] || [ ! -s "$caCert" ]; then
+  tmp="$(mktemp -d)"
+  openssl req -x509 -newkey rsa:4096 -sha256 -nodes -days 3650 \
+    -keyout "$tmp/ca.key" -out "$tmp/ca.crt" \
+    -subj "/O=SKYLAB/CN=SKYLAB Local CA" \
+    -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
+    -addext "keyUsage=critical,keyCertSign,cRLSign" \
+    -addext "subjectKeyIdentifier=hash"
+  install -m 0400 "$tmp/ca.key" "$caKey"
+  install -m 0444 "$tmp/ca.crt" "$caCert"
+  rm -rf "$tmp"
+  caCreated=1
+  echo "local-certs: created root CA $caCert" \
+    "(import it into client trust stores, see docs/security.md)"
+fi
+
+# Keep the CA material at the intended modes even if it was provisioned by hand.
+chmod 0400 "$caKey"
+chmod 0444 "$caCert"
+
+# ---------------------------------------------------------------------------
+# 2. Leaf certificate — re-issued when missing, not signed by the current CA
+#    (e.g. left over from mkcert or from a previous SKYLAB CA) or about to
+#    expire.
+# ---------------------------------------------------------------------------
+issueReason=""
+if [ "$caCreated" -eq 1 ]; then
+  issueReason="a new CA was just created"
+elif [ ! -s "$leafCert" ] || [ ! -s "$leafKey" ]; then
+  issueReason="certificate or key is missing"
+elif ! openssl verify -CAfile "$caCert" "$leafCert" >/dev/null 2>&1; then
+  issueReason="certificate is not signed by the current CA"
+elif ! openssl x509 -checkend $((minValidDays * 86400)) -noout -in "$leafCert" >/dev/null; then
+  issueReason="certificate expires on $(openssl x509 -enddate -noout -in "$leafCert" | cut -d= -f2)"
+else
+  notAfter="$(openssl x509 -enddate -noout -in "$leafCert" | cut -d= -f2)"
+  echo "local-certs: $leafCert is valid until $notAfter (> ${minValidDays}d left), nothing to do"
+  exit 0
+fi
+echo "local-certs: re-issuing $leafCert ($issueReason)"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+cat > "$tmp/ext.cnf" <<EOF
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:*.${domain}, DNS:${domain}, IP:127.0.0.1, IP:::1
+EOF
+
+openssl req -new -newkey rsa:2048 -sha256 -nodes \
+  -keyout "$tmp/leaf.key" -out "$tmp/leaf.csr" \
+  -subj "/O=SKYLAB/CN=*.${domain}"
+
+openssl x509 -req -sha256 -days 825 \
+  -in "$tmp/leaf.csr" -out "$tmp/leaf.crt" \
+  -CA "$caCert" -CAkey "$caKey" \
+  -CAserial "$caSerial" -CAcreateserial \
+  -extfile "$tmp/ext.cnf"
+
+install -m 0600 "$tmp/leaf.key" "$leafKey"
+install -m 0644 "$tmp/leaf.crt" "$leafCert"
+
+echo "local-certs: issued $leafCert ($domain), signed by $caCert"
+openssl x509 -noout -subject -enddate -in "$leafCert"
+
+# nginx only reads certificates at start/reload time. The unit also runs before
+# nginx on boot, where nginx is not up yet: skip the reload in that case, and
+# never fail the unit just because nginx happened to be restarting (the
+# certificate is already on disk and will be picked up by that restart).
+if systemctl is-active --quiet nginx.service; then
+  if systemctl reload nginx.service; then
+    echo "local-certs: nginx reloaded"
+  else
+    echo "local-certs: WARNING: nginx reload failed, run 'systemctl reload nginx' manually" >&2
+  fi
+fi

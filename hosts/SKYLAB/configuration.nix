@@ -20,6 +20,7 @@ in
     ../../modules/system/storage.nix
     ../../modules/system/sops.nix
     ../../modules/system/acme.nix
+    ../../modules/system/local-certs.nix
 
     # Programs
     ../../modules/programs/neovim.nix
