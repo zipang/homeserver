@@ -142,21 +142,26 @@ Declare the secret in your module (e.g., `modules/services/jellyfin.nix`):
 
 ### gitignore
 
-In a Nix Flakes environment, Nix only "sees" files that are tracked by Git. If a file is untracked (or ignored), Nix will exclude it from the build source, causing the rebuild to fail.
+In a Nix Flakes environment, a plain `.#` flake reference only "sees" files that are tracked by Git. If a file is untracked (or ignored), Nix excludes it from the build source. This is why a rebuild can fail with `Mandatory file 'secrets.nix' not found` even though the file exists on disk.
 
-To make Git (and thus Nix) aware of the file without actually staging its contents for a commit, use:
+The recommended fix is to reference the flake with `path:` instead of `.`, which copies the working tree verbatim (tracked **and** untracked files):
+
 ```bash
-git add -N path/to/secrets.nix
+sudo nixos-rebuild switch --impure --flake path:.#SKYLAB
 ```
 
-When the file is in .gitignore, you will need to add the -f (force) flag:
+The `update-nix` script already uses `path:.#SKYLAB` for this reason.
+
+An alternative is to make Git (and thus a plain `.#` flake reference) aware of the file without staging its contents for a commit:
+
 ```bash
-git add -f -N path/to/secrets.nix
+git add -N path/to/secrets.nix        # normal case
+git add -f -N path/to/secrets.nix     # when the file is in .gitignore
 ```
 
 Why this works:
-*   `--intent-to-add` (`-N`): Tells Git that the path exists and should be considered part of the repository, but it doesn't actually stage the file's content yet.
-*   **Nix Visibility**: Once Git "knows" about the path, Nix Flakes will include that file when it copies the repository to the Nix store for the rebuild.
-*   **Safety**: The file remains in an "intent to add" state. It will show up in git status as a new file, but its contents aren't staged, and it won't be included in a git commit unless you explicitly git add it later.
+*   `--intent-to-add` (`-N`): Tells Git that the path exists and should be considered part of the repository, but doesn't actually stage the file's content yet.
+*   **Nix Visibility**: Once Git "knows" about the path, Nix Flakes includes that file when it copies the repository to the Nix store for the rebuild.
+*   **Risk**: the trick is fragile. Any later `git add .` or `git reset --hard` can stage or delete the file. Prefer `path:.`.
 
-**Note:** Just be careful not to use `git commit -a` or `git add .` later, as that might accidentally stage and commit your secrets if you aren't paying attention to the status!
+**Note:** Never `git add -f` the actual secrets file without `-N`; that would commit its contents.

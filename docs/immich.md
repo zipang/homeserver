@@ -207,7 +207,7 @@ sudo chown -R immich:immich /var/lib/immich
 ### Fresh Re-install (Factory Reset)
 If the database or storage state is corrupted and you wish to start from scratch:
 1. Comment out the Immich import in `hosts/SKYLAB/configuration.nix`.
-2. Run `sudo nixos-rebuild switch --flake .#SKYLAB`.
+2. Run `sudo nixos-rebuild switch --flake path:.#SKYLAB`.
 3. Execute the cleanup script: `sudo ./scripts/drop-immich.sh`.
 4. Uncomment the import and rebuild again.
 
