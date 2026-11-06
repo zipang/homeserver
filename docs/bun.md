@@ -81,7 +81,7 @@ To upgrade Bun only, without touching the other inputs:
 
 ```bash
 nix flake lock --update-input nixpkgs-unstable
-sudo nixos-rebuild switch --impure --flake .#SKYLAB
+sudo nixos-rebuild switch --impure --flake path:.#SKYLAB
 ```
 
 ### Use a different Bun version for one project

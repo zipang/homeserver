@@ -60,7 +60,7 @@ Before deploying, ensure the following are handled manually on the SKYLAB server
     ```
   * **Stuck Units**: If a service or mount unit is stuck and prevents `nixos-rebuild switch`, use `boot` instead of `switch` and restart:
     ```bash
-    sudo nixos-rebuild boot --flake .#SKYLAB
+    sudo nixos-rebuild boot --flake path:.#SKYLAB
     sudo reboot
     ```
     This prepares the new configuration to be activated cleanly from the next cold start.

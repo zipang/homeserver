@@ -28,7 +28,11 @@ else
 fi
 
 echo "⚒️  [3/5] Rebuilding NixOS system..."
-sudo nixos-rebuild switch --impure --flake .#SKYLAB
+# Use `path:.` instead of `.:` so that the untracked (gitignored)
+# hosts/SKYLAB/secrets.nix is copied into the Nix store. A plain `.` flake
+# reference only includes git-tracked files, which makes the build fail with
+# "Mandatory file 'secrets.nix' not found".
+sudo nixos-rebuild switch --impure --flake path:.#SKYLAB
 
 if [ "$LOCK_COMMIT" -eq 1 ]; then
   echo "📤 [4/5] Pushing updated flake.lock to repository..."
