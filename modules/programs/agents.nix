@@ -20,7 +20,7 @@
     # Pi coding agent, built from the official upstream flake.
     # Building from source needs network access for the pinned model catalog.
     # Lighter alternative if the build ever breaks: pkgs-unstable.pi-coding-agent
-    inputs.pi.packages.${pkgs.system}.default
+    inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     # Helpers used by both agents and by Orca worktrees.
     pkgs.git

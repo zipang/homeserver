@@ -135,7 +135,7 @@ Create `modules/programs/agents.nix` and import it in `hosts/SKYLAB/configuratio
 
     # Pi coding agent from official upstream flake
     # (Alternative: pkgs-unstable.pi-coding-agent)
-    inputs.pi.packages.${pkgs.system}.default
+    inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     # Essential CLI tools used by OpenCode, Pi, and Orca worktrees
     pkgs.git
@@ -275,7 +275,7 @@ pi --continue
 1. **Step 1 — Update `flake.nix`** *(done)*:
    `nixpkgs-unstable` and `pi` (`github:earendil-works/pi/stable`) are declared as inputs, and `pkgs-unstable` + `inputs` are passed to the modules via `specialArgs`.
 2. **Step 2 — Create `modules/programs/agents.nix`** *(done)*:
-   Installs `pkgs-unstable.opencode`, `inputs.pi.packages.${pkgs.system}.default`, `gh`, `ripgrep`, `fd`, `fzf`, `jq`, enables `programs.nix-ld`, sets `linger = true` for `mainUser` and relaxes the OpenSSH forwarding limits.
+   Installs `pkgs-unstable.opencode`, `inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.default`, `gh`, `ripgrep`, `fd`, `fzf`, `jq`, enables `programs.nix-ld`, sets `linger = true` for `mainUser` and relaxes the OpenSSH forwarding limits.
 3. **Step 3 — Register the Module** *(done)*:
    `../../modules/programs/agents.nix` is imported in `hosts/SKYLAB/configuration.nix`.
 4. **Step 4 — Apply on SKYLAB**:
