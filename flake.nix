@@ -28,6 +28,38 @@
       pkgs-unstable = import nixpkgs-unstable {
         inherit system;
         config.allowUnfree = true;
+        overlays = [
+          # -------------------------------------------------------------------
+          # Workaround: opencode 2.2.5 node_modules hash mismatch
+          #
+          # nixpkgs computed the fixed-output hash with bun 1.4.2, but bun
+          # 1.4.4 (merged hours later) produces a different node_modules tree,
+          # so the build fails with a hash mismatch on x86_64-linux.
+          #
+          # Upstream: https://github.com/NixOS/nixpkgs/issues/582673
+          # Fixed by: https://github.com/NixOS/nixpkgs/pull/582675
+          #
+          # The override only applies while the broken hash is still present,
+          # so it disables itself once nixos-unstable carries the fix. At that
+          # point this overlay can be deleted.
+          # -------------------------------------------------------------------
+          (final: prev:
+            let
+              brokenHash = "sha256-xfOVcw1+waLVNhFDwzOtzxrUSQEogvn88YomydOlhwc=";
+            in
+            {
+              opencode =
+                if prev.opencode.node_modules.outputHash == brokenHash
+                then
+                  prev.opencode.overrideAttrs (old: {
+                    node_modules = old.node_modules.overrideAttrs {
+                      outputHash = "sha256-prx9dX7kUvs/E3zopkaPk5LXh3xJAy5sZeum/W8L7cA=";
+                    };
+                  })
+                else
+                  prev.opencode;
+            })
+        ];
       };
     in
     {

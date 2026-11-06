@@ -83,6 +83,26 @@ Add `nixpkgs-unstable` and the official `pi` flake input so SKYLAB can pull V2 `
       pkgs-unstable = import nixpkgs-unstable {
         inherit system;
         config.allowUnfree = true;
+        overlays = [
+          # Workaround for the broken opencode 2.2.5 node_modules hash.
+          # See the troubleshooting section for details.
+          (final: prev:
+            let
+              brokenHash = "sha256-xfOVcw1+waLVNhFDwzOtzxrUSQEogvn88YomydOlhwc=";
+            in
+            {
+              opencode =
+                if prev.opencode.node_modules.outputHash == brokenHash
+                then
+                  prev.opencode.overrideAttrs (old: {
+                    node_modules = old.node_modules.overrideAttrs {
+                      outputHash = "sha256-prx9dX7kUvs/E3zopkaPk5LXh3xJAy5sZeum/W8L7cA=";
+                    };
+                  })
+                else
+                  prev.opencode;
+            })
+        ];
       };
     in {
       nixosConfigurations.SKYLAB = nixpkgs.lib.nixosSystem {
@@ -322,6 +342,28 @@ pi update --models
 ls -la ~/.pi/agent/
 ```
 *(Note: Because Pi is installed via Nix, `pi update` will not self-mutate the binary; update Pi declaratively via `nix flake update pi` and `update-nix`.)*
+
+### Build Failure: `opencode` node_modules Hash Mismatch
+During `update-nix`, the rebuild may fail with:
+
+```text
+error: hash mismatch in fixed-output derivation '...-opencode-node_modules-2.2.5.drv':
+         specified: sha256-xfOVcw1+waLVNhFDwzOtzxrUSQEogvn88YomydOlhwc=
+            got:    sha256-prx9dX7kUvs/E3zopkaPk5LXh3xJAy5sZeum/W8L7cA=
+```
+
+This is an upstream Nixpkgs regression, not a local configuration problem: the `node_modules` hash was computed with bun 1.4.2, then bun 1.4.4 changed the generated tree. See [NixOS/nixpkgs#582673](https://github.com/NixOS/nixpkgs/issues/582673) (fixed by [PR #582675](https://github.com/NixOS/nixpkgs/pull/582675)).
+
+The `pkgs-unstable` overlay in `flake.nix` rewrites the hash **only while the broken one is present**, so it disables itself automatically once `nixos-unstable` advances past the fix. When that happens, delete the overlay.
+
+To confirm the workaround is no longer needed, check the hash nixpkgs ships:
+
+```bash
+nix eval --raw nixpkgs-unstable#opencode.version
+nix eval --raw nixpkgs-unstable#opencode.node_modules.outputHash
+```
+
+If the output no longer equals the `brokenHash` in the overlay, the fix has landed and the overlay can be removed.
 
 ### Orca Managed SSH Server Troubleshooting
 If Orca on your laptop connects over SSH but remote terminals fail to spawn:
