@@ -46,6 +46,7 @@
     # NOTE: `bun upgrade` can never work here - the binary lives in the
     # read-only Nix store. Upgrade with `update-nix` instead. See docs/bun.md.
     pkgs-unstable.bun
+    chromium
     curl
     devbox
     docker_29

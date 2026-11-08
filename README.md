@@ -77,6 +77,8 @@ Specific services have a dedicated documentation to explain their configuration 
 * [ZFS Storage](./docs/zfs-storage.md)
 * [Devbox](./docs/devbox.md)
 * [Bun Runtime](./docs/bun.md)
+* [Chromium (headless)](./docs/chromium.md)
+* [Agent browser automation (agent-browser)](./docs/agent-browser.md)
 * [PostgreSQL (Global)](./docs/postgresql.md)
 * [Redis (Global)](./docs/redis.md)
 * [Pocketid OIDC Provider](./docs/pocketid.md) - Use `scripts/generate-pocketid-secrets` to initialize
