@@ -1,4 +1,4 @@
-{ config, pkgs, pkgs-unstable, inputs, ... }:
+{ config, lib, pkgs, pkgs-unstable, inputs, ... }:
 
 {
   # ---------------------------------------------------------------------------
@@ -21,6 +21,10 @@
     # Building from source needs network access for the pinned model catalog.
     # Lighter alternative if the build ever breaks: pkgs-unstable.pi-coding-agent
     inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.default
+
+    # Browser automation CLI (native Rust binary) used by the agents to drive
+    # Chromium over CDP. Not packaged in nixos-25.11, only in nixpkgs-unstable.
+    pkgs-unstable.agent-browser
 
     # Helpers used by both agents and by Orca worktrees.
     pkgs.git
@@ -52,6 +56,23 @@
       util-linux # libuuid
       icu
     ];
+  };
+
+  # ---------------------------------------------------------------------------
+  # agent-browser -> system Chromium
+  #
+  # agent-browser defaults to downloading "Chrome for Testing" into ~/.cache
+  # (its `install` subcommand, ~684 MB, plus `--with-deps` which expects
+  # apt/dnf and cannot work here). Instead, point it at the nixpkgs Chromium
+  # already installed in environment.systemPackages: patched for NixOS,
+  # sandbox-aware, and upgraded together with the rest of the system.
+  #
+  # sessionVariables (PAM) rather than environment.variables (/etc/profile) so
+  # the variable also reaches non-interactive SSH sessions - the kind Orca uses
+  # to spawn agent shells.
+  # ---------------------------------------------------------------------------
+  environment.sessionVariables = {
+    AGENT_BROWSER_EXECUTABLE_PATH = lib.getExe pkgs.chromium;
   };
 
   # Keep user-scoped background processes alive after the SSH session ends:

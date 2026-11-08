@@ -8,7 +8,7 @@ Both `opencode` and `pi` have built-in session management and persistence (allow
 
 **Relevant module paths**:
 - `flake.nix` — Flake inputs for `nixpkgs-unstable` (for OpenCode V2) and `pi` (upstream official flake).
-- `modules/programs/agents.nix` — Declarative installation of `opencode`, `pi`, supporting CLI tools (`ripgrep`, `fd`, `fzf`, `gh`), and `nix-ld` dynamic linker compatibility for Orca's remote server runtime.
+- `modules/programs/agents.nix` — Declarative installation of `opencode`, `pi`, `agent-browser` (browser automation for the agents), supporting CLI tools (`ripgrep`, `fd`, `fzf`, `gh`), and `nix-ld` dynamic linker compatibility for Orca's remote server runtime.
 
 ### Architecture & Remote Control Matrix
 
@@ -17,6 +17,7 @@ Both `opencode` and `pi` have built-in session management and persistence (allow
 | **OpenCode** | Agent harness (`opencode`) + per-user background server | 1. **Orca** (SSH Target)<br>2. **Direct SSH** (`ssh zipang@skylab`)<br>3. **Web UI / App** (`opencode pair` over SSH port forward) | Background server (`opencode service`) persists all sessions in `~/.local/share/opencode/opencode.db`; switch sessions inside the TUI or CLI |
 | **Pi** | Terminal agent harness (`pi`) | 1. **Orca** (SSH Target — auto-setup, hooks, native chat)<br>2. **Direct SSH** (`ssh zipang@skylab`) | Saves sessions automatically per folder in `~/.pi/agent`; resume or switch via `pi --continue` or `/resume` |
 | **Orca (SSH Target)** | Auto-deploys its own managed Node server (`orcad`) over SSH into `~/.orca` | Orca Desktop on client machines connects over SSH (`zipang@skylab`) | Remote PTY and structured chat sessions live on SKYLAB's managed Orca server and survive client disconnects/sleep |
+| **agent-browser** | Browser automation CLI driven by any agent (`agent-browser open/snapshot/click`) against the system Chromium | Not a client-facing service: runs inside SKYLAB agent shells (SSH / Orca) | Per-`--session` background daemon, exits after 1 h idle; state in `~/.agent-browser` — see [Agent Browser Automation](./agent-browser.md) |
 
 ---
 
