@@ -19,6 +19,7 @@ To understand the repository structure and philosophy of NixOS with Flakes some 
 │   ├── programs/           # User programs (Neovim, Tmux)
 │   ├── services/           # Services (NFS, Docker, etc.)
 │   └── system/             # System settings (SSH, Core, Nix)
+├── packages/               # Pinned upstream packages (Qdrant, ...)
 ├── scripts/                # Custom management scripts
 ├── secrets/                # Encrypted secrets (sops)
 └── docs/                   # Detailed documentation
@@ -88,6 +89,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Jellyfin](./docs/jellyfin.md)
 * [AV1 Converter Script](./docs/av1-converter.md)
 * [Copyparty File Sharing](./docs/copyparty.md)
+* [Qdrant Vector Database](./docs/qdrant.md)
 * [Syncthing](./docs/syncthing.md)
 * [AI Coding Agents (OpenCode, Pi & Orca)](./docs/agents.md)
 * [Monitoring & Troubleshooting](./docs/monitoring.md)

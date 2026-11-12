@@ -43,6 +43,7 @@ in
     ../../modules/services/jellyfin.nix
     # ../../modules/services/nextcloud.nix
     ../../modules/services/copyparty.nix
+    ../../modules/services/qdrant.nix
 
   ];
 
