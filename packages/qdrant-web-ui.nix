@@ -21,10 +21,12 @@ stdenv.mkDerivation (finalAttrs: {
 
   dontBuild = true;
 
+  # The archive has a single top-level "dist/" directory, which unpackPhase
+  # detects as sourceRoot and cd's into. Install from the working directory.
   installPhase = ''
     runHook preInstall
     mkdir -p $out
-    cp -r dist/. $out/
+    cp -r . $out/
     runHook postInstall
   '';
 

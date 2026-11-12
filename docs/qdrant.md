@@ -102,10 +102,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   dontBuild = true;
 
+  # Single top-level "dist/" directory: unpackPhase cd's into it.
   installPhase = ''
     runHook preInstall
     mkdir -p $out
-    cp -r dist/. $out/
+    cp -r . $out/
     runHook postInstall
   '';
 
