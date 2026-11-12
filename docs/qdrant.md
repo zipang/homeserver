@@ -55,6 +55,10 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [ autoPatchelfHook ];
   buildInputs = [ stdenv.cc.cc.lib ];
 
+  # The release archive holds a single file at its root, with no directory:
+  # tell unpackPhase to use the build directory as the source root.
+  sourceRoot = ".";
+
   dontConfigure = true;
   dontBuild = true;
   dontStrip = true;

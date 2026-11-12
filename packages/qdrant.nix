@@ -23,6 +23,12 @@ stdenv.mkDerivation (finalAttrs: {
   # Supplies libgcc_s.so.1, which the release binary needs.
   buildInputs = [ stdenv.cc.cc.lib ];
 
+  # The release archive contains a single "qdrant" file at its root and no
+  # directory. The default unpackPhase derives sourceRoot from the only
+  # top-level directory and fails with "unpacker appears to have produced no
+  # directories", so point it at the build directory explicitly.
+  sourceRoot = ".";
+
   dontConfigure = true;
   dontBuild = true;
   # The binary is not stripped upstream; keep it that way for useful backtraces.
