@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# llama-models — list the GGUF files available in the shared model library.
+# Usage: llama-models
+
+LLAMA_MODELS_DIR="${LLAMA_MODELS_DIR:-/share/Skylab/LLMS}"
+
+[[ -d "$LLAMA_MODELS_DIR" ]] || {
+  echo "❌ $LLAMA_MODELS_DIR does not exist" >&2
+  exit 1
+}
+
+echo "📚 Models in $LLAMA_MODELS_DIR"
+echo
+printf '%-60s %8s\n' "FILE" "SIZE"
+printf '%-60s %8s\n' "----" "----"
+
+find "$LLAMA_MODELS_DIR" -maxdepth 1 -type f -name '*.gguf' ! -name 'mmproj-*' \
+  -printf '%f\t%s\n' | sort | while IFS=$'\t' read -r name size; do
+  printf '%-60s %8s\n' "$name" "$(numfmt --to=iec --suffix=B "$size")"
+done
+
+projectors=$(find "$LLAMA_MODELS_DIR" -maxdepth 1 -type f -name 'mmproj-*.gguf' | wc -l)
+echo
+echo "Vision projectors (mmproj): $projectors"
+
+if command -v curl >/dev/null 2>&1 && curl -sf --max-time 2 http://127.0.0.1:9931/running >/dev/null; then
+  echo
+  echo "🟢 llama-swap running models:"
+  curl -s http://127.0.0.1:9931/running
+  echo
+fi

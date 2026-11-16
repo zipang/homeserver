@@ -5,67 +5,94 @@ let
   # modules/system/storage.nix). NFS publishes it as /share/Skylab/LLMS.
   modelsDir = "/share/Skylab/LLMS";
 
-  # One model per service instance on nixos-25.11 (see docs/llama-cpp.md).
-  # `scripts/init-llms` creates the directory and downloads these exact files.
-  # Qwen3.5-2B is vision-capable (image + video) and Apache-2.0; the text
-  # weights are ~1.28 GB at Q4_K_M and the vision projector ~0.67 GB.
-  modelFile = "${modelsDir}/Qwen3.5-2B-Q4_K_M.gguf";
-  mmprojFile = "${modelsDir}/mmproj-F16.gguf";
-in
-{
-  # llama.cpp inference server (OpenAI-compatible API)
-  services.llama-cpp = {
-    enable = true;
-
-    # Vulkan is the reliable GPU backend on Vega 12 (gfx904), which ROCm does
-    # not officially target. The package comes from nixpkgs-unstable: the
-    # nixos-25.11 build (b6981) predates the `qwen35` architecture and cannot
-    # load Qwen3.5 GGUFs. Swap for pkgs.llama-cpp-vulkan only with a model
-    # that the stable build supports.
-    package = pkgs-unstable.llama-cpp-vulkan;
-
-    model = modelFile;
-    host = "127.0.0.1"; # LAN traffic goes through Nginx only
-    port = 9931;
-    openFirewall = false;
-
-    extraFlags = [
-      "--n-gpu-layers" "999" # offload every layer; spills to CPU if VRAM is short
-      "--ctx-size" "8192"
-      "--jinja" # honour the model's built-in chat template
-      "--mmproj" mmprojFile # vision projector: enables image/video input
-    ];
-  };
-
-  # --- GPU access and persistence -----------------------------------------
-  # The stock 25.11 unit runs as a DynamicUser with no supplementary groups,
-  # so it cannot open /dev/dri/renderD128. Use a static user in video/render
-  # and keep the persistent state directory.
-  systemd.services.llama-cpp = {
-    # Never start before the MEDIAS model subvolume is mounted.
-    unitConfig.RequiresMountsFor = [ modelsDir ];
-    # Do not auto-start at boot: the model files are fetched by
-    # `scripts/init-llms` after the first rebuild. Start it explicitly with
-    # `sudo systemctl start llama-cpp.service`, or drop this override once
-    # the model library is provisioned.
-    wantedBy = lib.mkForce [ ];
-    serviceConfig = {
-      DynamicUser = lib.mkForce false;
-      PrivateUsers = lib.mkForce false;
-      User = "llama-cpp";
-      Group = "llama-cpp";
-      SupplementaryGroups = [ "video" "render" "users" ];
-      StateDirectory = "llama-cpp"; # /var/lib/llama-cpp (runtime state)
-      RestartSec = lib.mkForce 30;
+  # Models pre-declared in the seed configuration. `scripts/init-llms`
+  # downloads them; `scripts/llama-download` fetches new ones.
+  # Adding an entry here only affects fresh installs: the live config is
+  # /var/lib/llama-swap/config.yaml and is meant to be edited at runtime.
+  seedModels = {
+    "qwen3.5-2b" = {
+      name = "Qwen3.5-2B (vision)";
+      file = "Qwen3.5-2B-Q4_K_M.gguf";
+      mmproj = "mmproj-F16.gguf";
+      ctx = 8192;
     };
   };
 
-  users.groups.llama-cpp = { };
-  users.users.llama-cpp = {
+  llamaServer = "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server";
+
+  # YAML seed, copied to /var/lib/llama-swap/config.yaml on first boot only.
+  # `${PORT}` must reach llama-swap verbatim, hence the `''${` escape.
+  configSeed = pkgs.writeText "llama-swap-config.yaml" (lib.generators.toYAML { } {
+    healthCheckTimeout = 300;
+    logLevel = "info";
+    sendLoadingState = true;
+    startPort = 10001;
+    globalTTL = 900; # unload a model after 15 min of inactivity
+    models = lib.mapAttrs (id: m: {
+      inherit (m) name;
+      cmd = ''
+        ${llamaServer}
+        --host 127.0.0.1 --port ''${PORT}
+        -m ${modelsDir}/${m.file}
+        --ctx-size ${toString m.ctx}
+        --n-gpu-layers 999
+        --jinja
+      '' + lib.optionalString ((m.mmproj or null) != null) "--mmproj ${modelsDir}/${m.mmproj}\n";
+    }) seedModels;
+  });
+
+  configPath = "/var/lib/llama-swap/config.yaml";
+in
+{
+  # llama-swap is the single front-end: it starts/stops llama-server on
+  # demand, one model at a time (only 4 GiB of VRAM on the Vega M GH).
+  systemd.services.llama-swap = {
+    description = "llama-swap - on-demand model switching for llama.cpp";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    unitConfig.RequiresMountsFor = [ modelsDir ];
+
+    serviceConfig = {
+      Type = "simple";
+      User = "llama-swap";
+      Group = "llama-swap";
+      SupplementaryGroups = [ "video" "render" "users" ];
+      StateDirectory = "llama-swap";
+      StateDirectoryMode = "2775";
+      ExecStart = "${pkgs-unstable.llama-swap}/bin/llama-swap --config ${configPath} --listen 127.0.0.1:9931 --watch-config";
+      Restart = "on-failure";
+      RestartSec = 10;
+
+      # Hardening: the models stay read-only, only StateDirectory is writable.
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      PrivateDevices = false; # llama-server children need /dev/dri
+      ProtectHome = true;
+      ProtectSystem = "strict";
+      ProtectKernelTunables = true;
+      ProtectKernelModules = true;
+      ProtectControlGroups = true;
+      RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+      RestrictNamespaces = true;
+      RestrictRealtime = true;
+      LockPersonality = true;
+    };
+  };
+
+  # Seed the (mutable, watched) config once. `C` never overwrites an existing
+  # file, so runtime edits survive reboots and rebuilds.
+  systemd.tmpfiles.rules = [
+    "d /var/lib/llama-swap 2775 llama-swap users -"
+    "C ${configPath} 0664 root users - ${configSeed}"
+    "d ${modelsDir}/.cache/huggingface 2775 zipang users -"
+  ];
+
+  users.groups.llama-swap = { };
+  users.users.llama-swap = {
     isSystemUser = true;
-    group = "llama-cpp";
+    group = "llama-swap";
     extraGroups = [ "video" "render" "users" ];
-    home = "/var/lib/llama-cpp";
+    home = "/var/lib/llama-swap";
   };
 
   # Mesa/RADV driver and Vulkan ICDs under /run/opengl-driver.
@@ -83,7 +110,7 @@ in
     sslCertificate = "/var/lib/secrets/certs/skylab.crt";
     sslCertificateKey = "/var/lib/secrets/certs/skylab.key";
 
-    # The API has no application-level authentication: keep it on the LAN.
+    # No application-level authentication: keep it on the LAN.
     extraConfig = ''
       allow 192.168.1.0/24;
       allow 127.0.0.1;
@@ -95,18 +122,20 @@ in
       proxyPass = "http://127.0.0.1:9931";
       proxyWebsockets = true;
       extraConfig = ''
-        # Token generation is slow and streamed: do not buffer or time out.
+        # SSE + streamed responses must not be buffered.
         proxy_buffering off;
+        proxy_cache off;
         proxy_read_timeout 600s;
         proxy_send_timeout 600s;
       '';
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    pkgs-unstable.llama-cpp-vulkan # same build as the service (qwen35 support)
-    vulkan-loader
-    vulkan-tools # provides `vulkaninfo` for verification
-    python3Packages.huggingface-hub # `hf download` to fetch GGUF files
+  environment.systemPackages = [
+    pkgs-unstable.llama-cpp-vulkan # provides llama-server / llama-cli
+    pkgs-unstable.llama-swap
+    pkgs.vulkan-loader
+    pkgs.vulkan-tools # provides `vulkaninfo` for verification
+    pkgs.python3Packages.huggingface-hub # `hf download`
   ];
 }

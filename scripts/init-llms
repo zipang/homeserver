@@ -165,9 +165,8 @@ echo
 echo "✅ Files ready:"
 ls -lh "$model_path" ${mmproj_path:+"$mmproj_path"}
 echo
-echo "ℹ️  Ensure modules/services/llama-cpp.nix points at them:"
-echo "   modelFile  = \"$model_path\";"
-if [[ -n "$mmproj_path" ]]; then
-  echo "   mmprojFile = \"$mmproj_path\";"
-fi
-echo "   Then: sudo systemctl start llama-cpp.service"
+echo "ℹ️  The llama-swap seed config already lists this model."
+echo "   Check: systemctl status llama-swap.service"
+echo "          curl -s http://127.0.0.1:9931/v1/models | jq"
+echo "   Vision projector: $mmproj_path"
+echo "   For other models use: scripts/llama-download <repo> <file>"

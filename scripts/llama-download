@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 022
+
+# llama-download — fetch one or more GGUF files into the shared model library
+# and print a llama-swap configuration snippet.
+#
+# Usage:
+#   llama-download <repo> <file> [<file>...] [--mmproj <file>] [--revision <rev>] [--force]
+#
+# Examples:
+#   llama-download unsloth/Qwen3.5-2B-GGUF Qwen3.5-2B-Q4_K_M.gguf --mmproj mmproj-F16.gguf
+#   llama-download TheBloke/Mistral-7B-Instruct-v0.2-GGUF mistral-7b-instruct-v0.2.Q4_K_M.gguf
+#
+# Overridable variables: LLAMA_MODELS_DIR, LLAMA_OWNER, LLAMA_GROUP.
+# The live llama-swap config is /var/lib/llama-swap/config.yaml; append the
+# printed snippet under `models:` and save — llama-swap reloads it.
+
+LLAMA_MODELS_DIR="${LLAMA_MODELS_DIR:-/share/Skylab/LLMS}"
+LLAMA_OWNER="${LLAMA_OWNER:-zipang}"
+LLAMA_GROUP="${LLAMA_GROUP:-users}"
+LLAMA_SERVER="${LLAMA_SERVER:-/run/current-system/sw/bin/llama-server}"
+
+usage() {
+  sed -n '5,17p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+die() {
+  echo "❌ $*" >&2
+  exit 1
+}
+
+repo=""
+files=()
+mmproj=""
+revision=""
+force=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --mmproj) mmproj="${2:?missing value}"; shift 2 ;;
+    --revision) revision="${2:?missing value}"; shift 2 ;;
+    --force) force=true; shift ;;
+    -h | --help) usage; exit 0 ;;
+    -*) die "unknown option: $1 (try --help)" ;;
+    *)
+      if [[ -z "$repo" ]]; then
+        repo="$1"
+      else
+        files+=("$1")
+      fi
+      shift
+      ;;
+  esac
+done
+
+[[ -n "$repo" ]] || { usage; die "missing <repo>"; }
+[[ ${#files[@]} -gt 0 || -n "$mmproj" ]] || { usage; die "missing <file>"; }
+[[ -d "$LLAMA_MODELS_DIR" ]] || die "$LLAMA_MODELS_DIR does not exist (create it first, see docs/llama-cpp.md)"
+
+if [[ $EUID -ne 0 && ! -w "$LLAMA_MODELS_DIR" ]]; then
+  die "$LLAMA_MODELS_DIR is not writable by $(id -un) - run: sudo -u $LLAMA_OWNER $0 <repo> <file>"
+fi
+
+command -v hf >/dev/null 2>&1 || die "'hf' not found - apply the NixOS configuration first"
+
+run_as=()
+if [[ $EUID -eq 0 ]] && id "$LLAMA_OWNER" >/dev/null 2>&1; then
+  run_as=(sudo -u "$LLAMA_OWNER")
+fi
+
+stage_dir="$LLAMA_MODELS_DIR/.staging"
+if [[ $EUID -eq 0 ]]; then
+  install -d -o "$LLAMA_OWNER" -g "$LLAMA_GROUP" -m 2775 "$stage_dir"
+else
+  mkdir -p "$stage_dir"
+fi
+trap 'rm -rf "$stage_dir"' EXIT
+
+rev_args=()
+[[ -n "$revision" ]] && rev_args=(--revision "$revision")
+
+fetch() {
+  local file="$1"
+  local target="$LLAMA_MODELS_DIR/$file"
+  if [[ -f "$target" && $force == false ]]; then
+    echo "✅ Already present: $file"
+    return 0
+  fi
+  echo "⬇️  Downloading $file (this can take a while)..."
+  "${run_as[@]}" hf download "$repo" "$file" \
+    --local-dir "$stage_dir" "${rev_args[@]}"
+  mv -f "$stage_dir/$file" "$target"
+  if [[ $EUID -eq 0 ]]; then
+    chown "$LLAMA_OWNER:$LLAMA_GROUP" "$target"
+  fi
+  chmod 0644 "$target"
+}
+
+for file in ${files[@]+"${files[@]}"}; do
+  fetch "$file"
+done
+[[ -n "$mmproj" ]] && fetch "$mmproj"
+
+model_id_of() {
+  basename "$1" .gguf \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed 's/[^a-z0-9._-]/-/g'
+}
+
+echo
+echo "✅ Files ready in $LLAMA_MODELS_DIR"
+echo
+echo "Add this under 'models:' in /var/lib/llama-swap/config.yaml:"
+echo
+for file in ${files[@]+"${files[@]}"}; do
+  id="$(model_id_of "$file")"
+  echo "  \"$id\":"
+  echo "    name: \"$id\""
+  echo "    cmd: |"
+  echo "      $LLAMA_SERVER"
+  echo "      --host 127.0.0.1 --port \${PORT}"
+  echo "      -m $LLAMA_MODELS_DIR/$file"
+  echo "      --ctx-size 8192 --n-gpu-layers 999 --jinja"
+  [[ -n "$mmproj" ]] && echo "      --mmproj $LLAMA_MODELS_DIR/$mmproj"
+  echo
+done
+
+echo "llama-swap watches the file: save it and the model appears in /v1/models."
+echo "Check with: curl -s http://127.0.0.1:9931/v1/models | jq"
