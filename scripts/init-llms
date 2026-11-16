@@ -71,7 +71,27 @@ if [[ "$mounted_target" != "$LLAMA_MODELS_DIR" ]]; then
   fi
 fi
 
-# 3. `hf` comes from pkgs.python3Packages.huggingface-hub, installed by the
+# 3. Make sure the calling user can actually write there. `hf` otherwise
+#    fails deep inside its metadata handling with a confusing traceback.
+if [[ $EUID -ne 0 && ! -w "$LLAMA_MODELS_DIR" ]]; then
+  echo "❌ $LLAMA_MODELS_DIR is not writable by $(id -un)." >&2
+  echo "   Run this script as the owner: sudo -u $LLAMA_OWNER $0" >&2
+  exit 1
+fi
+
+# 4. `hf --local-dir` keeps its download metadata in
+#    <local-dir>/.cache/huggingface and needs that directory to exist.
+hf_meta_dir="$LLAMA_MODELS_DIR/.cache/huggingface"
+if [[ ! -d "$hf_meta_dir" ]]; then
+  echo "📁 Preparing Hugging Face metadata dir"
+  if [[ $EUID -eq 0 ]]; then
+    install -d -o "$LLAMA_OWNER" -g "$LLAMA_GROUP" -m 2775 "$hf_meta_dir"
+  else
+    mkdir -p "$hf_meta_dir"
+  fi
+fi
+
+# 5. `hf` comes from pkgs.python3Packages.huggingface-hub, installed by the
 #    llama-cpp module.
 if ! command -v hf >/dev/null 2>&1; then
   echo "❌ 'hf' not found. Apply the NixOS configuration first:" >&2
@@ -99,7 +119,7 @@ if [[ $need_model == false && $need_mmproj == false ]]; then
   exit 0
 fi
 
-# 4. Download as the owner so the service (member of `users`) can read it.
+# 6. Download as the owner so the service (member of `users`) can read it.
 run_as=()
 if [[ $EUID -eq 0 ]] && id "$LLAMA_OWNER" >/dev/null 2>&1; then
   run_as=(sudo -u "$LLAMA_OWNER")
@@ -115,7 +135,7 @@ if [[ $need_mmproj == true ]]; then
     --local-dir "$LLAMA_MODELS_DIR"
 fi
 
-# 5. Normalize ownership/permissions in case the download ran as root.
+# 7. Normalize ownership/permissions in case the download ran as root.
 if [[ $EUID -eq 0 ]]; then
   chown "$LLAMA_OWNER:$LLAMA_GROUP" "$model_path" ${mmproj_path:+"$mmproj_path"}
 fi

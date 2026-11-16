@@ -288,7 +288,8 @@ init-llms --force    # re-download
 It is safe to run as `zipang` (no `sudo` needed once the directory exists), and
 handles being run as `root` by downloading as the owner. It also warns when
 `/share/Skylab/LLMS` is not actually a mountpoint, to avoid filling the root
-filesystem.
+filesystem, and pre-creates the hidden `.cache/huggingface` directory that
+`hf --local-dir` uses for download metadata (ignore it; it is not a model).
 
 If you prefer doing it by hand (the default model is vision-capable, so it
 needs **two** files):
