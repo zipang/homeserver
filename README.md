@@ -48,7 +48,9 @@ Before deploying, ensure the following are handled manually on the SKYLAB server
   * Commit and push changes to the repo.
  
 3. **Apply Configuration** (on the host)
-  * Use the `update-nix` script to pull and apply changes:
+  * Use the `update-nix` script to sync and apply changes. It fetches and
+    rebases onto `origin/<branch>`, pushes any local commits that were never
+    published, updates `flake.lock`, rebuilds, then pushes the lockfile:
   ```bash
   update-nix [branch]
   ```

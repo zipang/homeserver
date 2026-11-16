@@ -1,16 +1,33 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 BRANCH=${1:-master}
+REPO=/home/master/homeserver
 echo "🚀 Starting SKYLAB System Update (Branch: $BRANCH)..."
 
-cd /home/master/homeserver
+cd "$REPO"
 # Ensure current user owns the directory to avoid git permission errors
-sudo chown -R $USER:wheel .
+sudo chown -R "$USER":wheel .
 
-echo "📥 [1/5] Pulling latest changes from Git..."
+echo "📥 [1/5] Syncing with origin/$BRANCH (fetch + rebase)..."
 git fetch origin
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+
+# Rebase local work onto the remote branch first. `--autostash` keeps any
+# uncommitted edits out of the way, so a dirty working tree can never block
+# the update.
+git rebase --autostash "origin/$BRANCH"
+
+# Publish commits that were made on this host and never pushed. Doing this
+# *before* anything else means the next fetch/rebase starts from a clean,
+# in-sync branch instead of accumulating stale local commits that later make
+# `git pull` or `git push` fail.
+AHEAD=$(git rev-list --count "origin/$BRANCH..HEAD")
+if [ "$AHEAD" -gt 0 ]; then
+  echo "📤 Pushing $AHEAD local commit(s) not yet on origin/$BRANCH..."
+  git push origin "$BRANCH"
+else
+  echo "✅ Local branch is in sync with origin/$BRANCH."
+fi
 
 echo "🔄 [2/5] Updating Flake lockfile..."
 nix flake update
