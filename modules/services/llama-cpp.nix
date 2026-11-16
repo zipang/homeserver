@@ -102,6 +102,6 @@ in
     pkgs-unstable.llama-cpp-vulkan # same build as the service (qwen35 support)
     vulkan-loader
     vulkan-tools # provides `vulkaninfo` for verification
-    huggingface-hub # `hf download` to fetch GGUF files
+    python3Packages.huggingface-hub # `hf download` to fetch GGUF files
   ];
 }

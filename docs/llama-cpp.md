@@ -74,7 +74,7 @@ on MEDIAS, see below).
 ## Configuration Reference
 
 * NixOS module options (`nixos-25.11`): [`services.llama-cpp`](https://search.nixos.org/options?channel=25.11&query=services.llama-cpp)
-* Packages: [`llama-cpp-vulkan` (unstable)](https://search.nixos.org/packages?channel=unstable&query=llama-cpp-vulkan) · [`huggingface-hub`](https://search.nixos.org/packages?channel=25.11&query=huggingface-hub)
+* Packages: [`llama-cpp-vulkan` (unstable)](https://search.nixos.org/packages?channel=unstable&query=llama-cpp-vulkan) · [`python3Packages.huggingface-hub`](https://search.nixos.org/packages?channel=25.11&query=huggingface-hub) (provides `hf`)
 * Default model: [`unsloth/Qwen3.5-2B-GGUF`](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) (upstream [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B))
 * Vision support in llama.cpp: [multimodal docs](https://github.com/ggml-org/llama.cpp/blob/master/docs/multimodal.md)
 * Graphics stack: [`hardware.graphics.enable`](https://search.nixos.org/options?channel=25.11&query=hardware.graphics.enable)
@@ -174,7 +174,7 @@ in
     pkgs-unstable.llama-cpp-vulkan # same build as the service
     pkgs.vulkan-loader
     pkgs.vulkan-tools # `vulkaninfo`
-    pkgs.huggingface-hub
+    pkgs.python3Packages.huggingface-hub # provides `hf`
   ];
 }
 ```

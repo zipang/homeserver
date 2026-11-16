@@ -71,7 +71,8 @@ if [[ "$mounted_target" != "$LLAMA_MODELS_DIR" ]]; then
   fi
 fi
 
-# 3. `hf` comes from pkgs.huggingface-hub, installed by the llama-cpp module.
+# 3. `hf` comes from pkgs.python3Packages.huggingface-hub, installed by the
+#    llama-cpp module.
 if ! command -v hf >/dev/null 2>&1; then
   echo "❌ 'hf' not found. Apply the NixOS configuration first:" >&2
   echo "   sudo nixos-rebuild switch --flake path:.#SKYLAB" >&2
