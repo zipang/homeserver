@@ -2,53 +2,50 @@
 
 let
   # Shared model library on the MEDIAS drive (btrfs subvolume @llms, see
-  # modules/system/storage.nix). NFS publishes it as /share/Skylab/LLMS.
+  # modules/system/storage.nix). NFS publishes it as /share/Skylab/LLMS, so
+  # both the models and the llama-swap configuration are editable from any
+  # machine on the LAN, and they survive a NixOS reinstall.
   modelsDir = "/share/Skylab/LLMS";
 
-  # Models pre-declared in the seed configuration. `scripts/init-llms`
-  # downloads them; `scripts/llama-download` fetches new ones.
-  # Adding an entry here only affects fresh installs: the live config is
-  # /var/lib/llama-swap/config.yaml and is meant to be edited at runtime.
-  seedModels = {
-    "qwen3.5-2b" = {
-      name = "Qwen3.5-2B (vision)";
-      file = "Qwen3.5-2B-Q4_K_M.gguf";
-      mmproj = "mmproj-F16.gguf";
-      ctx = 8192;
-    };
-  };
+  # llama-swap merges every *.yaml found here (no scan of the models itself).
+  # `llama-scan` auto-registers new GGUF files, `llama-register` does it by
+  # hand. One file per model: no shared file to corrupt, and dropping a file
+  # is enough to add/remove a model (llama-swap polls the directory every 2 s).
+  configDir = "${modelsDir}/llama-swap.d";
 
   llamaServer = "${pkgs-unstable.llama-cpp-vulkan}/bin/llama-server";
 
-  # YAML seed, copied to /var/lib/llama-swap/config.yaml on first boot only.
-  # `${PORT}` must reach llama-swap verbatim, hence the `''${` escape.
-  configSeed = pkgs.writeText "llama-swap-config.yaml" (lib.generators.toYAML { } {
-    healthCheckTimeout = 300;
-    logLevel = "info";
-    sendLoadingState = true;
-    startPort = 10001;
-    globalTTL = 900; # unload a model after 15 min of inactivity
-    models = lib.mapAttrs (id: m: {
-      inherit (m) name;
-      cmd = ''
-        ${llamaServer}
-        --host 127.0.0.1 --port ''${PORT}
-        -m ${modelsDir}/${m.file}
-        --ctx-size ${toString m.ctx}
-        --n-gpu-layers 999
-        --jinja
-      '' + lib.optionalString ((m.mmproj or null) != null) "--mmproj ${modelsDir}/${m.mmproj}\n";
-    }) seedModels;
-  });
+  # --- Seeded once (`tmpfiles` rule `C` never overwrites an existing file) ---
 
-  configPath = "/var/lib/llama-swap/config.yaml";
+  globalsSeed = pkgs.writeText "llama-swap-00-globals.yaml" ''
+    healthCheckTimeout: 300
+    logLevel: info
+    sendLoadingState: true
+    startPort: 10001
+    globalTTL: 900
+  '';
+
+  # Curated default: the small vision model always fits in 4 GiB of VRAM.
+  # `${PORT}` must reach llama-swap verbatim.
+  defaultModelSeed = pkgs.writeText "llama-swap-qwen3.5-2b.yaml" ''
+    models:
+      "qwen3.5-2b":
+        name: "Qwen3.5-2B (vision)"
+        cmd: |
+          ${llamaServer}
+          --host 127.0.0.1 --port ''${PORT}
+          -m ${modelsDir}/Qwen3.5-2B-Q4_K_M.gguf
+          --ctx-size 8192 --n-gpu-layers 999 --jinja
+          --mmproj ${modelsDir}/mmproj-F16.gguf
+  '';
 in
 {
   # llama-swap is the single front-end: it starts/stops llama-server on
   # demand, one model at a time (only 4 GiB of VRAM on the Vega M GH).
   systemd.services.llama-swap = {
     description = "llama-swap - on-demand model switching for llama.cpp";
-    after = [ "network.target" ];
+    after = [ "network.target" "llama-scan.service" ];
+    wants = [ "llama-scan.service" ];
     wantedBy = [ "multi-user.target" ];
     unitConfig.RequiresMountsFor = [ modelsDir ];
 
@@ -59,11 +56,11 @@ in
       SupplementaryGroups = [ "video" "render" "users" ];
       StateDirectory = "llama-swap";
       StateDirectoryMode = "2775";
-      ExecStart = "${pkgs-unstable.llama-swap}/bin/llama-swap --config ${configPath} --listen 127.0.0.1:9931 --watch-config";
+      ExecStart = "${pkgs-unstable.llama-swap}/bin/llama-swap --config-dir ${configDir} --listen 127.0.0.1:9931 --watch-config";
       Restart = "on-failure";
       RestartSec = 10;
 
-      # Hardening: the models stay read-only, only StateDirectory is writable.
+      # Hardening: only the config directory and StateDirectory are writable.
       NoNewPrivileges = true;
       PrivateTmp = true;
       PrivateDevices = false; # llama-server children need /dev/dri
@@ -79,11 +76,35 @@ in
     };
   };
 
-  # Seed the (mutable, watched) config once. `C` never overwrites an existing
-  # file, so runtime edits survive reboots and rebuilds.
+  # Auto-registration: read the GGUF headers of the model library and write
+  # one fragment per model. Idempotent, runs on boot (before llama-swap) and
+  # every 2 minutes, so a file copied over NFS/SMB shows up on its own.
+  systemd.services.llama-scan = {
+    description = "Register GGUF models in llama-swap's config directory";
+    unitConfig.RequiresMountsFor = [ modelsDir ];
+    path = [ pkgs-unstable.llama-swap ]; # enables `llama-swap --validate`
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../scripts/llama-scan}";
+    };
+  };
+
+  systemd.timers.llama-scan = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "1min";
+      OnUnitActiveSec = "2min";
+      Unit = "llama-scan.service";
+    };
+  };
+
+  # Seed the config directory once. `C` never overwrites an existing file, so
+  # local edits (ctx size, extra models) survive reboots and rebuilds.
   systemd.tmpfiles.rules = [
     "d /var/lib/llama-swap 2775 llama-swap users -"
-    "C ${configPath} 0664 root users - ${configSeed}"
+    "d ${configDir} 2775 zipang users -"
+    "C ${configDir}/00-globals.yaml 0664 root users - ${globalsSeed}"
+    "C ${configDir}/qwen3.5-2b.yaml 0664 root users - ${defaultModelSeed}"
     "d ${modelsDir}/.cache/huggingface 2775 zipang users -"
   ];
 
@@ -136,6 +157,7 @@ in
     pkgs-unstable.llama-swap
     pkgs.vulkan-loader
     pkgs.vulkan-tools # provides `vulkaninfo` for verification
+    pkgs.python3 # `llama-scan` / `llama-register` shebang
     pkgs.python3Packages.huggingface-hub # `hf download`
   ];
 }

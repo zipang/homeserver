@@ -1,0 +1,615 @@
+#!/usr/bin/env python3
+"""llama-scan — keep llama-swap's model directory in sync with the GGUF files.
+
+llama-swap does not scan directories, so every model must be declared. This
+tool reads the GGUF metadata header of each file dropped into the model
+library and writes one YAML fragment per model into the llama-swap config
+directory (llama-swap merges every *.yaml found there).
+
+Layout (all overridable through environment variables):
+
+    $LLAMA_MODELS_DIR   /share/Skylab/LLMS            GGUF files
+    $LLAMA_CONFIG_DIR   $LLAMA_MODELS_DIR/llama-swap.d  YAML fragments
+    $LLAMA_SERVER       /run/current-system/sw/bin/llama-server
+
+Usage:
+    llama-scan [--force] [--dry-run] [--verbose]   # sync fragments (default)
+    llama-scan register <file> [options]            # explicit registration
+    llama-scan list
+"""
+
+from __future__ import annotations
+
+import fnmatch
+import grp
+import json
+import os
+import pwd
+import re
+import shutil
+import struct
+import subprocess
+import sys
+from pathlib import Path
+
+MODELS_DIR = Path(os.environ.get("LLAMA_MODELS_DIR", "/share/Skylab/LLMS"))
+CONFIG_DIR = Path(
+    os.environ.get("LLAMA_CONFIG_DIR", str(MODELS_DIR / "llama-swap.d"))
+)
+SERVER = os.environ.get("LLAMA_SERVER", "/run/current-system/sw/bin/llama-server")
+OWNER = os.environ.get("LLAMA_OWNER", "zipang")
+GROUP = os.environ.get("LLAMA_GROUP", "users")
+
+AUTO_MARKER = "# managed-by: llama-scan"
+MANUAL_MARKER = "# managed-by: llama-register"
+SOURCE_PREFIX = "# source: "
+IGNORE_FILE = ".llama-ignore"
+
+# Architectures that are embedding/pooling models: llama-server would start
+# them but they cannot answer chat requests, so they are not registered.
+EMBEDDING_ARCHS = {
+    "bert",
+    "nomic-bert",
+    "jina-bert-v2",
+    "t5",
+    "t5encoder",
+    "bge-m3",
+}
+
+GGUF_MAGIC = b"GGUF"
+# value type -> (struct format, size in bytes)
+VALUE_TYPES = {
+    0: ("<B", 1),  # uint8
+    1: ("<b", 1),  # int8
+    2: ("<H", 2),  # uint16
+    3: ("<h", 2),  # int16
+    4: ("<I", 4),  # uint32
+    5: ("<i", 4),  # int32
+    6: ("<f", 4),  # float32
+    7: ("<?", 1),  # bool
+    10: ("<Q", 8),  # uint64
+    11: ("<q", 8),  # int64
+    12: ("<d", 8),  # float64
+}
+TYPE_STRING = 8
+TYPE_ARRAY = 9
+
+VERBOSE = False
+
+
+def log(msg: str) -> None:
+    print(f"   {msg}")
+
+
+def debug(msg: str) -> None:
+    if VERBOSE:
+        print(f"   · {msg}")
+
+
+def warn(msg: str) -> None:
+    print(f"   ⚠️  {msg}", file=sys.stderr)
+
+
+def die(msg: str, code: int = 1) -> None:
+    print(f"❌ {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# --------------------------------------------------------------------------
+# GGUF header parsing
+# --------------------------------------------------------------------------
+def _read_str(f) -> str:
+    (length,) = struct.unpack("<Q", f.read(8))
+    return f.read(length).decode("utf-8", "replace")
+
+
+def _skip_array(f) -> None:
+    (elem_type,) = struct.unpack("<I", f.read(4))
+    (count,) = struct.unpack("<Q", f.read(8))
+    if elem_type == TYPE_STRING:
+        for _ in range(count):
+            (length,) = struct.unpack("<Q", f.read(8))
+            f.seek(length, os.SEEK_CUR)
+    elif elem_type == TYPE_ARRAY:
+        raise ValueError("nested arrays are not supported")
+    else:
+        try:
+            _, size = VALUE_TYPES[elem_type]
+        except KeyError as exc:
+            raise ValueError(f"unknown GGUF value type {elem_type}") from exc
+        f.seek(size * count, os.SEEK_CUR)
+
+
+def _read_value(f, value_type: int):
+    if value_type == TYPE_STRING:
+        return _read_str(f)
+    if value_type == TYPE_ARRAY:
+        _skip_array(f)
+        return None
+    try:
+        fmt, size = VALUE_TYPES[value_type]
+    except KeyError as exc:
+        raise ValueError(f"unknown GGUF value type {value_type}") from exc
+    return struct.unpack(fmt, f.read(size))[0]
+
+
+def gguf_metadata(path: Path, max_pairs: int = 256) -> dict:
+    """Read the GGUF metadata key/values (header only, never the tensors)."""
+    with open(path, "rb") as f:
+        if f.read(4) != GGUF_MAGIC:
+            raise ValueError("not a GGUF file (bad magic)")
+        (version,) = struct.unpack("<I", f.read(4))
+        if version not in (2, 3):
+            raise ValueError(f"unsupported GGUF version {version}")
+        f.read(8)  # tensor count
+        (pair_count,) = struct.unpack("<Q", f.read(8))
+
+        meta = {}
+        for _ in range(min(pair_count, max_pairs)):
+            key = _read_str(f)
+            (value_type,) = struct.unpack("<I", f.read(4))
+            try:
+                value = _read_value(f, value_type)
+            except (struct.error, ValueError):
+                break
+            if value is not None:
+                meta[key] = value
+        return meta
+
+
+# --------------------------------------------------------------------------
+# Names and IDs
+# --------------------------------------------------------------------------
+QUANT_TOKEN = re.compile(
+    r"(?i)^(?:i?q\d[\w.]*|f16|f32|bf16|fp16|fp32|q8_0|q6_k|q5_k|q4_k)$"
+)
+QUANT_SUFFIX = re.compile(
+    r"(?i)[-_.](?:i?q\d[\w.]*|f16|f32|bf16|fp16|fp32)$"
+)
+
+
+def strip_quant(stem: str) -> str:
+    """Drop a trailing quantization/format marker (Q4_K_M, BF16, ...)."""
+    s = stem.strip()
+    while True:
+        if QUANT_TOKEN.fullmatch(s):
+            return ""
+        m = QUANT_SUFFIX.search(s)
+        if not m:
+            return s
+        s = s[: m.start()]
+
+
+def strip_mmproj(stem: str) -> str:
+    return re.sub(r"(?i)^mmproj[-_.]", "", stem)
+
+
+def model_id(filename: str) -> str:
+    """Stable model ID used as the llama-swap `model` field."""
+    stem = re.sub(r"(?i)\.gguf$", "", filename)
+    slug = strip_quant(stem).lower()
+    slug = re.sub(r"[^a-z0-9._-]+", "-", slug).strip("-._")
+    return slug or "model"
+
+
+def family_key(filename: str) -> str:
+    """Model family, ignoring the projector prefix and quantization."""
+    stem = strip_mmproj(re.sub(r"(?i)\.gguf$", "", filename))
+    return model_id(stem + ".gguf")
+
+
+def display_name(filename: str) -> str:
+    stem = re.sub(r"(?i)\.gguf$", "", filename)
+    return re.sub(r"[-]+", " ", stem).strip()
+
+
+def default_ctx(size: int, native) -> int:
+    """Small VRAM: keep the KV cache modest for multi-GB models."""
+    want = 8192 if size < 2 * 1024**3 else 4096
+    if isinstance(native, int) and native > 0:
+        want = min(want, native)
+    return max(want, 2048)
+
+
+# --------------------------------------------------------------------------
+# Config directory helpers
+# --------------------------------------------------------------------------
+def ensure_config_dir() -> None:
+    if CONFIG_DIR.is_dir():
+        return
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    os.chmod(CONFIG_DIR, 0o2775)
+    if os.geteuid() == 0:
+        try:
+            uid = pwd.getpwnam(OWNER).pw_uid
+            gid = grp.getgrnam(GROUP).gr_gid
+            os.chown(CONFIG_DIR, uid, gid)
+        except KeyError:
+            pass
+
+
+def load_ignore() -> list[str]:
+    path = CONFIG_DIR / IGNORE_FILE
+    if not path.is_file():
+        return []
+    patterns = []
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            patterns.append(line)
+    return patterns
+
+
+def is_ignored(name: str, patterns: list[str]) -> bool:
+    return any(fnmatch.fnmatch(name, p) for p in patterns)
+
+
+def id_declared(model: str, exclude: Path | None = None) -> Path | None:
+    """Return the fragment (other than `exclude`) declaring this model ID."""
+    pattern = re.compile(r'^\s*"?' + re.escape(model) + r'"?\s*:')
+    if not CONFIG_DIR.is_dir():
+        return None
+    for fragment in sorted(CONFIG_DIR.glob("*.y*ml")):
+        if exclude is not None and fragment.resolve() == exclude.resolve():
+            continue
+        try:
+            text = fragment.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for line in text.splitlines():
+            if pattern.match(line):
+                return fragment
+    return None
+
+
+def write_fragment(target: Path, body: str, dry_run: bool) -> None:
+    if dry_run:
+        log(f"would write {target.name}")
+        return
+    tmp = target.with_name(f".{target.name}.tmp")
+    tmp.write_text(body, encoding="utf-8")
+    os.chmod(tmp, 0o664)
+    os.replace(tmp, target)
+
+
+def pick_mmproj(model_file: Path, projectors: list[Path]) -> Path | None:
+    key = family_key(model_file.name)
+    if not key:
+        return None
+    candidates = []
+    for proj in projectors:
+        pkey = family_key(proj.name)
+        if not pkey or "-" not in pkey or not any(c.isdigit() for c in pkey):
+            continue
+        if key == pkey or key.startswith(pkey + "-"):
+            candidates.append((len(pkey), proj))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    if len(candidates) > 1 and candidates[0][0] == candidates[1][0]:
+        warn(
+            f"{model_file.name}: several projectors match "
+            f"({candidates[0][1].name}, {candidates[1][1].name}); "
+            "use `llama-register --mmproj` to choose one"
+        )
+        return None
+    return candidates[0][1]
+
+
+def render_fragment(
+    model: str,
+    name: str,
+    path: Path,
+    ctx: int,
+    mmproj: Path | None,
+    marker: str,
+    source: str | None = None,
+) -> str:
+    lines = [marker]
+    if source:
+        lines.append(SOURCE_PREFIX + source)
+    lines.append("# Delete this file to unregister the model.")
+    lines += [
+        "models:",
+        f"  {json.dumps(model)}:",
+        f"    name: {json.dumps(name)}",
+        "    cmd: |",
+        f"      {SERVER}",
+        "      --host 127.0.0.1 --port ${PORT}",
+        f"      -m {path}",
+        f"      --ctx-size {ctx} --n-gpu-layers 999 --jinja",
+    ]
+    if mmproj is not None:
+        lines.append(f"      --mmproj {mmproj}")
+    return "\n".join(lines) + "\n"
+
+
+def fragment_source(fragment: Path) -> str | None:
+    try:
+        for line in fragment.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith(SOURCE_PREFIX):
+                return line[len(SOURCE_PREFIX) :].strip()
+            if line and not line.startswith("#"):
+                break
+    except OSError:
+        return None
+    return None
+
+
+def validate_config() -> bool:
+    exe = shutil.which("llama-swap")
+    if exe is None:
+        return True
+    result = subprocess.run(
+        [exe, "--validate", "--config-dir", str(CONFIG_DIR)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        sys.stderr.write(result.stdout)
+        sys.stderr.write(result.stderr)
+        return False
+    return True
+
+
+# --------------------------------------------------------------------------
+# scan
+# --------------------------------------------------------------------------
+def cmd_scan(force: bool, dry_run: bool) -> int:
+    if not MODELS_DIR.is_dir():
+        die(f"{MODELS_DIR} does not exist (is MEDIAS mounted?)")
+    ensure_config_dir()
+
+    patterns = load_ignore()
+    models: list[tuple[Path, dict]] = []
+    projectors: list[Path] = []
+
+    for entry in sorted(MODELS_DIR.iterdir()):
+        if not entry.is_file() or entry.suffix.lower() != ".gguf":
+            continue
+        # Projectors are never models, but they must be scanned: they are
+        # paired with the model files below.
+        if entry.name.lower().startswith("mmproj"):
+            projectors.append(entry)
+            continue
+        if is_ignored(entry.name, patterns):
+            continue
+        try:
+            meta = gguf_metadata(entry)
+        except (OSError, ValueError, struct.error) as exc:
+            warn(f"{entry.name}: cannot read GGUF header ({exc})")
+            continue
+        arch = meta.get("general.architecture")
+        if arch == "clip":
+            projectors.append(entry)
+            continue
+        if arch in EMBEDDING_ARCHS:
+            debug(f"{entry.name}: embedding model ({arch}), skipped")
+            continue
+        models.append((entry, meta))
+
+    print(
+        f"🔎 Scanning {MODELS_DIR} "
+        f"({len(models)} model(s), {len(projectors)} projector(s))"
+    )
+
+    changed = 0
+    for path, meta in models:
+        mid = model_id(path.name)
+        target = CONFIG_DIR / f"auto-{mid}.yaml"
+
+        # Any other fragment (curated or hand-written) always wins.
+        owner = id_declared(mid, exclude=target)
+        if owner is not None:
+            debug(f"{mid}: declared by {owner.name}, skipping")
+            continue
+
+        if target.exists():
+            if not force:
+                current = fragment_source(target)
+                if current and current != path.name:
+                    warn(
+                        f"{path.name}: same model ID as {current} ({mid}); "
+                        "use `llama-register --id` for a second quantization"
+                    )
+                else:
+                    debug(f"{mid}: already registered ({target.name})")
+                continue
+
+        mmproj = pick_mmproj(path, projectors)
+        arch = meta.get("general.architecture")
+        native = meta.get(f"{arch}.context_length") if arch else None
+        ctx = default_ctx(path.stat().st_size, native)
+        body = render_fragment(
+            model=mid,
+            name=display_name(path.name),
+            path=path,
+            ctx=ctx,
+            mmproj=mmproj,
+            marker=AUTO_MARKER,
+            source=path.name,
+        )
+        write_fragment(target, body, dry_run)
+        changed += 1
+        size_gib = path.stat().st_size / 1024**3
+        extra = f" + {mmproj.name}" if mmproj else " (text only)"
+        log(f"registered {mid}  [ctx {ctx}, {size_gib:.1f} GiB{extra}]")
+        if size_gib > 3.5:
+            warn(f"{path.name}: {size_gib:.1f} GiB, will not fit fully in 4 GiB VRAM")
+
+    # Prune auto fragments whose model disappeared or is now declared manually.
+    for fragment in sorted(CONFIG_DIR.glob("auto-*.yaml")):
+        mid = fragment.stem[len("auto-") :]
+        source = fragment_source(fragment)
+        stale = False
+        if source and not (MODELS_DIR / source).is_file():
+            stale = True
+        elif id_declared(mid, exclude=fragment) is not None:
+            stale = True
+        if stale:
+            if dry_run:
+                log(f"would remove {fragment.name}")
+            else:
+                fragment.unlink()
+                log(f"unregistered {mid}")
+            changed += 1
+
+    if changed and not dry_run and not validate_config():
+        die("llama-swap rejected the generated configuration (see above)")
+
+    print(
+        "✅ Up to date."
+        if changed == 0
+        else f"✅ {changed} fragment(s) updated in {CONFIG_DIR}"
+    )
+    return 0
+
+
+# --------------------------------------------------------------------------
+# register / list
+# --------------------------------------------------------------------------
+def resolve_model_file(value: str) -> Path:
+    path = Path(value)
+    if not path.is_absolute():
+        path = MODELS_DIR / path
+    if not path.is_file():
+        die(f"{path} does not exist")
+    return path
+
+
+def cmd_register(args: list[str]) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="llama-register",
+        description="Declare a GGUF file already present in the model library.",
+    )
+    parser.add_argument("file", help="model file (name or absolute path)")
+    parser.add_argument("--id", help="model ID (default: derived from the file)")
+    parser.add_argument("--name", help="display name shown in the llama-swap UI")
+    parser.add_argument("--ctx", type=int, help="context size (default: auto)")
+    parser.add_argument("--mmproj", help="vision projector file")
+    parser.add_argument("--no-mmproj", action="store_true", help="text only")
+    parser.add_argument("--force", action="store_true", help="overwrite")
+    parser.add_argument("--dry-run", action="store_true")
+    opts = parser.parse_args(args)
+
+    path = resolve_model_file(opts.file)
+    ensure_config_dir()
+
+    mid = opts.id or model_id(path.name)
+    target = CONFIG_DIR / f"{mid}.yaml"
+    if target.exists() and not opts.force:
+        body = target.read_text(encoding="utf-8", errors="replace")
+        if MANUAL_MARKER not in body:
+            die(f"{target} exists and is not managed by llama-register (use --force)")
+
+    mmproj = None
+    if not opts.no_mmproj:
+        if opts.mmproj:
+            mmproj = resolve_model_file(opts.mmproj)
+        else:
+            projectors = sorted(
+                p
+                for p in MODELS_DIR.iterdir()
+                if p.is_file()
+                and p.suffix.lower() == ".gguf"
+                and p.name.lower().startswith("mmproj")
+            )
+            mmproj = pick_mmproj(path, projectors)
+
+    if opts.ctx:
+        ctx = opts.ctx
+    else:
+        try:
+            meta = gguf_metadata(path)
+        except (OSError, ValueError, struct.error) as exc:
+            die(f"cannot read {path.name}: {exc}")
+        arch = meta.get("general.architecture")
+        native = meta.get(f"{arch}.context_length")
+        ctx = default_ctx(path.stat().st_size, native)
+
+    body = render_fragment(
+        model=mid,
+        name=opts.name or display_name(path.name),
+        path=path,
+        ctx=ctx,
+        mmproj=mmproj,
+        marker=MANUAL_MARKER,
+    )
+    write_fragment(target, body, opts.dry_run)
+
+    # A manual registration supersedes the auto-generated fragment for the
+    # same ID; keeping both would be a duplicate model in llama-swap.
+    auto = CONFIG_DIR / f"auto-{mid}.yaml"
+    if auto.exists():
+        if opts.dry_run:
+            log(f"would remove {auto.name}")
+        else:
+            auto.unlink()
+
+    if not opts.dry_run and not validate_config():
+        die("llama-swap rejected the generated configuration (see above)")
+
+    print(f"✅ {mid} registered in {target}")
+    print(f"   model: {path}")
+    print(f"   ctx  : {ctx}")
+    print(f"   mmproj: {mmproj.name if mmproj else 'none'}")
+    print("   llama-swap reloads the directory automatically (2 s poll).")
+    return 0
+
+
+def cmd_list() -> int:
+    if not CONFIG_DIR.is_dir():
+        die(f"{CONFIG_DIR} does not exist")
+    pattern = re.compile(r'^\s*"?(?P<id>[A-Za-z0-9._-]+)"?\s*:\s*$')
+    found = False
+    for fragment in sorted(CONFIG_DIR.glob("*.y*ml")):
+        try:
+            lines = fragment.read_text(
+                encoding="utf-8", errors="replace"
+            ).splitlines()
+        except OSError:
+            continue
+        in_models = False
+        for line in lines:
+            if re.match(r"^models:\s*$", line):
+                in_models = True
+                continue
+            if in_models and line and not line.startswith((" ", "#")):
+                break
+            if in_models:
+                m = pattern.match(line)
+                if m and line.startswith(("  ", "\t")):
+                    print(f"{m.group('id'):40s} {fragment.name}")
+                    found = True
+    if not found:
+        print("ℹ️  no model declared yet")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    global VERBOSE
+    if argv and argv[0] == "register":
+        return cmd_register(argv[1:])
+    if argv and argv[0] == "list":
+        return cmd_list()
+
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="llama-scan",
+        description="Register the GGUF files found in the model library.",
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="regenerate auto fragments"
+    )
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--verbose", action="store_true")
+    opts = parser.parse_args(argv)
+    VERBOSE = opts.verbose
+    return cmd_scan(opts.force, opts.dry_run)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -3,7 +3,7 @@ set -euo pipefail
 umask 022
 
 # llama-download — fetch one or more GGUF files into the shared model library
-# and print a llama-swap configuration snippet.
+# and register them with llama-swap.
 #
 # Usage:
 #   llama-download <repo> <file> [<file>...] [--mmproj <file>] [--revision <rev>] [--force]
@@ -13,13 +13,12 @@ umask 022
 #   llama-download TheBloke/Mistral-7B-Instruct-v0.2-GGUF mistral-7b-instruct-v0.2.Q4_K_M.gguf
 #
 # Overridable variables: LLAMA_MODELS_DIR, LLAMA_OWNER, LLAMA_GROUP.
-# The live llama-swap config is /var/lib/llama-swap/config.yaml; append the
-# printed snippet under `models:` and save — llama-swap reloads it.
+# Registration is delegated to `llama-scan`, which writes one YAML fragment
+# per model into /share/Skylab/LLMS/llama-swap.d (watched by llama-swap).
 
 LLAMA_MODELS_DIR="${LLAMA_MODELS_DIR:-/share/Skylab/LLMS}"
 LLAMA_OWNER="${LLAMA_OWNER:-zipang}"
 LLAMA_GROUP="${LLAMA_GROUP:-users}"
-LLAMA_SERVER="${LLAMA_SERVER:-/run/current-system/sw/bin/llama-server}"
 
 usage() {
   sed -n '5,17p' "$0" | sed 's/^# \{0,1\}//'
@@ -102,29 +101,18 @@ for file in ${files[@]+"${files[@]}"}; do
 done
 [[ -n "$mmproj" ]] && fetch "$mmproj"
 
-model_id_of() {
-  basename "$1" .gguf \
-    | tr '[:upper:]' '[:lower:]' \
-    | sed 's/[^a-z0-9._-]/-/g'
-}
-
 echo
 echo "✅ Files ready in $LLAMA_MODELS_DIR"
-echo
-echo "Add this under 'models:' in /var/lib/llama-swap/config.yaml:"
-echo
-for file in ${files[@]+"${files[@]}"}; do
-  id="$(model_id_of "$file")"
-  echo "  \"$id\":"
-  echo "    name: \"$id\""
-  echo "    cmd: |"
-  echo "      $LLAMA_SERVER"
-  echo "      --host 127.0.0.1 --port \${PORT}"
-  echo "      -m $LLAMA_MODELS_DIR/$file"
-  echo "      --ctx-size 8192 --n-gpu-layers 999 --jinja"
-  [[ -n "$mmproj" ]] && echo "      --mmproj $LLAMA_MODELS_DIR/$mmproj"
-  echo
-done
 
-echo "llama-swap watches the file: save it and the model appears in /v1/models."
-echo "Check with: curl -s http://127.0.0.1:9931/v1/models | jq"
+scan="$(dirname "$(readlink -f "$0")")/llama-scan"
+if [[ -x "$scan" ]]; then
+  echo
+  "$scan" --verbose \
+    || echo "⚠️  llama-scan failed - register by hand: llama-register <file>"
+else
+  echo "⚠️  llama-scan not found - register by hand: llama-register <file>"
+fi
+
+echo
+echo "llama-swap polls $LLAMA_MODELS_DIR/llama-swap.d every 2 s."
+echo "Check with: curl -s http://127.0.0.1:9931/v1/models | jq -r '.data[].id'"
