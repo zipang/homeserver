@@ -44,6 +44,11 @@ in
   systemd.services.llama-cpp = {
     # Never start before the MEDIAS model subvolume is mounted.
     unitConfig.RequiresMountsFor = [ modelsDir ];
+    # Do not auto-start at boot: the model files are fetched by
+    # `scripts/init-llms` after the first rebuild. Start it explicitly with
+    # `sudo systemctl start llama-cpp.service`, or drop this override once
+    # the model library is provisioned.
+    wantedBy = lib.mkForce [ ];
     serviceConfig = {
       DynamicUser = lib.mkForce false;
       PrivateUsers = lib.mkForce false;

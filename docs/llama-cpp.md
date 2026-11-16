@@ -121,6 +121,8 @@ in
   # GPU access + shared-library mount ordering.
   systemd.services.llama-cpp = {
     unitConfig.RequiresMountsFor = [ modelsDir ];
+    # No auto-start until the model library is provisioned.
+    wantedBy = lib.mkForce [ ];
     serviceConfig = {
       DynamicUser = lib.mkForce false;
       PrivateUsers = lib.mkForce false;
@@ -218,13 +220,16 @@ sudo umount /mnt/medias
 ```
 
 Then rebuild (`sudo nixos-rebuild switch`): the mount unit and the tmpfiles
-ownership rule are applied together. Finally, initialize the library and fetch
-the default model:
+ownership rule are applied together. The service is **not** started
+automatically; initialize the library, fetch the default model, then start it:
 
 ```bash
 init-llms
-sudo systemctl restart llama-cpp.service
+sudo systemctl start llama-cpp.service
 ```
+
+If a previous rebuild left the unit in a restart loop, clear it first with
+`sudo systemctl stop llama-cpp.service`.
 
 ### SSD or HDD for the model directory?
 
@@ -362,13 +367,9 @@ There is no dynamic model picker in this channel. Options for multiple models:
 
 ### Start / stop / restart
 
-The startup script is the generated systemd unit `llama-cpp.service`. Its
-`ExecStart` is:
-
-```
-llama-server --log-disable --host 127.0.0.1 --port 9931 -m <modelFile> \
-  --n-gpu-layers 999 --ctx-size 8192 --jinja --mmproj <mmprojFile>
-```
+The module sets `wantedBy = lib.mkForce [ ]`: the unit is **not started at
+boot** until the model library is provisioned. Start it explicitly after
+`init-llms`:
 
 ```bash
 sudo systemctl start llama-cpp.service
@@ -377,6 +378,17 @@ sudo systemctl restart llama-cpp.service
 sudo systemctl status llama-cpp.service
 
 sudo systemctl cat llama-cpp.service   # inspect the generated unit
+```
+
+Once you are happy with the setup, enable auto-start by removing the
+`wantedBy` override (or setting it back to `[ "multi-user.target" ]` in the
+module) and rebuilding.
+
+The startup script is the generated systemd unit. Its `ExecStart` is:
+
+```
+llama-server --log-disable --host 127.0.0.1 --port 9931 -m <modelFile> \
+  --n-gpu-layers 999 --ctx-size 8192 --jinja --mmproj <mmprojFile>
 ```
 
 Do **not** use `systemctl edit` for permanent changes: the file lives in

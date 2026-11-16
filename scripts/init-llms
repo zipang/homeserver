@@ -130,4 +130,4 @@ echo "   modelFile  = \"$model_path\";"
 if [[ -n "$mmproj_path" ]]; then
   echo "   mmprojFile = \"$mmproj_path\";"
 fi
-echo "   Then: sudo systemctl restart llama-cpp.service"
+echo "   Then: sudo systemctl start llama-cpp.service"
