@@ -35,6 +35,18 @@ in
     options = [ "subvol=@workspace" "compress=zstd" "noatime" ];
   };
 
+  # --- 1b. Shared AI model library (MEDIAS) ---
+  # Btrfs subvolume @llms, created once on the server:
+  #   sudo btrfs subvolume create /mnt/medias/@llms
+  # It is mounted directly under the NFS export root, so `crossmnt` in
+  # modules/services/nfs.nix publishes it as /share/Skylab/LLMS with no
+  # extra export entry.
+  fileSystems."/share/Skylab/LLMS" = {
+    device = mediasDevice;
+    fsType = "btrfs";
+    options = [ "subvol=@llms" "compress=zstd" "noatime" ];
+  };
+
   # --- 2. Share Tree (Common mount point for sharing services) ---
   # We use bind mounts to expose user directories under /share/Skylab.
   # Using fileSystems is more idiomatic for NixOS and handles unit generation.
@@ -106,6 +118,9 @@ in
   systemd.tmpfiles.rules = [
     "d /share 0755 root root -"
     "d /share/Skylab 0755 root root -"
+    # Group-writable by `users` so zipang downloads models and the llama-cpp
+    # service (member of `users`) can read them.
+    "d /share/Skylab/LLMS 2775 zipang users -"
     "d /share/Storage 0775 zipang users -"
     "d /share/Storage/WOODY/photos 0775 zipang users -"
     "d /media 0755 root root -"

@@ -41,6 +41,7 @@ in
     ../../modules/services/netdata.nix
     ../../modules/services/immich.nix
     ../../modules/services/jellyfin.nix
+    ../../modules/services/llama-cpp.nix
     # ../../modules/services/nextcloud.nix
     ../../modules/services/copyparty.nix
     ../../modules/services/qdrant.nix

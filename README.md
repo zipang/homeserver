@@ -87,6 +87,7 @@ Specific services have a dedicated documentation to explain their configuration 
 * [Immich](./docs/immich.md)
 * [Nextcloud](./docs/nextcloud.md)
 * [Jellyfin](./docs/jellyfin.md)
+* [llama.cpp](./docs/llama-cpp.md)
 * [AV1 Converter Script](./docs/av1-converter.md)
 * [Copyparty File Sharing](./docs/copyparty.md)
 * [Qdrant Vector Database](./docs/qdrant.md)
