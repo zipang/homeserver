@@ -290,6 +290,9 @@ handles being run as `root` by downloading as the owner. It also warns when
 `/share/Skylab/LLMS` is not actually a mountpoint, to avoid filling the root
 filesystem, and pre-creates the hidden `.cache/huggingface` directory that
 `hf --local-dir` uses for download metadata (ignore it; it is not a model).
+Downloads go through a hidden `.staging/` directory and are moved into place
+afterwards, so permissions stay correct even though `/share/Skylab` itself is
+root-owned.
 
 If you prefer doing it by hand (the default model is vision-capable, so it
 needs **two** files):

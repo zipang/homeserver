@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 022
 
 # init-llms — initialize the shared LLM model library and download the
 # default vision-capable GGUF model (plus its multimodal projector).
@@ -18,7 +19,7 @@ set -euo pipefail
 LLAMA_MODELS_DIR="${LLAMA_MODELS_DIR:-/share/Skylab/LLMS}"
 LLAMA_DEFAULT_REPO="${LLAMA_DEFAULT_REPO:-unsloth/Qwen3.5-2B-GGUF}"
 LLAMA_DEFAULT_FILE="${LLAMA_DEFAULT_FILE:-Qwen3.5-2B-Q4_K_M.gguf}"
-LLAMA_DEFAULT_MMPROJ="${LLAMA_DEFAULT_MMPROJ:-mmproj-F16.gguf}"
+LLAMA_DEFAULT_MMPROJ="${LLAMA_DEFAULT_MMPROJ-mmproj-F16.gguf}"
 LLAMA_OWNER="${LLAMA_OWNER:-zipang}"
 LLAMA_GROUP="${LLAMA_GROUP:-users}"
 
@@ -119,23 +120,42 @@ if [[ $need_model == false && $need_mmproj == false ]]; then
   exit 0
 fi
 
-# 6. Download as the owner so the service (member of `users`) can read it.
+# 6. Download through a staging subdirectory. `hf --local-dir` calls
+#    `_chmod_and_move`, which creates a temporary file in
+#    `dst.parent.parent`; for a file directly under LLMS that is
+#    /share/Skylab (root-owned), so the chmod fails with a noisy warning.
+#    One level deeper keeps that path inside the writable model directory.
+stage_dir="$LLAMA_MODELS_DIR/.staging"
 run_as=()
 if [[ $EUID -eq 0 ]] && id "$LLAMA_OWNER" >/dev/null 2>&1; then
   run_as=(sudo -u "$LLAMA_OWNER")
 fi
 
+if [[ $EUID -eq 0 ]]; then
+  install -d -o "$LLAMA_OWNER" -g "$LLAMA_GROUP" -m 2775 "$stage_dir"
+else
+  mkdir -p "$stage_dir"
+fi
+trap 'rm -rf "$stage_dir"' EXIT
+
+download() {
+  local file="$1"
+  "${run_as[@]}" hf download "$LLAMA_DEFAULT_REPO" "$file" \
+    --local-dir "$stage_dir"
+}
+
 echo "⬇️  Downloading (this can take a while)..."
 if [[ $need_model == true ]]; then
-  "${run_as[@]}" hf download "$LLAMA_DEFAULT_REPO" "$LLAMA_DEFAULT_FILE" \
-    --local-dir "$LLAMA_MODELS_DIR"
+  download "$LLAMA_DEFAULT_FILE"
+  mv -f "$stage_dir/$LLAMA_DEFAULT_FILE" "$model_path"
 fi
 if [[ $need_mmproj == true ]]; then
-  "${run_as[@]}" hf download "$LLAMA_DEFAULT_REPO" "$LLAMA_DEFAULT_MMPROJ" \
-    --local-dir "$LLAMA_MODELS_DIR"
+  download "$LLAMA_DEFAULT_MMPROJ"
+  mv -f "$stage_dir/$LLAMA_DEFAULT_MMPROJ" "$mmproj_path"
 fi
 
-# 7. Normalize ownership/permissions in case the download ran as root.
+# 7. Normalize ownership/permissions in case the download ran as root and
+#    regardless of the caller's umask.
 if [[ $EUID -eq 0 ]]; then
   chown "$LLAMA_OWNER:$LLAMA_GROUP" "$model_path" ${mmproj_path:+"$mmproj_path"}
 fi
