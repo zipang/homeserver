@@ -5,13 +5,37 @@
 [`llama.cpp`](https://github.com/ggml-org/llama.cpp) is a lightweight C/C++
 inference engine for LLaMA-family (and other) GGUF models. On SKYLAB it runs as
 the `llama-cpp` NixOS service: `llama-server` listens on
-`127.0.0.1:8080` and serves an OpenAI-compatible HTTP API, accelerated by the
-AMD Radeon RX Vega M GH. Nginx front-ends it at
+`127.0.0.1:9931` and serves an OpenAI-compatible HTTP API plus a built-in chat
+Web UI, accelerated by the AMD Radeon RX Vega M GH. Nginx front-ends it at
 `https://llama.<privateDomain>` (see `server.privateDomain`).
 
 Configured in **`modules/services/llama-cpp.nix`**, using the `nixos-25.11`
 module API (`model`, `host`, `port`, `extraFlags`) — **not** the newer
-RFC42 `settings` option, which only exists in `nixos-unstable`.
+RFC42 `settings` option, which only exists in `nixos-unstable`. The *package*
+comes from `nixpkgs-unstable` (see "Model" below).
+
+The default model is **Qwen3.5-2B** (vision-language, image + video input,
+Apache-2.0): 2.27B parameters, 262,144-token native context, ~1.28 GB at
+Q4_K_M plus a ~0.67 GB vision projector (`mmproj`).
+
+### Default model at a glance (verified from Hugging Face)
+
+| Property | Value |
+| --- | --- |
+| Upstream repo | [`Qwen/Qwen3.5-2B`](https://huggingface.co/Qwen/Qwen3.5-2B) (released 2026-02-28) |
+| GGUF repo | [`unsloth/Qwen3.5-2B-GGUF`](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) |
+| Task | `image-text-to-text` — **vision + video + text** |
+| Parameters | 2.27B (`Qwen3_5ForConditionalGeneration`, arch `qwen35`) |
+| Context | 262,144 tokens native |
+| License | Apache-2.0 |
+| BF16 weights | ~4.56 GB (does **not** fit 4 GiB VRAM) |
+| Q4_K_M weights | **1.28 GB** (used here) |
+| Vision projector | `mmproj-F16.gguf` **0.67 GB** |
+| Modalities | images (incl. OCR/documents), video, 201 languages |
+| Thinking mode | supported; 2B runs in non-thinking mode by default |
+
+Because the vision tower is a separate `mmproj` in llama.cpp (even though the
+upstream model is unified), the service loads **both** files.
 
 Related pages: [Jellyfin](./jellyfin.md) (other GPU-accelerated media service),
 [Monitoring](./monitoring.md).
@@ -29,6 +53,14 @@ generation of hardware.
 Vulkan ICD JSON files under `/run/opengl-driver`, which the (unwrapped)
 `llama-server` binary discovers at runtime.
 
+### Why the package comes from nixpkgs-unstable
+
+Qwen3.5 uses the `qwen35` GGUF architecture (hybrid Gated DeltaNet + attention).
+The `llama-cpp` in `nixos-25.11` is build **b6981** and predates it, so it fails
+with `unknown model architecture: qwen35`. `pkgs-unstable.llama-cpp-vulkan` is
+recent enough; the NixOS *module* still comes from 25.11, so the option names
+(`model`, `port`, ...) remain the stable ones.
+
 ### Why a static user instead of DynamicUser?
 
 The stock 25.11 unit runs the server with `DynamicUser = true` and no
@@ -42,7 +74,9 @@ on MEDIAS, see below).
 ## Configuration Reference
 
 * NixOS module options (`nixos-25.11`): [`services.llama-cpp`](https://search.nixos.org/options?channel=25.11&query=services.llama-cpp)
-* Packages: [`llama-cpp-vulkan`](https://search.nixos.org/packages?channel=25.11&query=llama-cpp-vulkan) · [`llama-cpp-rocm`](https://search.nixos.org/packages?channel=25.11&query=llama-cpp-rocm) · [`huggingface-hub`](https://search.nixos.org/packages?channel=25.11&query=huggingface-hub)
+* Packages: [`llama-cpp-vulkan` (unstable)](https://search.nixos.org/packages?channel=unstable&query=llama-cpp-vulkan) · [`huggingface-hub`](https://search.nixos.org/packages?channel=25.11&query=huggingface-hub)
+* Default model: [`unsloth/Qwen3.5-2B-GGUF`](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) (upstream [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B))
+* Vision support in llama.cpp: [multimodal docs](https://github.com/ggml-org/llama.cpp/blob/master/docs/multimodal.md)
 * Graphics stack: [`hardware.graphics.enable`](https://search.nixos.org/options?channel=25.11&query=hardware.graphics.enable)
 * Upstream server docs: <https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md>
 * Server flags: <https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md#usage>
@@ -52,29 +86,35 @@ on MEDIAS, see below).
 
 ```nix
 # modules/services/llama-cpp.nix
-{ config, pkgs, lib, ... }:
+{ config, pkgs, pkgs-unstable, lib, ... }:
 
 let
   # Shared model library on the MEDIAS drive (btrfs subvolume @llms).
   modelsDir = "/share/Skylab/LLMS";
 
   # One model per service instance on nixos-25.11.
-  # The 4 GiB HBM2 of the Vega M GH fits roughly a 3B model at Q4_K_M.
-  modelFile = "${modelsDir}/Qwen2.5-3B-Instruct-Q4_K_M.gguf";
+  # Qwen3.5-2B: vision-capable, Apache-2.0, ~1.28 GB at Q4_K_M.
+  modelFile = "${modelsDir}/Qwen3.5-2B-Q4_K_M.gguf";
+  mmprojFile = "${modelsDir}/mmproj-F16.gguf";
 in
 {
   services.llama-cpp = {
     enable = true;
-    package = pkgs.llama-cpp-vulkan; # Vulkan for Vega 12 (gfx904)
+
+    # nixos-25.11's llama-cpp (b6981) predates the `qwen35` architecture, so
+    # the package must come from nixpkgs-unstable.
+    package = pkgs-unstable.llama-cpp-vulkan; # Vulkan for Vega 12 (gfx904)
+
     model = modelFile;
     host = "127.0.0.1"; # LAN access goes through Nginx only
-    port = 8080;
+    port = 9931;
     openFirewall = false;
 
     extraFlags = [
       "--n-gpu-layers" "999" # offload all layers; spills to CPU if VRAM is short
       "--ctx-size" "8192"
       "--jinja" # honour the model's built-in chat template
+      "--mmproj" mmprojFile # vision projector: enables image/video input
     ];
   };
 
@@ -120,7 +160,7 @@ in
     '';
 
     locations."/" = {
-      proxyPass = "http://127.0.0.1:8080";
+      proxyPass = "http://127.0.0.1:9931";
       proxyWebsockets = true;
       extraConfig = ''
         proxy_buffering off;
@@ -130,11 +170,11 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    llama-cpp-vulkan
-    vulkan-loader
-    vulkan-tools # `vulkaninfo`
-    huggingface-hub
+  environment.systemPackages = [
+    pkgs-unstable.llama-cpp-vulkan # same build as the service
+    pkgs.vulkan-loader
+    pkgs.vulkan-tools # `vulkaninfo`
+    pkgs.huggingface-hub
   ];
 }
 ```
@@ -178,7 +218,13 @@ sudo umount /mnt/medias
 ```
 
 Then rebuild (`sudo nixos-rebuild switch`): the mount unit and the tmpfiles
-ownership rule are applied together.
+ownership rule are applied together. Finally, initialize the library and fetch
+the default model:
+
+```bash
+init-llms
+sudo systemctl restart llama-cpp.service
+```
 
 ### SSD or HDD for the model directory?
 
@@ -225,19 +271,32 @@ users.users.zipang.extraGroups = [ "wheel" "docker" "networkmanager" "video" "re
 
 ### Downloading a model from Hugging Face
 
-`huggingface-hub` provides the `hf` CLI (it is in `environment.systemPackages`).
-Run the download **as yourself** (`zipang`): the shared directory is
-group-writable and the service reads through the `users` group.
+The recommended path is the repository script, which initializes the shared
+directory (owner/mode) and downloads the default model referenced by
+`modules/services/llama-cpp.nix`:
 
 ```bash
-# 1. Find available quantizations (needs jq, optional)
-curl -s https://huggingface.co/api/models/bartowski/Qwen2.5-3B-Instruct-GGUF \
-  | jq -r '.siblings[].rfilename' | grep -i gguf
+init-llms            # idempotent: skips the download if the file exists
+init-llms --force    # re-download
+```
 
-# 2. Download one file into the shared library
-hf download \
-  bartowski/Qwen2.5-3B-Instruct-GGUF \
-  Qwen2.5-3B-Instruct-Q4_K_M.gguf \
+It is safe to run as `zipang` (no `sudo` needed once the directory exists), and
+handles being run as `root` by downloading as the owner. It also warns when
+`/share/Skylab/LLMS` is not actually a mountpoint, to avoid filling the root
+filesystem.
+
+If you prefer doing it by hand (the default model is vision-capable, so it
+needs **two** files):
+
+```bash
+# 1. Find available quantizations and projectors
+curl -s https://huggingface.co/api/models/unsloth/Qwen3.5-2B-GGUF \
+  | jq -r '.siblings[].rfilename' | grep -Ei 'gguf'
+
+# 2. Download the text weights and the vision projector
+hf download unsloth/Qwen3.5-2B-GGUF Qwen3.5-2B-Q4_K_M.gguf \
+  --local-dir /share/Skylab/LLMS
+hf download unsloth/Qwen3.5-2B-GGUF mmproj-F16.gguf \
   --local-dir /share/Skylab/LLMS
 
 # 3. Verify ownership and size
@@ -255,22 +314,41 @@ sudo chmod 0644 /share/Skylab/LLMS/*.gguf
 A direct URL works too (public repos need no token):
 
 ```bash
-curl -L -o /share/Skylab/LLMS/model.gguf \
-  https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/main/Qwen2.5-3B-Instruct-Q4_K_M.gguf
+curl -L -o /share/Skylab/LLMS/Qwen3.5-2B-Q4_K_M.gguf \
+  https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf
+curl -L -o /share/Skylab/LLMS/mmproj-F16.gguf \
+  https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/mmproj-F16.gguf
 ```
 
-> **VRAM budget.** The Vega M GH has 4 GiB of HBM2. Prefer 3B-class models at
-> `Q4_K_M` (≈2 GB) or 7B at `Q3_K_M`. Larger files still load, but layers spill
-> to system RAM and generation slows down considerably.
+> **VRAM budget.** The Vega M GH has 4 GiB of HBM2. Qwen3.5-2B at `Q4_K_M`
+> (≈1.28 GB) plus `mmproj-F16` (≈0.67 GB) leaves room for an 8k–16k context.
+> Images consume extra context tokens, so raise `--ctx-size` only if you lower
+> the number of images per request. Larger text models still load, but layers
+> spill to system RAM and generation slows down considerably.
 
 ### Selecting / changing the model
 
 `nixos-25.11` supports **one model per service instance**, declared by
 `services.llama-cpp.model` (a required option). To switch models:
 
-1. download the new `.gguf` into `/share/Skylab/LLMS/`;
-2. update `modelFile` in `modules/services/llama-cpp.nix`;
+1. download the new `.gguf` into `/share/Skylab/LLMS/` (or set
+   `LLAMA_DEFAULT_REPO` / `LLAMA_DEFAULT_FILE` / `LLAMA_DEFAULT_MMPROJ` when
+   calling `init-llms`);
+2. update `modelFile` (and `mmprojFile` for vision models) in
+   `modules/services/llama-cpp.nix`;
 3. `sudo nixos-rebuild switch` — the unit restarts with the new model.
+
+`init-llms` reads environment variables, so a different default is one command
+away:
+
+```bash
+LLAMA_DEFAULT_REPO=unsloth/Qwen3.5-2B-GGUF \
+LLAMA_DEFAULT_FILE=Qwen3.5-2B-Q5_K_M.gguf \
+init-llms
+```
+
+Set `LLAMA_DEFAULT_MMPROJ` to the same value as the model's projector file for
+vision models (this is the default), or to an empty string to skip it.
 
 There is no dynamic model picker in this channel. Options for multiple models:
 
@@ -278,9 +356,9 @@ There is no dynamic model picker in this channel. Options for multiple models:
   distinct ports (each mimics the generated `ExecStart`);
 * use [`llama-swap`](https://github.com/mostlygeek/llama-swap) as an
   OpenAI-compatible proxy that loads/unloads models on demand;
-* upgrade the service to `nixos-unstable`, whose RFC42 rewrite adds a
-  free-form `settings` attribute (and `models-preset` INI) supporting several
-  models.
+* on `nixos-unstable`'s RFC42 rewrite, the free-form `settings` attribute (and
+  `models-preset` INI) supports several models in one unit. That requires the
+  whole system on unstable, not just the package.
 
 ### Start / stop / restart
 
@@ -288,7 +366,8 @@ The startup script is the generated systemd unit `llama-cpp.service`. Its
 `ExecStart` is:
 
 ```
-llama-server --log-disable --host 127.0.0.1 --port 8080 -m <modelFile> <extraFlags...>
+llama-server --log-disable --host 127.0.0.1 --port 9931 -m <modelFile> \
+  --n-gpu-layers 999 --ctx-size 8192 --jinja --mmproj <mmprojFile>
 ```
 
 ```bash
@@ -319,14 +398,45 @@ systemd.services.llama-cpp.preStart = ''
 '';
 ```
 
+### Web UI and OpenAI-compatible endpoints
+
+`llama-server` ships a built-in browser UI at **`/`** and the API under
+**`/v1`**. Both are served by the same Nginx vhost, so with
+`server.privateDomain = "skylab.local"` they are available on the LAN as:
+
+| URL | Purpose |
+| --- | --- |
+| `https://llama.skylab.local/` | Built-in chat Web UI (no dashboard to install) |
+| `https://llama.skylab.local/v1/models` | List the loaded model |
+| `https://llama.skylab.local/v1/chat/completions` | OpenAI chat-completions API (streaming supported) |
+| `https://llama.skylab.local/v1/completions` | Legacy completions API |
+| `https://llama.skylab.local/v1/embeddings` | Embeddings (if the model supports it) |
+| `https://llama.skylab.local/health` | Liveness probe |
+
+The vhost name comes from `config.server.privateDomain`, not a hardcoded
+string: if your internal domain is not `skylab.local`, the host is
+`llama.<privateDomain>`. Point any OpenAI-compatible client at
+`https://llama.skylab.local/v1` with any non-empty API key (the server does not
+require one; authentication is the LAN allowlist on the vhost).
+
+```bash
+# Web UI over the proxy (opens the built-in chat)
+curl -s https://llama.skylab.local/ \
+  --cacert /var/lib/secrets/certs/skylab-ca.crt | head
+
+# OpenAI client style
+export OPENAI_BASE_URL=https://llama.skylab.local/v1
+export OPENAI_API_KEY=local
+```
+
 ### Test the API
 
 ```bash
 # Health / loaded model
-curl -s http://127.0.0.1:8080/v1/models | jq
+curl -s http://127.0.0.1:9931/v1/models | jq
 
 # Chat completion
-curl -s http://127.0.0.1:8080/v1/chat/completions \
+curl -s http://127.0.0.1:9931/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "local",
@@ -338,6 +448,33 @@ curl -s http://127.0.0.1:8080/v1/chat/completions \
 curl -s https://llama.skylab.local/v1/models \
   --cacert /var/lib/secrets/certs/skylab-ca.crt
 ```
+
+### Vision (image input)
+
+Qwen3.5-2B accepts images because the service passes `--mmproj`. The built-in
+Web UI has an attach button; from the API, send an OpenAI-style content array
+with a base64 data URL:
+
+```bash
+IMG=$(base64 -w0 photo.jpg)
+curl -s http://127.0.0.1:9931/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"model\": \"local\",
+    \"messages\": [{
+      \"role\": \"user\",
+      \"content\": [
+        {\"type\": \"text\", \"text\": \"Describe this image in one sentence.\"},
+        {\"type\": \"image_url\", \"image_url\": {\"url\": \"data:image/jpeg;base64,$IMG\"}}
+      ]
+    }],
+    \"max_tokens\": 256
+  }" | jq -r '.choices[0].message.content'
+```
+
+Video input follows the same content-array shape with `"type": "video_url"`.
+Each image/video frame consumes context tokens: keep `--ctx-size` at 8192 for a
+single image, or lower the image resolution/count if you get truncation.
 
 ## Headless Operations & Troubleshooting
 
@@ -352,7 +489,7 @@ systemctl status llama-cpp.service
 ### Port and process checks
 
 ```bash
-ss -ltnp | grep 8080
+ss -ltnp | grep 9931
 systemctl show -p ExecStart,User,Group,StateDirectory llama-cpp.service
 ```
 
@@ -409,6 +546,13 @@ The loader is present but `/run/opengl-driver/share/vulkan/icd.d` has no RADV
 manifest, or the unit cannot read it. Check `ls /run/opengl-driver/share/vulkan/icd.d/`
 and the `render` group membership of `llama-cpp` (see above).
 
+### `unknown model architecture: qwen35`
+
+The service is still using the `nixos-25.11` `llama-cpp` (build b6981), which
+predates Qwen3.5. Set `package = pkgs-unstable.llama-cpp-vulkan;` and rebuild.
+Check which binary runs with
+`systemctl show -p ExecStart llama-cpp.service | grep -o '/nix/store[^ ]*'`.
+
 ### `failed to load model from ...` / `No such file or directory`
 
 Check the two usual causes in order:
@@ -432,9 +576,9 @@ absent or the subvolume is missing, the service does not start (by design: it
 must not silently read an empty underlying directory). Verify with
 `systemctl status share-Skylab-LLMS.mount` and `dmesg | grep MEDIAS`.
 
-### `Address already in use` on 8080
+### `Address already in use` on 9931
 
-Another process grabbed the port. Identify it with `ss -ltnp | grep 8080`, then
+Another process grabbed the port. Identify it with `ss -ltnp | grep 9931`, then
 either stop it or change `services.llama-cpp.port` (and the Nginx `proxyPass`
 in the same module).
 
@@ -449,6 +593,16 @@ the module if your LAN uses another subnet or if you access it over Netbird.
 `proxy_read_timeout`/`proxy_send_timeout` are raised to 600 s in the module.
 For very long prompts raise them further; `proxy_buffering off` is required for
 streamed responses.
+
+### Images are rejected or ignored
+
+`--mmproj` is missing, points to a non-existent file, or the service was not
+restarted. Verify the flag and the file:
+
+```bash
+systemctl cat llama-cpp.service | grep -o -- '--mmproj [^ ]*'
+ls -lh /share/Skylab/LLMS/mmproj-F16.gguf
+```
 
 ### Low GPU offload
 

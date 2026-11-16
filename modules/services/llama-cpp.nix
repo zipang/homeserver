@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, pkgs-unstable, lib, ... }:
 
 let
   # Shared model library on the MEDIAS drive (btrfs subvolume @llms, see
@@ -6,8 +6,11 @@ let
   modelsDir = "/share/Skylab/LLMS";
 
   # One model per service instance on nixos-25.11 (see docs/llama-cpp.md).
-  # The 4 GiB HBM2 of the Vega M GH fits roughly a 3B model at Q4_K_M.
-  modelFile = "${modelsDir}/Qwen2.5-3B-Instruct-Q4_K_M.gguf";
+  # `scripts/init-llms` creates the directory and downloads these exact files.
+  # Qwen3.5-2B is vision-capable (image + video) and Apache-2.0; the text
+  # weights are ~1.28 GB at Q4_K_M and the vision projector ~0.67 GB.
+  modelFile = "${modelsDir}/Qwen3.5-2B-Q4_K_M.gguf";
+  mmprojFile = "${modelsDir}/mmproj-F16.gguf";
 in
 {
   # llama.cpp inference server (OpenAI-compatible API)
@@ -15,19 +18,22 @@ in
     enable = true;
 
     # Vulkan is the reliable GPU backend on Vega 12 (gfx904), which ROCm does
-    # not officially target. Swap for pkgs.llama-cpp-rocm only if you know
-    # your GPU is supported (or set HSA_OVERRIDE_GFX_VERSION).
-    package = pkgs.llama-cpp-vulkan;
+    # not officially target. The package comes from nixpkgs-unstable: the
+    # nixos-25.11 build (b6981) predates the `qwen35` architecture and cannot
+    # load Qwen3.5 GGUFs. Swap for pkgs.llama-cpp-vulkan only with a model
+    # that the stable build supports.
+    package = pkgs-unstable.llama-cpp-vulkan;
 
     model = modelFile;
     host = "127.0.0.1"; # LAN traffic goes through Nginx only
-    port = 8080;
+    port = 9931;
     openFirewall = false;
 
     extraFlags = [
       "--n-gpu-layers" "999" # offload every layer; spills to CPU if VRAM is short
       "--ctx-size" "8192"
       "--jinja" # honour the model's built-in chat template
+      "--mmproj" mmprojFile # vision projector: enables image/video input
     ];
   };
 
@@ -81,7 +87,7 @@ in
     '';
 
     locations."/" = {
-      proxyPass = "http://127.0.0.1:8080";
+      proxyPass = "http://127.0.0.1:9931";
       proxyWebsockets = true;
       extraConfig = ''
         # Token generation is slow and streamed: do not buffer or time out.
@@ -93,7 +99,7 @@ in
   };
 
   environment.systemPackages = with pkgs; [
-    llama-cpp-vulkan
+    pkgs-unstable.llama-cpp-vulkan # same build as the service (qwen35 support)
     vulkan-loader
     vulkan-tools # provides `vulkaninfo` for verification
     huggingface-hub # `hf download` to fetch GGUF files

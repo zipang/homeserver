@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# init-llms — initialize the shared LLM model library and download the
+# default vision-capable GGUF model (plus its multimodal projector).
+#
+# Run this on SKYLAB as the normal user (zipang), after the first
+# `nixos-rebuild switch` that mounts /share/Skylab/LLMS:
+#
+#   init-llms                 # create the directory + download model + mmproj
+#   init-llms --force         # re-download even if the files already exist
+#   LLAMA_MODELS_DIR=/tmp/llms init-llms
+#
+# Overridable variables: LLAMA_MODELS_DIR, LLAMA_DEFAULT_REPO,
+# LLAMA_DEFAULT_FILE, LLAMA_DEFAULT_MMPROJ, LLAMA_OWNER, LLAMA_GROUP.
+# The model and mmproj paths must match modules/services/llama-cpp.nix.
+
+LLAMA_MODELS_DIR="${LLAMA_MODELS_DIR:-/share/Skylab/LLMS}"
+LLAMA_DEFAULT_REPO="${LLAMA_DEFAULT_REPO:-unsloth/Qwen3.5-2B-GGUF}"
+LLAMA_DEFAULT_FILE="${LLAMA_DEFAULT_FILE:-Qwen3.5-2B-Q4_K_M.gguf}"
+LLAMA_DEFAULT_MMPROJ="${LLAMA_DEFAULT_MMPROJ:-mmproj-F16.gguf}"
+LLAMA_OWNER="${LLAMA_OWNER:-zipang}"
+LLAMA_GROUP="${LLAMA_GROUP:-users}"
+
+force=false
+case "${1:-}" in
+  --force) force=true ;;
+  -h | --help)
+    sed -n '4,17p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  "")
+    ;;
+  *)
+    echo "Unknown argument: $1 (try --help)" >&2
+    exit 2
+    ;;
+esac
+
+echo "🧠 Initializing the LLM model library"
+echo "   Directory : $LLAMA_MODELS_DIR"
+echo "   Model     : $LLAMA_DEFAULT_REPO / $LLAMA_DEFAULT_FILE"
+echo "   Projector : $LLAMA_DEFAULT_REPO / $LLAMA_DEFAULT_MMPROJ"
+echo
+
+# 1. Create the directory if it does not exist yet. The mount point is
+#    normally created by systemd, but this also covers a manual bootstrap.
+if [[ ! -d "$LLAMA_MODELS_DIR" ]]; then
+  echo "📁 Creating $LLAMA_MODELS_DIR ($LLAMA_OWNER:$LLAMA_GROUP, 2775)"
+  if [[ $EUID -eq 0 ]]; then
+    install -d -o "$LLAMA_OWNER" -g "$LLAMA_GROUP" -m 2775 "$LLAMA_MODELS_DIR"
+  else
+    sudo install -d -o "$LLAMA_OWNER" -g "$LLAMA_GROUP" -m 2775 "$LLAMA_MODELS_DIR"
+  fi
+else
+  echo "✅ Directory already exists"
+fi
+
+# 2. Warn (but do not fail) if the MEDIAS subvolume is not mounted: files
+#    would silently land on the root filesystem instead.
+mounted_target="$(findmnt -n -o TARGET --target "$LLAMA_MODELS_DIR" 2>/dev/null || true)"
+if [[ "$mounted_target" != "$LLAMA_MODELS_DIR" ]]; then
+  echo "⚠️  $LLAMA_MODELS_DIR is not a mountpoint (MEDIAS/@llms is probably not mounted)."
+  echo "    Models would land on the root filesystem."
+  echo "    See docs/llama-cpp.md (one-time creation) and re-run after the rebuild."
+  if [[ -t 0 ]]; then
+    read -r -p "Continue anyway? (y/N) " reply
+    [[ $reply =~ ^[Yy]$ ]] || exit 1
+  else
+    exit 1
+  fi
+fi
+
+# 3. `hf` comes from pkgs.huggingface-hub, installed by the llama-cpp module.
+if ! command -v hf >/dev/null 2>&1; then
+  echo "❌ 'hf' not found. Apply the NixOS configuration first:" >&2
+  echo "   sudo nixos-rebuild switch --flake path:.#SKYLAB" >&2
+  exit 1
+fi
+
+model_path="$LLAMA_MODELS_DIR/$LLAMA_DEFAULT_FILE"
+mmproj_path=""
+if [[ -n "$LLAMA_DEFAULT_MMPROJ" ]]; then
+  mmproj_path="$LLAMA_MODELS_DIR/$LLAMA_DEFAULT_MMPROJ"
+fi
+
+need_model=$force
+[[ -f "$model_path" ]] || need_model=true
+need_mmproj=false
+if [[ -n "$mmproj_path" ]]; then
+  need_mmproj=$force
+  [[ -f "$mmproj_path" ]] || need_mmproj=true
+fi
+
+if [[ $need_model == false && $need_mmproj == false ]]; then
+  echo "✅ Files already present, nothing to do:"
+  ls -lh "$model_path" ${mmproj_path:+"$mmproj_path"}
+  exit 0
+fi
+
+# 4. Download as the owner so the service (member of `users`) can read it.
+run_as=()
+if [[ $EUID -eq 0 ]] && id "$LLAMA_OWNER" >/dev/null 2>&1; then
+  run_as=(sudo -u "$LLAMA_OWNER")
+fi
+
+echo "⬇️  Downloading (this can take a while)..."
+if [[ $need_model == true ]]; then
+  "${run_as[@]}" hf download "$LLAMA_DEFAULT_REPO" "$LLAMA_DEFAULT_FILE" \
+    --local-dir "$LLAMA_MODELS_DIR"
+fi
+if [[ $need_mmproj == true ]]; then
+  "${run_as[@]}" hf download "$LLAMA_DEFAULT_REPO" "$LLAMA_DEFAULT_MMPROJ" \
+    --local-dir "$LLAMA_MODELS_DIR"
+fi
+
+# 5. Normalize ownership/permissions in case the download ran as root.
+if [[ $EUID -eq 0 ]]; then
+  chown "$LLAMA_OWNER:$LLAMA_GROUP" "$model_path" ${mmproj_path:+"$mmproj_path"}
+fi
+chmod 0644 "$model_path" ${mmproj_path:+"$mmproj_path"} 2>/dev/null || true
+
+echo
+echo "✅ Files ready:"
+ls -lh "$model_path" ${mmproj_path:+"$mmproj_path"}
+echo
+echo "ℹ️  Ensure modules/services/llama-cpp.nix points at them:"
+echo "   modelFile  = \"$model_path\";"
+if [[ -n "$mmproj_path" ]]; then
+  echo "   mmprojFile = \"$mmproj_path\";"
+fi
+echo "   Then: sudo systemctl restart llama-cpp.service"
